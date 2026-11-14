@@ -2,6 +2,12 @@ import { useRef, useState } from 'react';
 import firstLogo from '../assets/first-logo.webp';
 import { useTeamLookup } from '../hooks/useTeamLookup';
 import { teamsWithAssets, type AssetKind, type AssetStore } from '../lib/assets';
+import {
+  countAssets,
+  downloadBackup,
+  mergeAssetStores,
+  parseBackup,
+} from '../lib/backup';
 import { fileToImageDataUrl, isImageFile } from '../lib/image';
 import { searchTeams } from '../lib/teamSearch';
 import type { TeamStrength } from '../types';
@@ -13,10 +19,15 @@ interface Props {
   storageError: string | null;
   onSetAsset: (teamNumber: number, kind: AssetKind, dataUrl: string) => void;
   onRemoveAsset: (teamNumber: number, kind: AssetKind) => void;
+  onReplaceAssets: (store: AssetStore) => void;
   onBack: () => void;
 }
 
 const MAX_EDGE: Record<AssetKind, number> = { logo: 192, robot: 640 };
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
 
 export function ConfigView({
   teams,
@@ -24,13 +35,18 @@ export function ConfigView({
   storageError,
   onSetAsset,
   onRemoveAsset,
+  onReplaceAssets,
   onBack,
 }: Props) {
   const [teamInput, setTeamInput] = useState('');
   const [busy, setBusy] = useState<AssetKind | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [backupMode, setBackupMode] = useState<'merge' | 'replace'>('merge');
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
   const logoInput = useRef<HTMLInputElement>(null);
   const robotInput = useRef<HTMLInputElement>(null);
+  const backupInput = useRef<HTMLInputElement>(null);
 
   const trimmed = teamInput.trim();
   const teamNumber = /^\d+$/.test(trimmed) ? Number(trimmed) : null;
@@ -58,6 +74,50 @@ export function ConfigView({
       setLocalError(error instanceof Error ? error.message : 'Could not read that image.');
     } finally {
       setBusy(null);
+    }
+  };
+
+  const openBackupPicker = (mode: 'merge' | 'replace') => {
+    setBackupMode(mode);
+    setBackupMessage(null);
+    setBackupError(null);
+    backupInput.current?.click();
+  };
+
+  const handleBackupFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBackupMessage(null);
+    setBackupError(null);
+
+    try {
+      const incoming = parseBackup(await file.text());
+
+      if (backupMode === 'replace') {
+        onReplaceAssets(incoming);
+        setBackupMessage(
+          `Replaced with ${plural(countAssets(incoming), 'image')} from ${plural(
+            Object.keys(incoming).length,
+            'team',
+          )}.`,
+        );
+        return;
+      }
+
+      const { store, addedAssets, keptAssets, addedTeams } = mergeAssetStores(assets, incoming);
+      if (addedAssets === 0) {
+        setBackupMessage(
+          `Nothing new in that backup; ${plural(keptAssets, 'existing image')} left untouched.`,
+        );
+        return;
+      }
+      onReplaceAssets(store);
+      setBackupMessage(
+        `Merged ${plural(addedAssets, 'new image')} across ${plural(addedTeams, 'team')}${
+          keptAssets > 0 ? `; ${plural(keptAssets, 'existing image')} left untouched` : ''
+        }.`,
+      );
+    } catch (error) {
+      setBackupError(error instanceof Error ? error.message : 'Could not read that backup.');
     }
   };
 
@@ -186,6 +246,52 @@ export function ConfigView({
 
           {localError ? <p className="config__error">{localError}</p> : null}
           {storageError ? <p className="config__error">{storageError}</p> : null}
+        </section>
+
+        <section className="config__panel">
+          <h2>Backup</h2>
+          <p className="config__hint">
+            Save every logo and robot photo to a JSON file, or load one from another computer.
+            “Merge” fills in what is missing and keeps anything already saved here; “Replace”
+            swaps in the backup’s contents entirely.
+          </p>
+          <div className="asset__actions">
+            <input
+              ref={backupInput}
+              className="asset__input"
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                void handleBackupFile(file);
+              }}
+            />
+            <button
+              type="button"
+              className="button button--small"
+              disabled={countAssets(assets) === 0}
+              onClick={() => downloadBackup(assets)}
+            >
+              Download backup
+            </button>
+            <button
+              type="button"
+              className="button button--small button--ghost"
+              onClick={() => openBackupPicker('merge')}
+            >
+              Merge backup…
+            </button>
+            <button
+              type="button"
+              className="button button--small button--ghost"
+              onClick={() => openBackupPicker('replace')}
+            >
+              Replace from backup…
+            </button>
+          </div>
+          {backupMessage ? <p className="config__note">{backupMessage}</p> : null}
+          {backupError ? <p className="config__error">{backupError}</p> : null}
         </section>
 
         <section className="config__panel">

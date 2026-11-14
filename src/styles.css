@@ -1067,6 +1067,12 @@ select {
   color: #ff9aa3;
 }
 
+.config__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--accent-strong);
+}
+
 .config__assets {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

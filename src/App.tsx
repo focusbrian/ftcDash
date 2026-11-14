@@ -30,7 +30,13 @@ export default function App() {
     error: eventError,
     reload,
   } = useEventData(season, code);
-  const { assets, error: assetError, setAsset, removeAsset } = useTeamAssets();
+  const {
+    assets,
+    error: assetError,
+    setAsset,
+    removeAsset,
+    replaceAll: replaceAssets,
+  } = useTeamAssets();
 
   const seasons = useMemo(() => {
     const latest = Math.max(defaultSeason(), season);
@@ -177,6 +183,7 @@ export default function App() {
           storageError={assetError}
           onSetAsset={setAsset}
           onRemoveAsset={removeAsset}
+          onReplaceAssets={replaceAssets}
           onBack={() => setView('dashboard')}
         />
       ) : (

@@ -89,6 +89,11 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   stepped down further.
 - Everything is stored locally in this browser under `ftcdash.teamAssets.v1` — nothing is uploaded
   anywhere. “Saved teams” lists what you have added and lets you re-open or remove entries.
+- **Backup:** “Download backup” writes every logo and robot photo to `ftcdash-assets-<date>.json`.
+  “Merge backup…” adds only what is missing and keeps anything already saved here (it reports how
+  many images were added or left untouched); “Replace from backup…” swaps the whole store for the
+  file's contents. Files that aren't a valid backup are rejected with a message rather than clearing
+  anything.
 
 ## Theme
 

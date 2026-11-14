@@ -14,6 +14,8 @@ export interface TeamAssetsState {
   error: string | null;
   setAsset: (teamNumber: number, kind: AssetKind, dataUrl: string) => void;
   removeAsset: (teamNumber: number, kind: AssetKind) => void;
+  /** Replaces the whole store (used by backup import). */
+  replaceAll: (store: AssetStore) => void;
 }
 
 export function useTeamAssets(): TeamAssetsState {
@@ -61,5 +63,12 @@ export function useTeamAssets(): TeamAssetsState {
     [commit],
   );
 
-  return { assets, error, setAsset, removeAsset };
+  const replaceAll = useCallback(
+    (store: AssetStore) => {
+      commit(store);
+    },
+    [commit],
+  );
+
+  return { assets, error, setAsset, removeAsset, replaceAll };
 }
