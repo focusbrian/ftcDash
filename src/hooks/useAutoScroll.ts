@@ -1,9 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
-/** How long the list rests at the end before the cycle moves on. */
-const END_PAUSE_MS = 1800;
-
 /** Giving the pointer or a wheel a moment of control keeps auto-scroll from fighting a reader. */
 const HANDOVER_PAUSE_MS = 2500;
 
@@ -14,6 +11,8 @@ interface Options {
   enabled: boolean;
   /** Pixels per second. */
   speed: number;
+  /** How long a finished — or unscrollable — list stays up before the cycle moves on. */
+  dwellMs: number;
   /** Changing this restarts the current list at the top. */
   view: string;
   /** Called once the list has reached (or already was at) the end; advance to the next list here. */
@@ -22,9 +21,17 @@ interface Options {
 
 /**
  * Scrolls a pane at a steady rate and calls `onCycle` once it reaches the bottom, so the schedule,
- * ranking and prediction lists can be handed round on a screen nobody is touching.
+ * ranking and prediction lists can be handed round on a screen nobody is touching. A list with
+ * nowhere to scroll — a filtered one, usually — is simply held for `dwellMs` instead.
  */
-export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options): void {
+export function useAutoScroll({
+  target,
+  enabled,
+  speed,
+  dwellMs,
+  view,
+  onCycle,
+}: Options): void {
   const cycleRef = useRef(onCycle);
   cycleRef.current = onCycle;
 
@@ -97,9 +104,9 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
         return;
       }
 
-      // Nothing left to scroll: rest at the end (or at the top of a list that already fits) before moving on.
+      // Nothing left to scroll: hold the list (or a short one at its top) before moving on.
       if (atEndSince === null) atEndSince = now;
-      else if (now - atEndSince >= END_PAUSE_MS) {
+      else if (now - atEndSince >= dwellMs) {
         atEndSince = null;
         position = 0;
         element.scrollTop = 0;
@@ -118,5 +125,5 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
       element.removeEventListener('pointerleave', onPointerLeave);
       element.removeEventListener('pointercancel', onPointerLeave);
     };
-  }, [target, enabled, speed]);
+  }, [target, enabled, speed, dwellMs]);
 }

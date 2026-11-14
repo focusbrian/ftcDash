@@ -22,7 +22,7 @@ import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { applySeasonOpr, rankTeams } from './lib/teams';
-import { nextAutoScrollView } from './lib/settings';
+import { nextAutoScrollView, dwellMsFor } from './lib/settings';
 import { eventRecords } from './lib/records';
 import { buildHash, defaultSeason, EARLIEST_SEASON, parseRoute, type RouteView } from './lib/route';
 import type { TeamStrength } from './types';
@@ -167,6 +167,8 @@ export default function App() {
     // Nothing to cycle through (or no event loaded) means nothing to scroll.
     enabled: settings.autoScrollViews.length > 0 && event !== null,
     speed: settings.scrollSpeed,
+    // A list with nowhere to scroll is held for the speed's reading time instead.
+    dwellMs: dwellMsFor(settings.scrollSpeed),
     view: leftView,
     onCycle: cycleView,
   });

@@ -30,6 +30,17 @@ export const REFRESH_OPTIONS = [0, 10, 15, 30, 60, 120] as const;
 /** Auto-scroll speeds in px/s: a slow read, a comfortable one, and a fast one for a busy screen. */
 export const SCROLL_SPEED_OPTIONS = [20, 40, 80] as const;
 
+/**
+ * How long a list is held before the cycle moves on, per speed. A list with nothing to scroll — the
+ * common case once the highlight filter is on — is on screen for exactly this long, so the slower
+ * the setting, the longer each list is left up to read.
+ */
+const DWELL_MS: Record<number, number> = { 20: 9000, 40: 6000, 80: 3500 };
+
+export function dwellMsFor(speed: number): number {
+  return DWELL_MS[speed] ?? 6000;
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
   refreshSeconds: 30,
   followLatest: false,
@@ -126,7 +137,8 @@ export function scrollSpeedLabel(speed: number): string {
 export function autoScrollDescription(views: readonly AutoScrollView[], speed: number): string {
   if (views.length === 0) return 'Pick a list to scroll it automatically.';
   const names = views.map((view) => AUTO_SCROLL_LABELS[view].toLowerCase()).join(', then ');
-  return `Scrolls ${names} at ${speed} px/s, then cycles back to the first.`;
+  const seconds = Math.round(dwellMsFor(speed) / 1000);
+  return `Scrolls ${names} at ${speed} px/s; a list too short to scroll just stays up for ${seconds}s.`;
 }
 
 /** The next list in the cycle after `current`, or the first one when `current` is not in it. */

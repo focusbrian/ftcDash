@@ -145,12 +145,14 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   - **Only highlighted teams** hides every match, ranking row and prediction that does not involve a
     team you highlighted in the search box, and the tab counts follow.
   - **Auto-scroll** picks which of the left column's lists take part — Matches, Ranking and Predict,
-    any combination. The chosen list scrolls itself, rests a moment at the end, then moves to the
-    next one in the order above and starts again from the top, so an unattended screen works through
-    the whole event. **Speed** sets the pace (Slow 20 px/s, Medium 40, Fast 80). Resting the pointer
-    on the list, turning a wheel or grabbing it hands control back — the list waits while you read
-    and picks up again a couple of seconds after you leave. Nothing selected leaves the lists still.
-    Cards passing under the tabs fade out rather than meeting a hard edge.
+    any combination. A chosen list scrolls itself at **Speed** (Slow 20 px/s, Medium 40, Fast 80),
+    then hands over to the next one in the order above and starts again from the top, so an
+    unattended screen works through the whole event. A list with nothing to scroll — which is what
+    the highlight filter usually leaves — is simply held on screen instead, for 9s at Slow, 6s at
+    Medium and 3.5s at Fast. Resting the pointer on the list, turning a wheel or grabbing it hands
+    control back — the list waits while you read and picks up again a couple of seconds after you
+    leave. Nothing selected leaves the lists still. Cards passing under the tabs fade out rather than
+    meeting a hard edge.
   - **Team assets** at the bottom of the menu opens the configuration page.
 - **Celebration:** when a played match has a winner, that alliance's card gets a light confetti
   animation — clipped to the card, behind its text, and clear of the robot line-up. It is skipped

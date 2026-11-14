@@ -6,6 +6,7 @@ import {
   REFRESH_OPTIONS,
   SCROLL_SPEED_OPTIONS,
   autoScrollDescription,
+  dwellMsFor,
   nextAutoScrollView,
   parseSettings,
   refreshDescription,
@@ -90,9 +91,18 @@ describe('auto-scroll settings', () => {
     ]);
   });
 
+  it('holds a list on screen longer the slower the speed', () => {
+    const [slow, medium, fast] = SCROLL_SPEED_OPTIONS;
+    expect(dwellMsFor(slow)).toBeGreaterThan(dwellMsFor(medium));
+    expect(dwellMsFor(medium)).toBeGreaterThan(dwellMsFor(fast));
+    // Anything unrecognised falls back to the medium reading time.
+    expect(dwellMsFor(45)).toBe(dwellMsFor(medium));
+  });
+
   it('describes what will scroll', () => {
     expect(autoScrollDescription([], 40)).toMatch(/Pick a list/);
     expect(autoScrollDescription(['matches'], 40)).toContain('matches at 40 px/s');
+    expect(autoScrollDescription(['matches'], 40)).toContain('stays up for 6s');
     expect(autoScrollDescription(['matches', 'ranking'], 20)).toContain('matches, then ranking');
   });
 
