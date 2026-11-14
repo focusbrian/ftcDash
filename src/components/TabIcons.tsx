@@ -50,3 +50,15 @@ export function PredictIcon({ size = 14 }: Props) {
     </svg>
   );
 }
+
+/** Funnel for the "only these teams" filter beside the highlight chips. */
+export function FilterIcon({ size = 13 }: Props) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M4 5h16l-6.2 7.4V19l-3.6-2v-4.6L4 5Z"
+      />
+    </svg>
+  );
+}

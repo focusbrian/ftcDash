@@ -16,12 +16,9 @@ interface Props {
   settings: AppSettings;
   lastUpdated: Date | null;
   disabled: boolean;
-  /** True when at least one team is highlighted, so the filter has something to keep. */
-  hasHighlights: boolean;
   onSelectRefresh: (seconds: number) => void;
   onRefresh: () => void;
   onFollowLatestChange: (enabled: boolean) => void;
-  onHideUnhighlightedChange: (enabled: boolean) => void;
   onAutoScrollViewChange: (view: AutoScrollView, enabled: boolean) => void;
   onScrollSpeedChange: (speed: number) => void;
   onOpenAssets: () => void;
@@ -52,11 +49,9 @@ export function SettingsMenu({
   settings,
   lastUpdated,
   disabled,
-  hasHighlights,
   onSelectRefresh,
   onRefresh,
   onFollowLatestChange,
-  onHideUnhighlightedChange,
   onAutoScrollViewChange,
   onScrollSpeedChange,
   onOpenAssets,
@@ -65,7 +60,6 @@ export function SettingsMenu({
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const followId = useId();
-  const hideId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -154,35 +148,6 @@ export function SettingsMenu({
               </span>
             </label>
             <p className="settings__hint">Opens the most recently played match as results arrive.</p>
-          </div>
-
-          <div className="settings__section">
-            <label className="switch" htmlFor={hideId}>
-              <span
-                className={
-                  settings.hideUnhighlighted ? 'switch__text switch__text--on' : 'switch__text'
-                }
-              >
-                Only highlighted teams
-              </span>
-              <span className="switch__control">
-                <input
-                  id={hideId}
-                  type="checkbox"
-                  role="switch"
-                  checked={settings.hideUnhighlighted}
-                  onChange={(event) => onHideUnhighlightedChange(event.target.checked)}
-                />
-                <span className="switch__track" aria-hidden="true">
-                  <span className="switch__thumb" />
-                </span>
-              </span>
-            </label>
-            <p className="settings__hint">
-              {hasHighlights
-                ? 'Hides matches, ranking rows and predictions that do not involve a highlighted team.'
-                : 'Hides everything except the teams you highlight in the search box.'}
-            </p>
           </div>
 
           <div className="settings__section">

@@ -1288,6 +1288,33 @@ select {
   color: var(--text);
 }
 
+/* "Only these teams" filter, sitting beside the highlight chips. */
+.teamsearch__filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.teamsearch__filter:hover {
+  background: var(--bg-raised-2);
+  color: var(--text);
+}
+
+.teamsearch__filter--on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 /* ---------- switch, as used in the settings panel ---------- */
 
 .switch {

@@ -7,7 +7,7 @@ import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
 import { PredictRanking } from './components/PredictRanking';
 import { SettingsMenu } from './components/SettingsMenu';
-import { PredictIcon, RankingIcon, ScheduleIcon } from './components/TabIcons';
+import { FilterIcon, PredictIcon, RankingIcon, ScheduleIcon } from './components/TabIcons';
 import { TeamList } from './components/TeamList';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
@@ -359,11 +359,9 @@ export default function App() {
               settings={settings}
               lastUpdated={lastUpdated}
               disabled={!code || eventLoading}
-              hasHighlights={highlightTeams.length > 0}
               onSelectRefresh={setRefreshSeconds}
               onRefresh={reload}
               onFollowLatestChange={setFollowLatest}
-              onHideUnhighlightedChange={setHideUnhighlighted}
               onAutoScrollViewChange={toggleAutoScrollView}
               onScrollSpeedChange={setScrollSpeed}
               onOpenAssets={() => setView('config')}
@@ -434,7 +432,29 @@ export default function App() {
                   onAdd={handleAddTeam}
                   onRemove={handleRemoveTeam}
                   onClear={handleClearTeams}
-                  statusExtra={<span>· {teamMatchCount} matches</span>}
+                  statusExtra={
+                    <>
+                      <button
+                        type="button"
+                        className={
+                          settings.hideUnhighlighted
+                            ? 'teamsearch__filter teamsearch__filter--on'
+                            : 'teamsearch__filter'
+                        }
+                        aria-pressed={settings.hideUnhighlighted}
+                        aria-label="Show only highlighted teams"
+                        title={
+                          settings.hideUnhighlighted
+                            ? 'Showing only the highlighted teams — click to show every team'
+                            : 'Show only the highlighted teams'
+                        }
+                        onClick={() => setHideUnhighlighted(!settings.hideUnhighlighted)}
+                      >
+                        <FilterIcon />
+                      </button>
+                      <span>· {teamMatchCount} matches</span>
+                    </>
+                  }
                 />
               ) : null}
             </header>
