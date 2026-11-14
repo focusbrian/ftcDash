@@ -48,6 +48,8 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
      * pixels, so reading it mid-frame would round away the sub-pixel step slow speeds depend on.
      */
     let position = element.scrollTop;
+    /** A pointer resting on the list means someone is reading it, so scrolling waits for them. */
+    let pointerInside = false;
 
     const hold = () => {
       holdUntil = performance.now() + HANDOVER_PAUSE_MS;
@@ -55,10 +57,21 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
     const onPointerDown = () => hold();
     const onWheel = () => hold();
     const onKeyDown = () => hold();
+    const onPointerEnter = () => {
+      pointerInside = true;
+      atEndSince = null;
+    };
+    const onPointerLeave = () => {
+      pointerInside = false;
+      hold();
+    };
 
     element.addEventListener('pointerdown', onPointerDown);
     element.addEventListener('wheel', onWheel, { passive: true });
     element.addEventListener('keydown', onKeyDown);
+    element.addEventListener('pointerenter', onPointerEnter);
+    element.addEventListener('pointerleave', onPointerLeave);
+    element.addEventListener('pointercancel', onPointerLeave);
 
     const step = (now: number) => {
       frame = requestAnimationFrame(step);
@@ -72,7 +85,7 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
         atEndSince = null;
       }
 
-      if (now < holdUntil) {
+      if (pointerInside || now < holdUntil) {
         atEndSince = null;
         return;
       }
@@ -101,6 +114,9 @@ export function useAutoScroll({ target, enabled, speed, view, onCycle }: Options
       element.removeEventListener('pointerdown', onPointerDown);
       element.removeEventListener('wheel', onWheel);
       element.removeEventListener('keydown', onKeyDown);
+      element.removeEventListener('pointerenter', onPointerEnter);
+      element.removeEventListener('pointerleave', onPointerLeave);
+      element.removeEventListener('pointercancel', onPointerLeave);
     };
   }, [target, enabled, speed]);
 }
