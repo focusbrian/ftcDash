@@ -4,10 +4,12 @@ import {
   loadAssetStore,
   saveAssetStore,
   withAsset,
+  withShrunkImages,
   withoutAsset,
   type AssetKind,
   type AssetStore,
 } from '../lib/assets';
+import { MAX_ASSET_SIZE, shrinkImageDataUrl } from '../lib/image';
 
 export interface TeamAssetsState {
   assets: AssetStore;
@@ -48,6 +50,23 @@ export function useTeamAssets(): TeamAssetsState {
       setError('Browser storage is full — remove a logo or photo and try again.');
     }
   }, []);
+
+  // Images saved before the size limits existed (or restored from an older backup) are shrunk in
+  // place once, so they take no more room than a fresh upload.
+  useEffect(() => {
+    let cancelled = false;
+    withShrunkImages(assets, (dataUrl, kind) => shrinkImageDataUrl(dataUrl, MAX_ASSET_SIZE[kind]))
+      .then((next) => {
+        if (cancelled || next === assets) return;
+        commit(next);
+      })
+      .catch(() => {
+        // A decode failure just leaves that image at its stored size.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [assets, commit]);
 
   const setAsset = useCallback(
     (teamNumber: number, kind: AssetKind, dataUrl: string, season?: number) => {

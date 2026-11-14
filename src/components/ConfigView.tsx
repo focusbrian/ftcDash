@@ -13,7 +13,7 @@ import {
   mergeAssetStores,
   parseBackup,
 } from '../lib/backup';
-import { fileToImageDataUrl, isImageFile } from '../lib/image';
+import { fileToImageDataUrl, isImageFile, MAX_ASSET_SIZE } from '../lib/image';
 import { defaultSeason, EARLIEST_SEASON } from '../lib/route';
 import { searchTeams } from '../lib/teamSearch';
 import type { TeamStrength } from '../types';
@@ -28,8 +28,6 @@ interface Props {
   onReplaceAssets: (store: AssetStore) => void;
   onBack: () => void;
 }
-
-const MAX_EDGE: Record<AssetKind, number> = { logo: 192, robot: 640 };
 
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -86,7 +84,7 @@ export function ConfigView({
     setBusy(kind);
     setLocalError(null);
     try {
-      const dataUrl = await fileToImageDataUrl(file, MAX_EDGE[kind]);
+      const dataUrl = await fileToImageDataUrl(file, MAX_ASSET_SIZE[kind]);
       onSetAsset(teamNumber, kind, dataUrl, kind === 'robot' ? robotSeason : undefined);
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : 'Could not read that image.');
@@ -210,7 +208,8 @@ export function ConfigView({
               Upload a logo for a team and a photo of its robot — any image file your browser can
               open (PNG, JPEG, WebP, SVG, …). They are stored in this browser only and appear in the
               match view: logos next to team numbers, robot photos standing above the alliance card.
-              Transparent PNGs of the robot work best.
+              Transparent PNGs of the robot work best. Uploads are scaled to fit 48 × 48 px for logos
+              and 200 × 200 px for robots, keeping their aspect ratio.
             </p>
           </div>
           <button type="button" className="button button--ghost" onClick={onBack}>

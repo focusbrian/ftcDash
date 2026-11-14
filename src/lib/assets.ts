@@ -130,6 +130,54 @@ export function teamsWithAssets(store: AssetStore): number[] {
     .sort((a, b) => a - b);
 }
 
+/**
+ * Runs every stored image through `shrink`, which returns a smaller replacement or null to keep the
+ * original. Handing back the same store when nothing changed keeps callers from re-saving needlessly.
+ */
+export async function withShrunkImages(
+  store: AssetStore,
+  shrink: (dataUrl: string, kind: AssetKind) => Promise<string | null>,
+): Promise<AssetStore> {
+  let changed = false;
+
+  const shrinkInto = async (
+    asset: TeamAsset,
+    key: 'logo' | 'robot',
+  ): Promise<void> => {
+    const original = asset[key];
+    if (!original) return;
+    const smaller = await shrink(original, key);
+    if (!smaller) return;
+    asset[key] = smaller;
+    changed = true;
+  };
+
+  const entries = await Promise.all(
+    Object.entries(store).map(async ([key, source]) => {
+      const asset: TeamAsset = { ...source };
+      await shrinkInto(asset, 'logo');
+      await shrinkInto(asset, 'robot');
+      if (asset.robots) {
+        const robots: Record<string, string> = { ...asset.robots };
+        for (const season of Object.keys(robots)) {
+          const smaller = await shrink(robots[season]!, 'robot');
+          if (smaller) {
+            robots[season] = smaller;
+            changed = true;
+          }
+        }
+        asset.robots = robots;
+      }
+      return [key, asset] as const;
+    }),
+  );
+
+  if (!changed) return store;
+  const next: AssetStore = {};
+  for (const [key, asset] of entries) next[key] = asset;
+  return next;
+}
+
 /** Seasons that have a robot image saved for this team, newest first. */
 export function robotSeasons(asset: TeamAsset | undefined): number[] {
   if (!asset?.robots) return [];

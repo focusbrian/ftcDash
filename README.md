@@ -171,10 +171,11 @@ browser does not zoom when one takes focus, and the layout honours the notch and
   match's season, so 2025 and 2026 robots can coexist. Chips next to the picker show which seasons
   already have an image. Images uploaded before season support are kept as a fallback for any season
   and are replaced the first time you upload for a specific one.
-- Images are decoded, scaled down (192 px for logos, up to 640 px for photos), and re-encoded for
-  storage: transparency-capable sources (PNG/WebP/GIF/SVG) stay PNG, opaque formats become JPEG at
-  85% quality to keep the footprint small. If the result is still too large the resolution is
-  stepped down further.
+- Images are decoded, scaled to fit a 48 × 48 box for logos and 200 × 200 for robot photos (aspect
+  ratio kept, never upscaled), and re-encoded for storage: transparency-capable sources
+  (PNG/WebP/GIF/SVG) stay PNG, opaque formats become JPEG at 85% quality to keep the footprint small.
+  If the result is still too large the box is stepped down further, and images saved before these
+  limits existed are shrunk in place the next time the app loads.
 - Everything is stored locally in this browser under `ftcdash.teamAssets.v1` — nothing is uploaded
   anywhere. “Saved teams” lists what you have added and lets you re-open or remove entries.
 - **Backup:** “Download backup” writes every logo and robot photo to `ftcdash-assets-<date>.json`.

@@ -5,6 +5,7 @@ import {
   robotSeasons,
   teamsWithAssets,
   withAsset,
+  withShrunkImages,
   withoutAsset,
   type AssetStore,
 } from './assets';
@@ -100,5 +101,46 @@ describe('asset store updates', () => {
   it('lists teams that have assets in numeric order', () => {
     const store = withAsset(withAsset({}, 34235, 'logo', LOGO), 1234, 'robot', ROBOT, 2026);
     expect(teamsWithAssets(store)).toEqual([1234, 34235]);
+  });
+});
+
+describe('withShrunkImages', () => {
+  it('replaces oversized images and leaves the rest alone', async () => {
+    const store: AssetStore = {
+      10136: { logo: LOGO, robots: { 2026: ROBOT, 2025: ROBOT_2025 } },
+      23502: { logo: 'data:image/png;base64,SMALL' },
+    };
+
+    const next = await withShrunkImages(store, async (dataUrl, kind) =>
+      kind === 'logo' && dataUrl === LOGO ? 'data:image/png;base64,TINY' : null,
+    );
+
+    expect(next['10136']?.logo).toBe('data:image/png;base64,TINY');
+    expect(next['10136']?.robots).toEqual({ 2026: ROBOT, 2025: ROBOT_2025 });
+    expect(next['23502']).toEqual({ logo: 'data:image/png;base64,SMALL' });
+    // The original is not mutated, so a failed save cannot corrupt what is on screen.
+    expect(store['10136']?.logo).toBe(LOGO);
+  });
+
+  it('shrinks every season of a robot image and reports the kind', async () => {
+    const kinds: string[] = [];
+    const store: AssetStore = { 10136: { robot: ROBOT, robots: { 2026: ROBOT, 2025: ROBOT_2025 } } };
+
+    const next = await withShrunkImages(store, async (dataUrl, kind) => {
+      kinds.push(kind);
+      return `${dataUrl}-small`;
+    });
+
+    expect(next['10136']?.robot).toBe(`${ROBOT}-small`);
+    expect(next['10136']?.robots).toEqual({
+      2026: `${ROBOT}-small`,
+      2025: `${ROBOT_2025}-small`,
+    });
+    expect(kinds).toEqual(['robot', 'robot', 'robot']);
+  });
+
+  it('hands back the same store when nothing needed shrinking', async () => {
+    const store: AssetStore = { 10136: { logo: LOGO } };
+    await expect(withShrunkImages(store, async () => null)).resolves.toBe(store);
   });
 });

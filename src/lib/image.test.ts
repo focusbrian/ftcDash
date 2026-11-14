@@ -1,7 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { isImageFile, outputMimeFor } from './image';
+import { fitInside, isImageFile, outputMimeFor } from './image';
 
 const file = (name: string, type: string) => ({ name, type });
+
+describe('fitInside', () => {
+  it('keeps the aspect ratio and fits the whole image inside the box', () => {
+    expect(fitInside({ width: 300, height: 150 }, { width: 48, height: 48 })).toEqual({
+      width: 48,
+      height: 24,
+    });
+    expect(fitInside({ width: 1000, height: 2000 }, { width: 200, height: 200 })).toEqual({
+      width: 100,
+      height: 200,
+    });
+  });
+
+  it('never upscales an image that already fits', () => {
+    expect(fitInside({ width: 32, height: 32 }, { width: 48, height: 48 })).toEqual({
+      width: 32,
+      height: 32,
+    });
+    expect(fitInside({ width: 200, height: 130 }, { width: 200, height: 200 })).toEqual({
+      width: 200,
+      height: 130,
+    });
+  });
+
+  it('rounds to whole pixels and keeps at least one of each', () => {
+    expect(fitInside({ width: 1536, height: 1024 }, { width: 200, height: 200 })).toEqual({
+      width: 200,
+      height: 133,
+    });
+    expect(fitInside({ width: 4000, height: 10 }, { width: 48, height: 48 })).toEqual({
+      width: 48,
+      height: 1,
+    });
+  });
+});
 
 describe('isImageFile', () => {
   it('accepts any image MIME type', () => {
