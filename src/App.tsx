@@ -13,6 +13,7 @@ import { pickDefaultEvent } from './lib/events';
 import { latestPlayedMatchId } from './api/normalize';
 import { fmtDateRange } from './lib/format';
 import { buildMatchView } from './lib/model';
+import type { MatchView } from './lib/model';
 import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
 
 const EARLIEST_SEASON = 2019;
@@ -23,7 +24,7 @@ export default function App() {
   const [season, setSeason] = useState(initialRoute.season);
   const [code, setCode] = useState<string | null>(initialRoute.code);
   const [matchId, setMatchId] = useState<number | null>(initialRoute.matchId);
-  const [highlightTeam, setHighlightTeam] = useState<number | null>(null);
+  const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
   const [onlyHighlighted, setOnlyHighlighted] = useState(false);
 
   const { events, loading: eventsLoading, error: eventsError } = useEventList(season);
@@ -105,23 +106,25 @@ export default function App() {
     [event],
   );
 
-  const teamMatchCount = useMemo(() => {
-    if (highlightTeam === null) return 0;
-    return views.filter((candidate) =>
+  const highlightSet = useMemo(() => new Set(highlightTeams), [highlightTeams]);
+
+  const hasHighlightedTeam = useCallback(
+    (candidate: MatchView) =>
       candidate.sides.some((side) =>
-        side.entries.some((entry) => entry.teamNumber === highlightTeam),
+        side.entries.some((entry) => highlightSet.has(entry.teamNumber)),
       ),
-    ).length;
-  }, [views, highlightTeam]);
+    [highlightSet],
+  );
+
+  const teamMatchCount = useMemo(() => {
+    if (highlightSet.size === 0) return 0;
+    return views.filter(hasHighlightedTeam).length;
+  }, [views, highlightSet, hasHighlightedTeam]);
 
   const visibleViews = useMemo(() => {
-    if (!onlyHighlighted || highlightTeam === null) return views;
-    return views.filter((candidate) =>
-      candidate.sides.some((side) =>
-        side.entries.some((entry) => entry.teamNumber === highlightTeam),
-      ),
-    );
-  }, [views, onlyHighlighted, highlightTeam]);
+    if (!onlyHighlighted || highlightSet.size === 0) return views;
+    return views.filter(hasHighlightedTeam);
+  }, [views, onlyHighlighted, highlightSet, hasHighlightedTeam]);
 
   const selectedView = useMemo(
     () => views.find((candidate) => candidate.match.id === matchId) ?? null,
@@ -164,10 +167,25 @@ export default function App() {
     setMatchId(null);
   }, []);
 
-  const handleSelectTeam = useCallback((teamNumber: number | null) => {
-    setHighlightTeam(teamNumber);
-    if (teamNumber === null) setOnlyHighlighted(false);
+  const handleAddTeam = useCallback((teamNumber: number) => {
+    setHighlightTeams((current) =>
+      current.includes(teamNumber) ? current : [...current, teamNumber],
+    );
   }, []);
+
+  const handleRemoveTeam = useCallback((teamNumber: number) => {
+    setHighlightTeams((current) => current.filter((value) => value !== teamNumber));
+  }, []);
+
+  const handleClearTeams = useCallback(() => {
+    setHighlightTeams([]);
+    setOnlyHighlighted(false);
+  }, []);
+
+  // The "only these" filter makes no sense without highlighted teams.
+  useEffect(() => {
+    if (highlightTeams.length === 0) setOnlyHighlighted(false);
+  }, [highlightTeams.length]);
 
   const jumpToNext = useCallback(() => {
     const next = views.find((candidate) => !candidate.match.played) ?? views[0];
@@ -259,8 +277,10 @@ export default function App() {
               {event && eventTeams.length > 0 ? (
                 <TeamSearch
                   teams={eventTeams}
-                  selected={highlightTeam}
-                  onSelect={handleSelectTeam}
+                  selected={highlightTeams}
+                  onAdd={handleAddTeam}
+                  onRemove={handleRemoveTeam}
+                  onClear={handleClearTeams}
                   statusExtra={
                     <>
                       <span>· {teamMatchCount} matches</span>
@@ -309,15 +329,15 @@ export default function App() {
                 <MatchList
                   views={visibleViews}
                   selectedId={matchId}
-                  highlightTeam={highlightTeam}
+                  highlightTeams={highlightTeams}
                   timezone={event.timezone}
                   assets={assets}
                   onSelect={selectMatch}
                 />
               ) : null}
-              {onlyHighlighted && highlightTeam !== null && event && visibleViews.length === 0 ? (
+              {onlyHighlighted && highlightTeams.length > 0 && event && visibleViews.length === 0 ? (
                 <p className="empty">
-                  No matches for team {highlightTeam} at this event. Untick “Only these” to see the
+                  No matches for the highlighted teams at this event. Untick “Only these” to see the
                   full schedule.
                 </p>
               ) : null}
@@ -331,7 +351,7 @@ export default function App() {
               loading={eventLoading}
               error={eventError}
               assets={assets}
-              highlightTeam={highlightTeam}
+              highlightTeams={highlightTeams}
               onJumpToNext={jumpToNext}
             />
           </section>

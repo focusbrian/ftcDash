@@ -7,7 +7,7 @@ import type { MatchView, SideView } from '../lib/model';
 interface Props {
   views: MatchView[];
   selectedId: number | null;
-  highlightTeam: number | null;
+  highlightTeams: readonly number[];
   timezone: string;
   assets: AssetStore;
   onSelect: (matchId: number) => void;
@@ -25,12 +25,13 @@ function sideTotal(side: SideView, projected: boolean): string {
 export function MatchList({
   views,
   selectedId,
-  highlightTeam,
+  highlightTeams,
   timezone,
   assets,
   onSelect,
 }: Props) {
   const groups = useMemo(() => groupByLevel(views, (view) => view.match.level), [views]);
+  const highlightSet = useMemo(() => new Set(highlightTeams), [highlightTeams]);
 
   if (views.length === 0) {
     return (
@@ -42,7 +43,7 @@ export function MatchList({
   }
 
   return (
-    <div className={highlightTeam === null ? 'matches' : 'matches matches--focused'}>
+    <div className={highlightSet.size === 0 ? 'matches' : 'matches matches--focused'}>
       {groups.map((group) => (
         <section key={group.level} className="matches__group">
           <h3 className="matches__title">
@@ -52,9 +53,9 @@ export function MatchList({
           {group.items.map((view) => {
             const topTotal = Math.max(...view.sides.map((side) => side.total));
             const highlighted =
-              highlightTeam !== null &&
+              highlightSet.size > 0 &&
               view.sides.some((side) =>
-                side.entries.some((entry) => entry.teamNumber === highlightTeam),
+                side.entries.some((entry) => highlightSet.has(entry.teamNumber)),
               );
 
             return (
@@ -95,7 +96,7 @@ export function MatchList({
                             <span
                               key={`${entry.teamNumber}-${entry.station}`}
                               className={
-                                entry.teamNumber === highlightTeam
+                                highlightSet.has(entry.teamNumber)
                                   ? 'card__team card__team--on'
                                   : 'card__team'
                               }

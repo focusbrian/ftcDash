@@ -8,7 +8,7 @@ interface Props {
   side: SideView;
   projected: boolean;
   assets: AssetStore;
-  highlightTeam: number | null;
+  highlightTeams: readonly number[];
   celebrate?: boolean;
 }
 
@@ -21,10 +21,11 @@ function Stat({ label, value, total }: { label: string; value: string; total?: b
   );
 }
 
-export function AllianceCard({ side, projected, assets, highlightTeam, celebrate }: Props) {
+export function AllianceCard({ side, projected, assets, highlightTeams, celebrate }: Props) {
   // Remote seasons recorded alliance totals without an auto/teleop breakdown.
   const breakdownMissing = !projected && side.total > 0 && side.auto === 0 && side.teleop === 0;
   const digits = projected ? 1 : 0;
+  const highlighted = new Set(highlightTeams);
 
   return (
     <article className={`alliance alliance--${side.alliance.toLowerCase()}`}>
@@ -42,7 +43,7 @@ export function AllianceCard({ side, projected, assets, highlightTeam, celebrate
           const logo = assets[String(entry.teamNumber)]?.logo;
           const classes = ['team'];
           if (entry.noShow) classes.push('team--out');
-          if (entry.teamNumber === highlightTeam) classes.push('team--highlight');
+          if (highlighted.has(entry.teamNumber)) classes.push('team--highlight');
 
           return (
             <li key={`${entry.teamNumber}-${entry.station}`} className={classes.join(' ')}>

@@ -65,9 +65,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.
 - **Team highlight:** the search box under the event header matches a team by number *or* name
-  (exact number, then number prefix, then name/school). Every match that team appears in is
-  highlighted, the team's number turns orange on the card and in the alliance list, and “Only these”
-  narrows the schedule to just those matches.
+  (exact number, then number prefix, then name/school). Picking a team adds it as a chip, and you can
+  keep adding teams — each chip has its own × and the ✕ at the end of the box clears them all. Every
+  match containing any highlighted team is highlighted, those teams' numbers turn orange on the cards
+  and in the alliance list, and “Only these” narrows the schedule to matches with at least one of them.
 - **Detail (right):** scheduled time and status, the scoreline (real or projected), a Red/Blue win
   probability bar for projections, then per-alliance cards with the auto/teleop/total split and each
   team's OPR contribution, event rank, and surrogate/DQ/no-show flags.

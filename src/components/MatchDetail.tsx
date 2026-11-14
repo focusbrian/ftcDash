@@ -10,7 +10,7 @@ interface Props {
   loading: boolean;
   error: string | null;
   assets: AssetStore;
-  highlightTeam: number | null;
+  highlightTeams: readonly number[];
   onJumpToNext: () => void;
 }
 
@@ -116,7 +116,7 @@ export function MatchDetail({
   loading,
   error,
   assets,
-  highlightTeam,
+  highlightTeams,
   onJumpToNext,
 }: Props) {
   if (error) {
@@ -226,7 +226,7 @@ export function MatchDetail({
               side={side}
               projected={view.projected}
               assets={assets}
-              highlightTeam={highlightTeam}
+              highlightTeams={highlightTeams}
               celebrate={!view.projected && view.leader?.alliance === side.alliance}
             />
           </div>

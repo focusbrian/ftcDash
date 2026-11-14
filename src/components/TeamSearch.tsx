@@ -4,23 +4,40 @@ import type { TeamStrength } from '../types';
 
 interface Props {
   teams: TeamStrength[];
-  selected: number | null;
-  onSelect: (teamNumber: number | null) => void;
+  selected: readonly number[];
+  onAdd: (teamNumber: number) => void;
+  onRemove: (teamNumber: number) => void;
+  onClear: () => void;
   placeholder?: string;
-  /** Rendered next to the selected-team chip (match count, filter toggle, ...). */
+  /** Rendered next to the selected-team chips (match count, filter toggle, ...). */
   statusExtra?: ReactNode;
 }
 
-export function TeamSearch({ teams, selected, onSelect, placeholder, statusExtra }: Props) {
+export function TeamSearch({
+  teams,
+  selected,
+  onAdd,
+  onRemove,
+  onClear,
+  placeholder,
+  statusExtra,
+}: Props) {
   const listId = useId();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
-  const suggestions = useMemo(() => searchTeams(teams, query), [teams, query]);
-  const selectedTeam = selected === null ? null : teams.find((team) => team.teamNumber === selected);
+  const suggestions = useMemo(
+    () => searchTeams(teams, query).filter((hit) => !selected.includes(hit.teamNumber)),
+    [teams, query, selected],
+  );
 
-  const choose = (teamNumber: number | null) => {
-    onSelect(teamNumber);
+  const chosen = selected.map((teamNumber) => ({
+    teamNumber,
+    name: teams.find((team) => team.teamNumber === teamNumber)?.name ?? '',
+  }));
+
+  const choose = (teamNumber: number) => {
+    onAdd(teamNumber);
     setQuery('');
     setOpen(false);
   };
@@ -47,7 +64,11 @@ export function TeamSearch({ teams, selected, onSelect, placeholder, statusExtra
           aria-expanded={open && suggestions.length > 0}
           aria-controls={listId}
           aria-autocomplete="list"
-          placeholder={placeholder ?? 'Highlight a team by number or name'}
+          placeholder={
+            chosen.length > 0
+              ? 'Add another team…'
+              : (placeholder ?? 'Highlight teams by number or name')
+          }
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -57,12 +78,13 @@ export function TeamSearch({ teams, selected, onSelect, placeholder, statusExtra
           onBlur={() => setOpen(false)}
           onKeyDown={handleKeyDown}
         />
-        {selected !== null ? (
+        {chosen.length > 0 ? (
           <button
             type="button"
             className="teamsearch__clear"
-            title="Clear team highlight"
-            onClick={() => choose(null)}
+            title="Clear highlighted teams"
+            aria-label="Clear highlighted teams"
+            onClick={onClear}
           >
             ✕
           </button>
@@ -75,7 +97,7 @@ export function TeamSearch({ teams, selected, onSelect, placeholder, statusExtra
             <li className="teamsearch__empty">No team in this event matches “{query.trim()}”.</li>
           ) : (
             suggestions.map((hit) => (
-              <li key={hit.teamNumber} role="option" aria-selected={hit.teamNumber === selected}>
+              <li key={hit.teamNumber} role="option" aria-selected={false}>
                 <button
                   type="button"
                   className="teamsearch__option"
@@ -92,10 +114,25 @@ export function TeamSearch({ teams, selected, onSelect, placeholder, statusExtra
         </ul>
       ) : null}
 
-      {selectedTeam ? (
+      {chosen.length > 0 ? (
         <div className="teamsearch__status">
-          <span className="chip chip--team">{selectedTeam.teamNumber}</span>
-          <strong>{selectedTeam.name}</strong>
+          <ul className="teamchips">
+            {chosen.map((team) => (
+              <li key={team.teamNumber} className="teamchip">
+                <span className="teamchip__number">{team.teamNumber}</span>
+                {team.name ? <span className="teamchip__name">{team.name}</span> : null}
+                <button
+                  type="button"
+                  className="teamchip__remove"
+                  title={`Stop highlighting ${team.teamNumber}`}
+                  aria-label={`Stop highlighting ${team.teamNumber}`}
+                  onClick={() => onRemove(team.teamNumber)}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
           {statusExtra}
         </div>
       ) : null}
