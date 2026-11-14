@@ -227,7 +227,17 @@ export default function App() {
             <span className="brand__dash">DASH</span>
           </span>
           <span className="brand__sub">Schedule · results · OPR projections</span>
-          <span className="brand__credit">Created by Team 10136 RobotFalcons</span>
+          <span className="brand__credit">
+            Created by Team 10136{' '}
+            <a
+              className="brand__credit-link"
+              href="https://frostrobofalcons.org/"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              RoboFalcons
+            </a>
+          </span>
           <a
             className="brand__source"
             href="https://ftcscout.org"

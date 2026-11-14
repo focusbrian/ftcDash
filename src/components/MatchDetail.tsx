@@ -236,11 +236,13 @@ export function MatchDetail({
         ))}
       </div>
 
-      <p className="detail__note">
-        {view.projected
-          ? 'Projected scores add each team’s OPR from this event’s matches: auto plus teleop (driver-controlled). Penalty points are excluded. Win chances treat each alliance total as a normal distribution around its projection.'
-          : 'Scores as reported by FIRST. “Penalty pts” are points added to the alliance total by the opposing alliance’s penalties; OPR figures on each team are this event’s regression values.'}
-      </p>
+      {view.projected ? (
+        <p className="detail__note">
+          Projected scores add each team’s OPR from this event’s matches: auto plus teleop
+          (driver-controlled). Penalty points are excluded. Win chances treat each alliance total as a
+          normal distribution around its projection.
+        </p>
+      ) : null}
     </div>
   );
 }
