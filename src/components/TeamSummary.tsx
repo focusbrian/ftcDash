@@ -159,7 +159,7 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
             value={team.hasOpr ? fmtPoints(auto + teleop) : '—'}
             tone={TOTAL_COLOR}
           />
-          <Stat label="Avg RP" value={team.rp === null ? '—' : fmtPoints(team.rp)} />
+          <Stat label="Rank pts" value={team.rp === null ? '—' : fmtPoints(team.rp)} />
         </dl>
 
         {team.oprFromSeason ? (

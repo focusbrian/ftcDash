@@ -81,15 +81,23 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   left of its `FINAL` chip; the highest autonomous and highest teleop runs get smaller blue and green
   ★s beside it. Ties are all starred, projected matches never are, and seasons that recorded a single
   alliance total without an auto/teleop split don't earn the split stars. Hover a star for the value.
-- **Team ranking (left):** the Matches / Ranking switch above the list swaps the schedule for every
-  team at the event in official rank order — rank, number and name, OPR total, then the auton/teleop
-  split with average ranking points and matches played. Until the event publishes OPR, the OPR column
-  carries the team's season OPR at that point in parentheses instead of a dash, and the row's detail
-  line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked ones, best OPR
-  first. Clicking a team highlights its matches exactly like the search box, and hovering a row shows
-  the same team summary card. On touch screens, where there is no hover, each row carries an ⓘ button
-  that opens the summary as a centred sheet with a backdrop — tap it, the ×, or anywhere outside to
-  dismiss (Escape works too).
+- **Team ranking (left):** the Matches / Ranking / Predict switch above the list swaps the schedule
+  for every team at the event in official rank order — rank, number and name, OPR total, then the
+  auton/teleop split with ranking points and matches played. Until the event publishes OPR, the OPR
+  column carries the team's season OPR at that point in parentheses instead of a dash, and the row's
+  detail line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked ones, best
+  OPR first. Clicking a team highlights its matches exactly like the search box, and hovering a row
+  shows the same team summary card. On touch screens, where there is no hover, each row carries an ⓘ
+  button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or anywhere
+  outside to dismiss (Escape works too).
+- **Predict (left):** predicts the final qualification ranking. Each team keeps the ranking points it
+  has banked and gains the points its remaining matches are expected to produce — two for a win, plus
+  its own observed bonus-point rate, weighted by each match's projected win probability — so the list
+  shows the projected total, the team's place now, and how far it moves (▲/▼). The switch at the top
+  swaps it for **schedule difficulty**, which ranks teams by the projected OPR of the alliances they
+  still have to face, hardest first; teams whose qualification matches are all scored drop to the
+  bottom with a dash. Playoff matches and the 2020/2021 single-alliance seasons are left out, since
+  neither decided a qualification rank on head-to-head results.
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no
@@ -189,11 +197,12 @@ src/
   assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
                (favicon source)
   hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts
-  lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), model.ts (match views),
-               format.ts, events.ts, route.ts, teamSearch.ts (team matching), assets.ts (local asset
-               store), image.ts (image handling), settings.ts, backup.ts
-  components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, ConfigView,
-               RefreshSettings, Confetti
+  lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), predict.ts (predicted
+               ranking and schedule difficulty), model.ts (match views), format.ts, events.ts,
+               route.ts, teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image
+               handling), settings.ts, backup.ts
+  components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, TeamList,
+               PredictRanking, ConfigView, RefreshSettings, Confetti
   types.ts     shared domain types
 public/        favicon.png, apple-touch-icon.png (served from the site root)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
@@ -202,8 +211,9 @@ start.cmd      Windows launcher: finds Node, installs dependencies, opens the ap
 ```
 
 Tests cover the projection math, raw-data normalization (including remote seasons and matches with no
-OPR), the season OPR series (last season's anchor and carried-forward values), team search ranking,
-image format handling, the local asset store, and picker/route helpers: `npm test`.
+OPR), the season OPR series (last season's anchor and carried-forward values), the predicted ranking
+and schedule difficulty, team search ranking, image format handling, the local asset store, and
+picker/route helpers: `npm test`.
 
 ## Deploying
 
