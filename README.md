@@ -83,6 +83,11 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - Enter a team number (or search the loaded event by name), then upload a logo and a photo of the
   robot. Any image file your browser can open is accepted — PNG, JPEG, WebP, GIF, BMP, SVG, AVIF…
   Teams outside the loaded event are looked up by number against FTC Scout.
+- **Robot photos are per season.** The robot tile has a season picker (defaulting to the current
+  season); the image is saved under that season and the match view only shows the image for the
+  match's season, so 2025 and 2026 robots can coexist. Chips next to the picker show which seasons
+  already have an image. Images uploaded before season support are kept as a fallback for any season
+  and are replaced the first time you upload for a specific one.
 - Images are decoded, scaled down (192 px for logos, up to 640 px for photos), and re-encoded for
   storage: transparency-capable sources (PNG/WebP/GIF/SVG) stay PNG, opaque formats become JPEG at
   85% quality to keep the footprint small. If the result is still too large the resolution is

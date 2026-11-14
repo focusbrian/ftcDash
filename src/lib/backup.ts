@@ -1,4 +1,4 @@
-import { parseAssetStore, type AssetStore } from './assets';
+import { parseAssetStore, type AssetStore, type TeamAsset } from './assets';
 
 export const BACKUP_APP = 'ftcdash';
 export const BACKUP_VERSION = 1;
@@ -22,7 +22,11 @@ export interface MergeResult {
 
 export function countAssets(store: AssetStore): number {
   return Object.values(store).reduce(
-    (total, assets) => total + (assets.logo ? 1 : 0) + (assets.robot ? 1 : 0),
+    (total, assets) =>
+      total +
+      (assets.logo ? 1 : 0) +
+      (assets.robot ? 1 : 0) +
+      Object.keys(assets.robots ?? {}).length,
     0,
   );
 }
@@ -81,20 +85,38 @@ export function mergeAssetStores(current: AssetStore, incoming: AssetStore): Mer
 
   for (const [team, incomingAssets] of Object.entries(incoming)) {
     const existing = store[team];
-    const merged = { ...existing };
+    const merged: TeamAsset = { ...existing };
 
-    for (const kind of ['logo', 'robot'] as const) {
-      const value = incomingAssets[kind];
-      if (!value) continue;
-      if (merged[kind]) {
+    if (incomingAssets.logo) {
+      if (merged.logo) {
         keptAssets += 1;
       } else {
-        merged[kind] = value;
+        merged.logo = incomingAssets.logo;
         addedAssets += 1;
       }
     }
 
-    if (merged.logo || merged.robot) {
+    if (incomingAssets.robot) {
+      if (merged.robot) {
+        keptAssets += 1;
+      } else {
+        merged.robot = incomingAssets.robot;
+        addedAssets += 1;
+      }
+    }
+
+    const robots = { ...existing?.robots };
+    for (const [season, image] of Object.entries(incomingAssets.robots ?? {})) {
+      if (robots[season]) {
+        keptAssets += 1;
+      } else {
+        robots[season] = image;
+        addedAssets += 1;
+      }
+    }
+    if (Object.keys(robots).length > 0) merged.robots = robots;
+
+    if (merged.logo || merged.robot || merged.robots) {
       if (!existing) addedTeams += 1;
       store[team] = merged;
     }

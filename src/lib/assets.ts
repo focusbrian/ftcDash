@@ -3,8 +3,10 @@ export type AssetKind = 'logo' | 'robot';
 export interface TeamAsset {
   /** Image data URL (PNG or JPEG). */
   logo?: string;
-  /** Image data URL (PNG or JPEG). */
+  /** Season-less robot image, kept for older backups; used when no season-specific image exists. */
   robot?: string;
+  /** Robot image per FTC season, keyed by the season number as a string. */
+  robots?: Record<string, string>;
 }
 
 export type AssetStore = Record<string, TeamAsset>;
@@ -14,6 +16,10 @@ export const ASSETS_CHANGED_EVENT = 'ftcdash:assets-changed';
 
 function isDataUrl(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith('data:image/');
+}
+
+function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 export function parseAssetStore(raw: string | null): AssetStore {
@@ -32,11 +38,27 @@ export function parseAssetStore(raw: string | null): AssetStore {
     if (!/^\d+$/.test(key) || !value || typeof value !== 'object') continue;
     const entry = value as Record<string, unknown>;
     const asset: TeamAsset = {};
+
     if (isDataUrl(entry.logo)) asset.logo = entry.logo;
     if (isDataUrl(entry.robot)) asset.robot = entry.robot;
-    if (asset.logo || asset.robot) store[key] = asset;
+
+    if (isNonEmptyObject(entry.robots)) {
+      const robots: Record<string, string> = {};
+      for (const [season, image] of Object.entries(entry.robots)) {
+        if (/^\d{4}$/.test(season) && isDataUrl(image)) robots[season] = image;
+      }
+      if (Object.keys(robots).length > 0) asset.robots = robots;
+    }
+
+    if (asset.logo || asset.robot || asset.robots) store[key] = asset;
   }
   return store;
+}
+
+/** The robot image for a season, falling back to a legacy season-less image. */
+export function robotForSeason(asset: TeamAsset | undefined, season: number): string | undefined {
+  if (!asset) return undefined;
+  return asset.robots?.[String(season)] ?? asset.robot;
 }
 
 export function withAsset(
@@ -44,21 +66,56 @@ export function withAsset(
   teamNumber: number,
   kind: AssetKind,
   dataUrl: string,
+  season?: number,
 ): AssetStore {
   const key = String(teamNumber);
-  return { ...store, [key]: { ...store[key], [kind]: dataUrl } };
+  const existing = store[key];
+
+  if (kind === 'logo') {
+    return { ...store, [key]: { ...existing, logo: dataUrl } };
+  }
+  if (season === undefined) {
+    return { ...store, [key]: { ...existing, robot: dataUrl } };
+  }
+
+  return {
+    ...store,
+    [key]: { ...existing, robots: { ...existing?.robots, [String(season)]: dataUrl } },
+  };
 }
 
-export function withoutAsset(store: AssetStore, teamNumber: number, kind: AssetKind): AssetStore {
+/**
+ * Removes an asset. Robot images are removed for one season, or — when no season is given —
+ * the legacy season-less image.
+ */
+export function withoutAsset(
+  store: AssetStore,
+  teamNumber: number,
+  kind: AssetKind,
+  season?: number,
+): AssetStore {
   const key = String(teamNumber);
   const existing = store[key];
   if (!existing) return store;
 
   const asset: TeamAsset = { ...existing };
-  delete asset[kind];
+
+  if (kind === 'logo') {
+    delete asset.logo;
+  } else if (season === undefined) {
+    delete asset.robot;
+  } else {
+    const robots = { ...asset.robots };
+    delete robots[String(season)];
+    if (Object.keys(robots).length > 0) {
+      asset.robots = robots;
+    } else {
+      delete asset.robots;
+    }
+  }
 
   const next = { ...store };
-  if (asset.logo || asset.robot) {
+  if (asset.logo || asset.robot || asset.robots) {
     next[key] = asset;
   } else {
     delete next[key];
@@ -71,6 +128,15 @@ export function teamsWithAssets(store: AssetStore): number[] {
     .map(Number)
     .filter((teamNumber) => Number.isInteger(teamNumber))
     .sort((a, b) => a - b);
+}
+
+/** Seasons that have a robot image saved for this team, newest first. */
+export function robotSeasons(asset: TeamAsset | undefined): number[] {
+  if (!asset?.robots) return [];
+  return Object.keys(asset.robots)
+    .map(Number)
+    .filter((season) => Number.isInteger(season))
+    .sort((a, b) => b - a);
 }
 
 export function loadAssetStore(): AssetStore {

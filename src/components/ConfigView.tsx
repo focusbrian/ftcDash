@@ -1,7 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import firstLogo from '../assets/first-logo.webp';
 import { useTeamLookup } from '../hooks/useTeamLookup';
-import { teamsWithAssets, type AssetKind, type AssetStore } from '../lib/assets';
+import {
+  robotSeasons,
+  teamsWithAssets,
+  type AssetKind,
+  type AssetStore,
+} from '../lib/assets';
 import {
   countAssets,
   downloadBackup,
@@ -9,6 +14,7 @@ import {
   parseBackup,
 } from '../lib/backup';
 import { fileToImageDataUrl, isImageFile } from '../lib/image';
+import { defaultSeason } from '../lib/route';
 import { searchTeams } from '../lib/teamSearch';
 import type { TeamStrength } from '../types';
 
@@ -17,16 +23,23 @@ interface Props {
   teams: TeamStrength[];
   assets: AssetStore;
   storageError: string | null;
-  onSetAsset: (teamNumber: number, kind: AssetKind, dataUrl: string) => void;
-  onRemoveAsset: (teamNumber: number, kind: AssetKind) => void;
+  onSetAsset: (teamNumber: number, kind: AssetKind, dataUrl: string, season?: number) => void;
+  onRemoveAsset: (teamNumber: number, kind: AssetKind, season?: number) => void;
   onReplaceAssets: (store: AssetStore) => void;
   onBack: () => void;
 }
 
 const MAX_EDGE: Record<AssetKind, number> = { logo: 192, robot: 640 };
+const EARLIEST_SEASON = 2019;
 
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+function seasonOptions(extra: number[]): number[] {
+  const seasons = new Set<number>([defaultSeason() + 1, defaultSeason(), ...extra]);
+  for (let season = defaultSeason(); season >= EARLIEST_SEASON; season -= 1) seasons.add(season);
+  return [...seasons].sort((a, b) => b - a);
 }
 
 export function ConfigView({
@@ -41,6 +54,7 @@ export function ConfigView({
   const [teamInput, setTeamInput] = useState('');
   const [busy, setBusy] = useState<AssetKind | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [robotSeason, setRobotSeason] = useState(() => defaultSeason());
   const [backupMode, setBackupMode] = useState<'merge' | 'replace'>('merge');
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -58,6 +72,11 @@ export function ConfigView({
   const displayName = knownTeam?.name ?? lookup.name;
   const displaySchool = knownTeam?.schoolName ?? lookup.schoolName;
 
+  const savedRobotSeasons = robotSeasons(current);
+  const seasonRobot = current?.robots?.[String(robotSeason)];
+  const robotImage = seasonRobot ?? current?.robot;
+  const seasons = seasonOptions(savedRobotSeasons);
+
   const handleFile = async (kind: AssetKind, file: File | undefined) => {
     if (!file || teamNumber === null) return;
     if (!isImageFile(file)) {
@@ -69,7 +88,7 @@ export function ConfigView({
     setLocalError(null);
     try {
       const dataUrl = await fileToImageDataUrl(file, MAX_EDGE[kind]);
-      onSetAsset(teamNumber, kind, dataUrl);
+      onSetAsset(teamNumber, kind, dataUrl, kind === 'robot' ? robotSeason : undefined);
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : 'Could not read that image.');
     } finally {
@@ -121,18 +140,24 @@ export function ConfigView({
     }
   };
 
-  const renderTile = (kind: AssetKind, title: string, hint: string) => {
-    const dataUrl = current?.[kind];
+  const renderTile = (
+    kind: AssetKind,
+    title: string,
+    hint: string,
+    value: string | undefined,
+    extra?: { header?: ReactNode; note?: string; onRemove?: () => void },
+  ) => {
     const inputRef = kind === 'logo' ? logoInput : robotInput;
 
     return (
       <div className="asset">
         <span className="asset__label">{title}</span>
+        {extra?.header}
         <div className="asset__preview">
-          {dataUrl ? (
+          {value ? (
             <img
               className="asset__image"
-              src={dataUrl}
+              src={value}
               alt={`Team ${teamNumber ?? ''} ${kind}`}
             />
           ) : (
@@ -157,19 +182,20 @@ export function ConfigView({
             disabled={teamNumber === null || busy !== null}
             onClick={() => inputRef.current?.click()}
           >
-            {busy === kind ? 'Processing…' : dataUrl ? 'Replace image' : 'Upload image'}
+            {busy === kind ? 'Processing…' : value ? 'Replace image' : 'Upload image'}
           </button>
-          {dataUrl ? (
+          {value ? (
             <button
               type="button"
               className="button button--small button--danger"
               disabled={busy !== null}
-              onClick={() => teamNumber !== null && onRemoveAsset(teamNumber, kind)}
+              onClick={extra?.onRemove}
             >
               Remove
             </button>
           ) : null}
         </div>
+        {extra?.note ? <p className="asset__note">{extra.note}</p> : null}
       </div>
     );
   };
@@ -238,8 +264,66 @@ export function ConfigView({
                 {displaySchool ? <span>· {displaySchool}</span> : null}
               </p>
               <div className="config__assets">
-                {renderTile('logo', 'Team logo', 'No logo yet — a square image works best.')}
-                {renderTile('robot', 'Robot photo', 'No photo yet — it shows in the match view.')}
+                {renderTile('logo', 'Team logo', 'No logo yet — a square image works best.', current?.logo, {
+                  onRemove: () => teamNumber !== null && onRemoveAsset(teamNumber, 'logo'),
+                })}
+                {renderTile(
+                  'robot',
+                  'Robot photo',
+                  `No robot image for ${robotSeason} yet — transparent PNGs work best.`,
+                  robotImage,
+                  {
+                    header: (
+                      <>
+                        <div className="asset__season">
+                          <label htmlFor="robot-season">Season</label>
+                          <select
+                            id="robot-season"
+                            className="field__control"
+                            value={robotSeason}
+                            onChange={(event) => setRobotSeason(Number(event.target.value))}
+                          >
+                            {seasons.map((season) => (
+                              <option key={season} value={season}>
+                                {season}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {savedRobotSeasons.length > 0 ? (
+                          <div className="asset__seasons">
+                            {savedRobotSeasons.map((season) => (
+                              <button
+                                key={season}
+                                type="button"
+                                className={
+                                  season === robotSeason
+                                    ? 'asset__season-chip asset__season-chip--active'
+                                    : 'asset__season-chip'
+                                }
+                                onClick={() => setRobotSeason(season)}
+                              >
+                                {season} ✓
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ),
+                    note:
+                      !seasonRobot && current?.robot
+                        ? `No image for ${robotSeason} — showing the image saved for all seasons.`
+                        : undefined,
+                    onRemove: () => {
+                      if (teamNumber === null) return;
+                      if (seasonRobot) {
+                        onRemoveAsset(teamNumber, 'robot', robotSeason);
+                      } else {
+                        onRemoveAsset(teamNumber, 'robot');
+                      }
+                    },
+                  },
+                )}
               </div>
             </>
           ) : null}

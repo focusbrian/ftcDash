@@ -1098,6 +1098,65 @@ select {
   color: var(--text-faint);
 }
 
+.asset__season {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asset__season label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.asset__season select {
+  flex: 1;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-panel);
+  color: var(--text);
+  outline: none;
+}
+
+.asset__season select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.asset__seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.asset__season-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.asset__season-chip--active {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.asset__note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--warn);
+}
+
 .asset__preview {
   display: flex;
   align-items: center;

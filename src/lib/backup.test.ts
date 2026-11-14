@@ -11,6 +11,7 @@ import type { AssetStore } from './assets';
 
 const LOGO = 'data:image/png;base64,AAAA';
 const ROBOT = 'data:image/png;base64,BBBB';
+const ROBOT_2025 = 'data:image/png;base64,CCCC';
 
 const store: AssetStore = {
   '23502': { logo: LOGO, robot: ROBOT },
@@ -48,8 +49,9 @@ describe('backup file', () => {
     expect(() => parseBackup(JSON.stringify({ teams: {} }))).toThrow(/no team logos/);
   });
 
-  it('counts every stored image', () => {
+  it('counts every stored image, including each season', () => {
     expect(countAssets(store)).toBe(3);
+    expect(countAssets({ '1': { robots: { 2026: ROBOT, 2025: ROBOT_2025 } } })).toBe(2);
     expect(countAssets({})).toBe(0);
   });
 
@@ -66,6 +68,17 @@ describe('mergeAssetStores', () => {
     expect(result.addedAssets).toBe(2);
     expect(result.addedTeams).toBe(1);
     expect(result.keptAssets).toBe(0);
+  });
+
+  it('merges robot images season by season', () => {
+    const result = mergeAssetStores(
+      { '1': { robots: { 2026: ROBOT } } },
+      { '1': { robots: { 2026: ROBOT_2025, 2025: ROBOT_2025 } } },
+    );
+
+    expect(result.store['1']?.robots).toEqual({ 2026: ROBOT, 2025: ROBOT_2025 });
+    expect(result.addedAssets).toBe(1);
+    expect(result.keptAssets).toBe(1);
   });
 
   it('keeps existing assets when the backup has the same kind', () => {

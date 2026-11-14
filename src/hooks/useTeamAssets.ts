@@ -12,8 +12,8 @@ import {
 export interface TeamAssetsState {
   assets: AssetStore;
   error: string | null;
-  setAsset: (teamNumber: number, kind: AssetKind, dataUrl: string) => void;
-  removeAsset: (teamNumber: number, kind: AssetKind) => void;
+  setAsset: (teamNumber: number, kind: AssetKind, dataUrl: string, season?: number) => void;
+  removeAsset: (teamNumber: number, kind: AssetKind, season?: number) => void;
   /** Replaces the whole store (used by backup import). */
   replaceAll: (store: AssetStore) => void;
 }
@@ -50,15 +50,15 @@ export function useTeamAssets(): TeamAssetsState {
   }, []);
 
   const setAsset = useCallback(
-    (teamNumber: number, kind: AssetKind, dataUrl: string) => {
-      commit(withAsset(storeRef.current, teamNumber, kind, dataUrl));
+    (teamNumber: number, kind: AssetKind, dataUrl: string, season?: number) => {
+      commit(withAsset(storeRef.current, teamNumber, kind, dataUrl, season));
     },
     [commit],
   );
 
   const removeAsset = useCallback(
-    (teamNumber: number, kind: AssetKind) => {
-      commit(withoutAsset(storeRef.current, teamNumber, kind));
+    (teamNumber: number, kind: AssetKind, season?: number) => {
+      commit(withoutAsset(storeRef.current, teamNumber, kind, season));
     },
     [commit],
   );

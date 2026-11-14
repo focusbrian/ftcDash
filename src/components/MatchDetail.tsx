@@ -1,6 +1,6 @@
 import { AllianceCard } from './AllianceCard';
 import { fmtPercent, fmtPoints, fmtTime, matchLongLabel, singleAllianceLabel } from '../lib/format';
-import type { AssetStore } from '../lib/assets';
+import { robotForSeason, type AssetStore } from '../lib/assets';
 import type { MatchView, SideView } from '../lib/model';
 import type { EventData } from '../types';
 
@@ -20,15 +20,15 @@ interface RobotPhoto {
   url: string;
 }
 
-/** Robot photos for the teams that actually take the field for one alliance. */
-function robotPhotos(side: SideView, assets: AssetStore): RobotPhoto[] {
+/** Robot photos for the teams that actually take the field for one alliance, for the event's season. */
+function robotPhotos(side: SideView, assets: AssetStore, season: number): RobotPhoto[] {
   const seen = new Set<number>();
   const photos: RobotPhoto[] = [];
 
   for (const entry of side.entries) {
     if (entry.noShow || seen.has(entry.teamNumber)) continue;
     seen.add(entry.teamNumber);
-    const url = assets[String(entry.teamNumber)]?.robot;
+    const url = robotForSeason(assets[String(entry.teamNumber)], season);
     if (url) photos.push({ teamNumber: entry.teamNumber, name: entry.name, url });
   }
   return photos;
@@ -165,7 +165,10 @@ export function MatchDetail({
 
   const scheduled = fmtTime(view.match.scheduledStartTime, event.timezone);
   const actual = fmtTime(view.match.actualStartTime, event.timezone);
-  const lineups = view.sides.map((side) => ({ side, photos: robotPhotos(side, assets) }));
+  const lineups = view.sides.map((side) => ({
+    side,
+    photos: robotPhotos(side, assets, event.season),
+  }));
   const anyRobots = lineups.some((lineup) => lineup.photos.length > 0);
 
   return (
