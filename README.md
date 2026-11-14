@@ -75,6 +75,11 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   (teams without a logo show the FIRST logo as a placeholder), and uploaded robot photos stand in a
   line-up above their alliance card — tucked behind the card like fighters entering the arena, with
   two robots overlapping slightly and a tight drop shadow keeping them visually separate.
+- **Auto-refresh:** the gear beside “Team assets” sets how often the match list re-fetches — Off,
+  10s, 15s, 30s, 1m or 2m (default 30s), remembered in this browser. Refreshes run in the
+  background: scores update in place without unmounting the page, resetting your scroll position or
+  dropping the selected match, and they are skipped while the tab is hidden. “Refresh now” in the
+  same menu forces an immediate update.
 - **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, and `#/config`
   opens the asset configuration. The season and event pickers stay in sync with the URL.
 

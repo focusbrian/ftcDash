@@ -3,9 +3,11 @@ import { ConfigView } from './components/ConfigView';
 import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
+import { RefreshSettings } from './components/RefreshSettings';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
 import { useEventList } from './hooks/useEventList';
+import { useSettings } from './hooks/useSettings';
 import { useTeamAssets } from './hooks/useTeamAssets';
 import { pickDefaultEvent } from './lib/events';
 import { fmtDateRange } from './lib/format';
@@ -29,6 +31,7 @@ export default function App() {
     loading: eventLoading,
     error: eventError,
     reload,
+    refresh,
   } = useEventData(season, code);
   const {
     assets,
@@ -37,6 +40,8 @@ export default function App() {
     removeAsset,
     replaceAll: replaceAssets,
   } = useTeamAssets();
+  const { settings, setRefreshSeconds } = useSettings();
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const seasons = useMemo(() => {
     const latest = Math.max(defaultSeason(), season);
@@ -63,6 +68,23 @@ export default function App() {
       window.history.replaceState(null, '', hash);
     }
   }, [view, season, code, matchId]);
+
+  // Auto-refresh the event (and therefore the match list) on the configured interval.
+  // Uses the silent refresh so scores update in place without clearing the page.
+  useEffect(() => {
+    if (settings.refreshSeconds <= 0 || view !== 'dashboard' || !code) return;
+
+    const id = window.setInterval(() => {
+      // Skip while the tab is in the background so we don't burn requests.
+      if (document.visibilityState === 'visible') refresh();
+    }, settings.refreshSeconds * 1000);
+
+    return () => window.clearInterval(id);
+  }, [settings.refreshSeconds, view, code, refresh]);
+
+  useEffect(() => {
+    if (event) setLastUpdated(new Date());
+  }, [event]);
 
   // Follow manual URL edits and back/forward navigation.
   useEffect(() => {
@@ -171,6 +193,13 @@ export default function App() {
               <button type="button" className="button" onClick={() => setView('config')}>
                 Team assets
               </button>
+              <RefreshSettings
+                seconds={settings.refreshSeconds}
+                lastUpdated={lastUpdated}
+                disabled={!code || eventLoading}
+                onSelect={setRefreshSeconds}
+                onRefresh={reload}
+              />
             </>
           ) : null}
         </div>
