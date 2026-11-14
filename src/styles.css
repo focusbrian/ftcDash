@@ -141,6 +141,14 @@ select {
   align-items: flex-end;
 }
 
+/* Shares the field-control row: same offset as the info button. */
+@media (min-width: 721px) {
+  .topbar__actions {
+    align-self: flex-start;
+    margin-top: var(--field-label-offset);
+  }
+}
+
 .settings-wrap {
   position: relative;
   display: flex;
@@ -301,6 +309,14 @@ select {
   flex: none;
 }
 
+/* Line the info button up with the field controls rather than the bottom of the picker block. */
+@media (min-width: 721px) {
+  .eventinfo {
+    align-self: flex-start;
+    margin-top: var(--field-label-offset);
+  }
+}
+
 .eventinfo__panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -373,6 +389,11 @@ select {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+/* Label line (10px text at 1.5) plus its gap — the offset from the topbar's top to the controls. */
+.topbar {
+  --field-label-offset: 19px;
 }
 
 .field--grow {
