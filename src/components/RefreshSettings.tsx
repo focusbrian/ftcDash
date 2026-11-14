@@ -7,6 +7,7 @@ interface Props {
   disabled: boolean;
   onSelect: (seconds: number) => void;
   onRefresh: () => void;
+  onOpenAssets: () => void;
 }
 
 function GearIcon() {
@@ -29,7 +30,14 @@ function formatClock(date: Date | null): string {
   }).format(date);
 }
 
-export function RefreshSettings({ seconds, lastUpdated, disabled, onSelect, onRefresh }: Props) {
+export function RefreshSettings({
+  seconds,
+  lastUpdated,
+  disabled,
+  onSelect,
+  onRefresh,
+  onOpenAssets,
+}: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -100,6 +108,18 @@ export function RefreshSettings({ seconds, lastUpdated, disabled, onSelect, onRe
             }}
           >
             Refresh now
+          </button>
+
+          <button
+            type="button"
+            className="settings__link"
+            onClick={() => {
+              onOpenAssets();
+              setOpen(false);
+            }}
+          >
+            Team assets
+            <span className="settings__link-hint">Team logos, robot photos and backups</span>
           </button>
         </div>
       ) : null}

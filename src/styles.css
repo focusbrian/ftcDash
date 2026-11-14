@@ -228,6 +228,34 @@ select {
   color: var(--text-faint);
 }
 
+/* Navigation entry inside the settings panel (team assets lives here now). */
+.settings__link {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 8px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings__link:hover {
+  color: var(--accent-strong);
+}
+
+.settings__link-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
 .workspace {
   flex: 1;
   min-height: 0;
@@ -2082,12 +2110,8 @@ select {
     font-size: 10px;
   }
 
-  .topbar__assets {
-    display: none;
-  }
-
   .topbar__actions {
-    order: 3;
+    order: 2;
     align-items: center;
     gap: 6px;
   }

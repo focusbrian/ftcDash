@@ -97,11 +97,12 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   (teams without a logo show the FIRST logo as a placeholder), and uploaded robot photos stand in a
   line-up above their alliance card — tucked behind the card like fighters entering the arena, with
   two robots overlapping slightly and a tight drop shadow keeping them visually separate.
-- **Auto-refresh:** the gear beside “Team assets” sets how often the match list re-fetches — Off,
-  10s, 15s, 30s, 1m or 2m (default 30s), remembered in this browser. Refreshes run in the
-  background: scores update in place without unmounting the page, resetting your scroll position or
-  dropping the selected match, and they are skipped while the tab is hidden. “Refresh now” in the
-  same menu forces an immediate update.
+- **Auto-refresh:** the gear in the header opens the settings menu, which sets how often the match
+  list re-fetches — Off, 10s, 15s, 30s, 1m or 2m (default 30s), remembered in this browser. Refreshes
+  run in the background: scores update in place without unmounting the page, resetting your scroll
+  position or dropping the selected match, and they are skipped while the tab is hidden. “Refresh now”
+  in the same menu forces an immediate update, and **Team assets** at the bottom of the menu opens the
+  configuration page.
 - **Follow latest result:** the switch under the team search keeps the most recently played match
   open in the detail panel, including as new scores arrive on a refresh. Picking a match by hand
   turns it back off; the setting is remembered.
@@ -120,11 +121,11 @@ scroll away instead of being pinned above a short list.
 
 The event picker collapses into a button in the header showing the current event code and name;
 tapping it opens a menu with the season, event filter, and event list, which closes on a selection,
-an outside tap, or `Esc`. “Team assets” is hidden at that width, so the configuration page is only
-reachable on a wider screen. Fields grow to 40px tall and 16px text so the browser does not zoom when
-one takes focus, and the layout honours the notch and home-bar safe areas.
+an outside tap, or `Esc`. The gear sits on that same row, so the header stays two lines tall and the
+configuration page is reachable from a phone too. Fields grow to 40px tall and 16px text so the
+browser does not zoom when one takes focus, and the layout honours the notch and home-bar safe areas.
 
-## Configuration page (`#/config`, “Team assets” button)
+## Configuration page (`#/config`, “Team assets” in the settings menu)
 
 - Enter a team number (or search the loaded event by name), then upload a logo and a photo of the
   robot. Any image file your browser can open is accepted — PNG, JPEG, WebP, GIF, BMP, SVG, AVIF…

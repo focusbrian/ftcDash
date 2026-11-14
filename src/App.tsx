@@ -277,30 +277,14 @@ export default function App() {
 
         <div className="topbar__actions">
           {view === 'dashboard' ? (
-            <>
-              <button
-                type="button"
-                className="button button--ghost"
-                onClick={reload}
-                disabled={!code || eventLoading}
-              >
-                {eventLoading ? 'Refreshing…' : 'Refresh'}
-              </button>
-              <button
-                type="button"
-                className="button topbar__assets"
-                onClick={() => setView('config')}
-              >
-                Team assets
-              </button>
-              <RefreshSettings
-                seconds={settings.refreshSeconds}
-                lastUpdated={lastUpdated}
-                disabled={!code || eventLoading}
-                onSelect={setRefreshSeconds}
-                onRefresh={reload}
-              />
-            </>
+            <RefreshSettings
+              seconds={settings.refreshSeconds}
+              lastUpdated={lastUpdated}
+              disabled={!code || eventLoading}
+              onSelect={setRefreshSeconds}
+              onRefresh={reload}
+              onOpenAssets={() => setView('config')}
+            />
           ) : null}
         </div>
       </header>
