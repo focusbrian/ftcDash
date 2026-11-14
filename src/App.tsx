@@ -4,6 +4,7 @@ import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
 import { RefreshSettings } from './components/RefreshSettings';
+import { TeamList } from './components/TeamList';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
 import { useEventList } from './hooks/useEventList';
@@ -14,12 +15,16 @@ import { latestPlayedMatchId } from './api/normalize';
 import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
+import { rankTeams } from './lib/teams';
 import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
 
 const EARLIEST_SEASON = 2019;
 
 /** Which of the two stacked panes a narrow screen shows; ignored on wide layouts. */
 type Pane = 'schedule' | 'match';
+
+/** What the left column lists: the match schedule or the event's team ranking. */
+type LeftView = 'matches' | 'teams';
 
 export default function App() {
   const initialRoute = useMemo(() => parseRoute(window.location.hash), []);
@@ -28,6 +33,7 @@ export default function App() {
   const [code, setCode] = useState<string | null>(initialRoute.code);
   const [matchId, setMatchId] = useState<number | null>(initialRoute.matchId);
   const [pane, setPane] = useState<Pane>(initialRoute.matchId !== null ? 'match' : 'schedule');
+  const [leftView, setLeftView] = useState<LeftView>('matches');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
   const [onlyHighlighted, setOnlyHighlighted] = useState(false);
 
@@ -125,6 +131,8 @@ export default function App() {
     if (highlightSet.size === 0) return 0;
     return views.filter(hasHighlightedTeam).length;
   }, [views, highlightSet, hasHighlightedTeam]);
+
+  const rankedTeams = useMemo(() => rankTeams(eventTeams), [eventTeams]);
 
   const visibleViews = useMemo(() => {
     if (!onlyHighlighted || highlightSet.size === 0) return views;
@@ -392,12 +400,53 @@ export default function App() {
               ) : null}
             </header>
 
+            <div className="schedule__tabs" role="group" aria-label="Schedule or team ranking">
+              <button
+                type="button"
+                className={
+                  leftView === 'matches'
+                    ? 'schedule__tab schedule__tab--active'
+                    : 'schedule__tab'
+                }
+                aria-pressed={leftView === 'matches'}
+                onClick={() => setLeftView('matches')}
+              >
+                Matches
+                {visibleViews.length > 0 ? (
+                  <span className="schedule__tab-count">{visibleViews.length}</span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className={
+                  leftView === 'teams' ? 'schedule__tab schedule__tab--active' : 'schedule__tab'
+                }
+                aria-pressed={leftView === 'teams'}
+                onClick={() => setLeftView('teams')}
+              >
+                Teams
+                {rankedTeams.length > 0 ? (
+                  <span className="schedule__tab-count">{rankedTeams.length}</span>
+                ) : null}
+              </button>
+            </div>
+
             <div className="schedule__list">
               {eventLoading && !event ? <p className="empty">Loading schedule…</p> : null}
               {!code && !eventLoading ? (
                 <p className="empty">Choose an event above to load its match schedule.</p>
               ) : null}
-              {event && !(onlyHighlighted && visibleViews.length === 0) ? (
+
+              {leftView === 'teams' && event ? (
+                <TeamList
+                  teams={rankedTeams}
+                  highlightTeams={highlightTeams}
+                  assets={assets}
+                  onToggleTeam={handleToggleTeam}
+                />
+              ) : null}
+
+              {leftView === 'matches' && event && !(onlyHighlighted && visibleViews.length === 0) ? (
                 <MatchList
                   views={visibleViews}
                   selectedId={matchId}
@@ -407,7 +456,11 @@ export default function App() {
                   onSelect={selectMatch}
                 />
               ) : null}
-              {onlyHighlighted && highlightTeams.length > 0 && event && visibleViews.length === 0 ? (
+              {leftView === 'matches' &&
+              onlyHighlighted &&
+              highlightTeams.length > 0 &&
+              event &&
+              visibleViews.length === 0 ? (
                 <p className="empty">
                   No matches for the highlighted teams at this event. Untick “Only these” to see the
                   full schedule.
