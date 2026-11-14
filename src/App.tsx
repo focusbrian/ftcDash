@@ -24,7 +24,7 @@ const EARLIEST_SEASON = 2019;
 type Pane = 'schedule' | 'match';
 
 /** What the left column lists: the match schedule or the event's team ranking. */
-type LeftView = 'matches' | 'teams';
+type LeftView = 'matches' | 'ranking';
 
 export default function App() {
   const initialRoute = useMemo(() => parseRoute(window.location.hash), []);
@@ -400,7 +400,7 @@ export default function App() {
               ) : null}
             </header>
 
-            <div className="schedule__tabs" role="group" aria-label="Schedule or team ranking">
+            <div className="schedule__tabs" role="group" aria-label="Matches or ranking">
               <button
                 type="button"
                 className={
@@ -419,12 +419,12 @@ export default function App() {
               <button
                 type="button"
                 className={
-                  leftView === 'teams' ? 'schedule__tab schedule__tab--active' : 'schedule__tab'
+                  leftView === 'ranking' ? 'schedule__tab schedule__tab--active' : 'schedule__tab'
                 }
-                aria-pressed={leftView === 'teams'}
-                onClick={() => setLeftView('teams')}
+                aria-pressed={leftView === 'ranking'}
+                onClick={() => setLeftView('ranking')}
               >
-                Teams
+                Ranking
                 {rankedTeams.length > 0 ? (
                   <span className="schedule__tab-count">{rankedTeams.length}</span>
                 ) : null}
@@ -437,7 +437,7 @@ export default function App() {
                 <p className="empty">Choose an event above to load its match schedule.</p>
               ) : null}
 
-              {leftView === 'teams' && event ? (
+              {leftView === 'ranking' && event ? (
                 <TeamList
                   teams={rankedTeams}
                   highlightTeams={highlightTeams}

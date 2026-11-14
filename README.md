@@ -64,9 +64,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Schedule (left):** one card per match, grouped into Qualification / Playoff / Semifinal / Final.
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.
-- **Team ranking (left):** the Matches / Teams switch above the list swaps the schedule for every team
-  at the event in official rank order — rank, number and name, OPR total, then the auton/teleop split
-  with average ranking points and matches played. Teams that are not ranked yet fall in below the
+- **Team ranking (left):** the Matches / Ranking switch above the list swaps the schedule for every
+  team at the event in official rank order — rank, number and name, OPR total, then the auton/teleop
+  split with average ranking points and matches played. Teams that are not ranked yet fall in below the
   ranked ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
   hovering a row shows the same team summary card.
 - **Team highlight:** the search box under the event header matches a team by number *or* name
