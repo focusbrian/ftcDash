@@ -1,7 +1,42 @@
 import type { TeamStrength } from '../types';
 
+/** A team's most recent published OPR, in the shape the projections and the UI consume. */
+export interface OprValues {
+  auto: number;
+  teleop: number;
+  total: number;
+}
+
+export type SeasonOprFallback = Map<number, OprValues>;
+
 function oprTotal(team: TeamStrength): number {
   return team.hasOpr ? Math.max(0, team.oprAuto) + Math.max(0, team.oprTeleop) : -1;
+}
+
+/**
+ * Copies the strengths map with teams that have no OPR at this event yet standing on their most
+ * recent season OPR, flagged so the UI can show where the number came from. An event OPR always
+ * wins, and teams with nothing published anywhere are left alone.
+ */
+export function applySeasonOpr(
+  strengths: Map<number, TeamStrength>,
+  fallback: SeasonOprFallback,
+): Map<number, TeamStrength> {
+  if (fallback.size === 0) return strengths;
+
+  const merged = new Map(strengths);
+  for (const [teamNumber, opr] of fallback) {
+    const team = merged.get(teamNumber);
+    if (!team || team.hasOpr) continue;
+    merged.set(teamNumber, {
+      ...team,
+      oprAuto: opr.auto,
+      oprTeleop: opr.teleop,
+      hasOpr: true,
+      oprFromSeason: true,
+    });
+  }
+  return merged;
 }
 
 /**

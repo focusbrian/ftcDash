@@ -10,6 +10,7 @@ import { TeamList } from './components/TeamList';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
 import { useEventList } from './hooks/useEventList';
+import { useSeasonOprFallback } from './hooks/useSeasonOprFallback';
 import { useSettings } from './hooks/useSettings';
 import { useTeamAssets } from './hooks/useTeamAssets';
 import { pickDefaultEvent } from './lib/events';
@@ -17,9 +18,10 @@ import { latestPlayedMatchId } from './api/normalize';
 import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
-import { rankTeams } from './lib/teams';
+import { applySeasonOpr, rankTeams } from './lib/teams';
 import { eventRecords } from './lib/records';
 import { buildHash, defaultSeason, EARLIEST_SEASON, parseRoute, type RouteView } from './lib/route';
+import type { TeamStrength } from './types';
 
 /** Which of the two stacked panes a narrow screen shows; ignored on wide layouts. */
 type Pane = 'schedule' | 'match';
@@ -68,6 +70,13 @@ export default function App() {
     [event],
   );
 
+  // Before the event publishes OPR, projections stand on each team's most recent OPR.
+  const seasonOpr = useSeasonOprFallback(eventTeams, event?.season ?? null);
+  const strengths = useMemo(
+    () => (event ? applySeasonOpr(event.teams, seasonOpr) : new Map<number, TeamStrength>()),
+    [event, seasonOpr],
+  );
+
   // First visit: land on today's event, or the most recent one with results.
   useEffect(() => {
     if (code || events.length === 0) return;
@@ -114,8 +123,8 @@ export default function App() {
   }, []);
 
   const views = useMemo(
-    () => (event ? event.matches.map((match) => buildMatchView(match, event.teams)) : []),
-    [event],
+    () => (event ? event.matches.map((match) => buildMatchView(match, strengths)) : []),
+    [event, strengths],
   );
 
   const highlightSet = useMemo(() => new Set(highlightTeams), [highlightTeams]);
@@ -133,7 +142,7 @@ export default function App() {
     return views.filter(hasHighlightedTeam).length;
   }, [views, highlightSet, hasHighlightedTeam]);
 
-  const rankedTeams = useMemo(() => rankTeams(eventTeams), [eventTeams]);
+  const rankedTeams = useMemo(() => rankTeams(strengths.values()), [strengths]);
 
   // Event-wide records, so a filtered list still stars the true high scores.
   const records = useMemo(() => eventRecords(views), [views]);

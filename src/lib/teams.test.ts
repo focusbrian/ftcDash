@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankTeams } from './teams';
+import { applySeasonOpr, rankTeams } from './teams';
 import type { TeamStrength } from '../types';
 
 function team(
@@ -45,5 +45,35 @@ describe('rankTeams', () => {
       team(35561, null, 0, 0, false),
     ]);
     expect(sorted.map((entry) => entry.teamNumber)).toEqual([35559, 35560, 35561]);
+  });
+});
+
+describe('applySeasonOpr', () => {
+  it('stands a team on its most recent season OPR until the event publishes one', () => {
+    const strengths = new Map([[7, team(7, null, 0, 0, false)]]);
+    const merged = applySeasonOpr(strengths, new Map([[7, { auto: 12, teleop: 34, total: 46 }]]));
+
+    expect(merged.get(7)).toMatchObject({
+      oprAuto: 12,
+      oprTeleop: 34,
+      hasOpr: true,
+      oprFromSeason: true,
+    });
+    // The event's own strengths are untouched, so a refresh starts from the published values again.
+    expect(strengths.get(7)?.hasOpr).toBe(false);
+  });
+
+  it('keeps an OPR the event has already published', () => {
+    const strengths = new Map([[7, team(7, 3, 20, 40)]]);
+    const merged = applySeasonOpr(strengths, new Map([[7, { auto: 1, teleop: 2, total: 3 }]]));
+
+    expect(merged.get(7)).toMatchObject({ oprAuto: 20, oprTeleop: 40 });
+    expect(merged.get(7)?.oprFromSeason).toBeUndefined();
+  });
+
+  it('never invents teams and hands the map back untouched when there is no fallback', () => {
+    const strengths = new Map([[7, team(7, null, 0, 0, false)]]);
+    expect(applySeasonOpr(strengths, new Map())).toBe(strengths);
+    expect(applySeasonOpr(strengths, new Map([[8, { auto: 1, teleop: 2, total: 3 }]])).size).toBe(1);
   });
 });

@@ -162,6 +162,10 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
           <Stat label="Avg RP" value={team.rp === null ? '—' : fmtPoints(team.rp)} />
         </dl>
 
+        {team.oprFromSeason ? (
+          <p className="teamcard__note">OPR from the season so far — this event has none yet.</p>
+        ) : null}
+
         <Sparkline
           title="OPR by event"
           caption={

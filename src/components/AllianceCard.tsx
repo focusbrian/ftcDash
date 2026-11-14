@@ -55,6 +55,9 @@ export function AllianceCard({
           const classes = ['team'];
           if (entry.noShow) classes.push('team--out');
           if (highlighted.has(entry.teamNumber)) classes.push('team--highlight');
+          // A carried season OPR is shown in parentheses so it never reads as earned here.
+          const marked = (value: number) =>
+            entry.strength?.oprFromSeason ? `(${fmtPoints(value)})` : fmtPoints(value);
 
           return (
             <li key={`${entry.teamNumber}-${entry.station}`} className={classes.join(' ')}>
@@ -108,9 +111,16 @@ export function AllianceCard({
                     </span>
                   ) : null}
                 </span>
-                <span className="team__opr" title="This team's OPR: auto + teleop">
+                <span
+                  className="team__opr"
+                  title={
+                    entry.strength?.oprFromSeason
+                      ? 'No OPR at this event yet — using the team’s most recent season OPR (auto + teleop)'
+                      : "This team's OPR: auto + teleop"
+                  }
+                >
                   {entry.contribution
-                    ? `OPR A ${fmtPoints(entry.contribution.auto)} · T ${fmtPoints(entry.contribution.teleop)}`
+                    ? `OPR A ${marked(entry.contribution.auto)} · T ${marked(entry.contribution.teleop)}`
                     : 'no OPR'}
                 </span>
               </button>

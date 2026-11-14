@@ -256,9 +256,10 @@ export function MatchDetail({
 
       {view.projected ? (
         <p className="detail__note">
-          Projected scores add each team’s OPR from this event’s matches: auto plus teleop
-          (driver-controlled). Penalty points are excluded. Win chances treat each alliance total as a
-          normal distribution around its projection.
+          Projected scores add each team’s OPR — auto plus teleop (driver-controlled). Teams with no
+          OPR from this event yet use their most recent season OPR, shown in parentheses. Penalty
+          points are excluded. Win chances treat each alliance total as a normal distribution around
+          its projection.
         </p>
       ) : null}
     </div>

@@ -1290,6 +1290,12 @@ select {
   color: var(--text-faint);
 }
 
+.teamcard__note {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
 .teamcard__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -10,6 +10,13 @@ and robot photos from the configuration page so they appear in the match view.
 
 ## Quick start
 
+Double-click **`start.cmd`**: it finds Node.js, installs the dependencies the first time, starts the
+dev server and opens the app at http://localhost:5173. Extra arguments are passed to Vite, so
+`start.cmd --host` serves the app to other devices on your network (handy for checking it on a
+phone).
+
+Or by hand:
+
 ```bash
 npm install
 npm run dev      # http://localhost:5173
@@ -19,6 +26,9 @@ npm test         # unit tests (Vitest)
 
 No API key or backend is needed: FTC Scout serves GraphQL with CORS enabled, so the browser talks to
 it directly.
+
+If Node.js is not installed, `start.cmd` falls back to a portable copy in `.node\` (git-ignored);
+delete that folder once `node --version` works in a terminal.
 
 ## How it works
 
@@ -46,7 +56,10 @@ whose score has not been posted yet — the dashboard projects:
 - **Auto** = Σ `opr.autoPoints` of the teams on that alliance.
 - **Teleop** = Σ `opr.dcPoints` (driver-controlled) of those teams.
 - **Total** = auto + teleop, which matches `opr.totalPointsNp`; penalty points are excluded.
-- Teams without OPR (no matches played yet) count as zero and are called out in the card.
+- A team with no OPR from this event yet stands on its most recent OPR from the season — the last
+  event that published one, or where the team ended last season when this season has none — shown in
+  parentheses so it never reads as earned here.
+- Teams with nothing published anywhere count as zero and are called out in the card.
 - Negative OPR components (the regression can produce them) are floored at zero.
 
 `OPR` is FTC Scout's least-squares estimate of a team's contribution from this event's matches, so
@@ -183,6 +196,7 @@ src/
                RefreshSettings, Confetti
   types.ts     shared domain types
 public/        favicon.png, apple-touch-icon.png (served from the site root)
+start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
 .github/
   workflows/   deploy.yml (typecheck + test + build + publish to GitHub Pages)
 ```

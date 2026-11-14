@@ -17,6 +17,11 @@ export interface TeamStrength {
   /** Standard deviation of match totals, used for forecast confidence. */
   sigma: number;
   hasOpr: boolean;
+  /**
+   * True when this OPR is the team's most recent published OPR from earlier in the season (or the
+   * previous one) because the event has none yet — the number stands in, it was not earned here.
+   */
+  oprFromSeason?: boolean;
 }
 
 export interface MatchTeamEntry {

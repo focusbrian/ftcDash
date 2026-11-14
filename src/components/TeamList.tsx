@@ -1,9 +1,7 @@
 import firstLogo from '../assets/first-logo.webp';
 import { InfoIcon } from './InfoIcon';
 import { TeamSummary } from './TeamSummary';
-import { useEventCharts } from './EventChartsContext';
 import { useTeamHover } from '../hooks/useTeamHover';
-import { useTeamOprHistory } from '../hooks/useTeamOprHistory';
 import { fmtPoints } from '../lib/format';
 import type { AssetStore } from '../lib/assets';
 import type { TeamStrength } from '../types';
@@ -16,33 +14,25 @@ interface Props {
 }
 
 /**
- * The row's OPR column. Before an event publishes any OPR there is nothing to show for it, so the
- * team's season OPR at this point stands in — in parentheses, the same way the hover card marks a
- * carried value.
+ * The row's OPR column. A team with no OPR at this event yet carries its season OPR instead, in
+ * parentheses — the same way the hover card marks a carried value.
  */
-function OprCells({ team, season }: { team: TeamStrength; season: number | null }) {
-  // Only teams without an event OPR need their season series, so nothing is fetched otherwise.
-  const history = useTeamOprHistory(team.hasOpr ? null : team.teamNumber, season);
-  const carried = team.hasOpr ? null : (history.points.at(-1) ?? null);
-
-  const auto = team.hasOpr ? Math.max(0, team.oprAuto) : (carried?.auto ?? 0);
-  const teleop = team.hasOpr ? Math.max(0, team.oprTeleop) : (carried?.teleop ?? 0);
-
-  const total = team.hasOpr
-    ? fmtPoints(auto + teleop)
-    : carried
-      ? `(${fmtPoints(auto + teleop)})`
-      : '—';
+function OprCells({ team }: { team: TeamStrength }) {
+  const auto = Math.max(0, team.oprAuto);
+  const teleop = Math.max(0, team.oprTeleop);
+  const total = fmtPoints(auto + teleop);
   const split = `Auton ${fmtPoints(auto)} · Teleop ${fmtPoints(teleop)}`;
 
   return (
     <>
       <span className="teamrow__opr">
-        <span className="teamrow__total">{total}</span>
+        <span className="teamrow__total">
+          {team.hasOpr ? (team.oprFromSeason ? `(${total})` : total) : '—'}
+        </span>
         <span className="teamrow__total-label">OPR</span>
       </span>
       <span className="teamrow__detail">
-        {team.hasOpr ? split : carried ? `Season OPR · ${split}` : 'No OPR published yet'}
+        {team.hasOpr ? (team.oprFromSeason ? `Season OPR · ${split}` : split) : 'No OPR published yet'}
         {team.rp === null ? '' : ` · RP ${fmtPoints(team.rp)}`}
         {team.matchesPlayed > 0
           ? ` · ${team.matchesPlayed} match${team.matchesPlayed === 1 ? '' : 'es'}`
@@ -54,7 +44,6 @@ function OprCells({ team, season }: { team: TeamStrength; season: number | null 
 
 export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props) {
   const highlighted = new Set(highlightTeams);
-  const season = useEventCharts()?.season ?? null;
   const { hovered, pinned, show, hide, togglePin, unpin } = useTeamHover();
 
   if (teams.length === 0) {
@@ -100,7 +89,7 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
                   <span className="teamrow__num">{team.teamNumber}</span>
                   <span className="teamrow__name">{team.name || 'Unknown team'}</span>
                 </span>
-                <OprCells team={team} season={season} />
+                <OprCells team={team} />
               </button>
               <button
                 type="button"
