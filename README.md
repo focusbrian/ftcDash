@@ -82,7 +82,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   ★s beside it. Ties are all starred, projected matches never are, and seasons that recorded a single
   alliance total without an auto/teleop split don't earn the split stars. Hover a star for the value.
 - **Team ranking (left):** the Matches / Ranking / Predict switch above the list swaps the schedule
-  for every team at the event in official rank order — rank, number and name, OPR total, then the
+  for every team at the event, with a **Rank / OPR** control at the top of the list choosing the
+  order: the official table, or strongest OPR first (the left column becomes the OPR position and the
+  official rank moves into the detail line). Rows carry rank, number and name, OPR total, then the
   auton/teleop split with ranking points and matches played. Until the event publishes OPR, the OPR
   column carries the team's season OPR at that point in parentheses instead of a dash, and the row's
   detail line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked ones, best
