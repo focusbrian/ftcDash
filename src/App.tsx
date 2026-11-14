@@ -198,8 +198,20 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__mark">FTCDash</span>
+          <span className="brand__mark">
+            <span className="brand__ftc">FTC</span>
+            <span className="brand__dash">DASH</span>
+          </span>
           <span className="brand__sub">Schedule · results · OPR projections</span>
+          <span className="brand__credit">Created by Team 10136 RobotFalcons</span>
+          <a
+            className="brand__source"
+            href="https://ftcscout.org"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Data from FTC Scout
+          </a>
         </div>
 
         {view === 'dashboard' ? (

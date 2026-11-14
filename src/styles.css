@@ -80,25 +80,50 @@ select {
 .brand {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
   padding-right: 8px;
 }
 
 .brand__mark {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  background: linear-gradient(100deg, #ffffff, var(--accent) 72%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.brand__ftc {
+  color: #7d858f;
+}
+
+.brand__dash {
+  color: var(--accent);
 }
 
 .brand__sub {
+  margin-top: 1px;
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
+}
+
+.brand__credit {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.brand__source {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.brand__source:hover {
+  color: var(--accent);
 }
 
 .topbar__actions {
