@@ -95,9 +95,11 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   its own observed bonus-point rate, weighted by each match's projected win probability — so the list
   shows the projected total, the team's place now, and how far it moves (▲/▼). The switch at the top
   swaps it for **schedule difficulty**, which ranks teams by the projected OPR of the alliances they
-  still have to face, hardest first; teams whose qualification matches are all scored drop to the
-  bottom with a dash. Playoff matches and the 2020/2021 single-alliance seasons are left out, since
-  neither decided a qualification rank on head-to-head results.
+  still have to face, hardest first. Each difficulty row shows the OPR of the partner it draws and the
+  margin between its own OPR and the opposition's (`+` green, `−` red); teams whose qualification
+  matches are all scored drop to the bottom with dashes. Playoff matches and the 2020/2021
+  single-alliance seasons are left out, since neither decided a qualification rank on head-to-head
+  results.
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no

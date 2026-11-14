@@ -668,6 +668,15 @@ select {
   color: var(--text-faint);
 }
 
+/* Own OPR minus the opponents', coloured so a positive matchup stands out at a glance. */
+.predict__margin--up {
+  color: #4ade80;
+}
+
+.predict__margin--down {
+  color: var(--red);
+}
+
 /* ---------- team ranking ---------- */
 
 .teams {

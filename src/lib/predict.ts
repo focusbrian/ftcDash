@@ -27,6 +27,10 @@ export interface TeamPrediction {
   remaining: number;
   /** Mean projected total of the alliances this team still has to face, or null once it is done. */
   difficulty: number | null;
+  /** Mean projected total of this team's partners in the matches it has left. */
+  partnerOpr: number | null;
+  /** This team's own projected OPR minus the opponents' mean — positive means it out-scores them. */
+  oprMargin: number | null;
   /** 1 for the hardest remaining schedule at the event; null when nothing is left to play. */
   difficultyRank: number | null;
   oprTotal: number;
@@ -42,6 +46,8 @@ interface Record {
   winRp: number;
   difficultySum: number;
   difficultyCount: number;
+  partnerSum: number;
+  partnerCount: number;
 }
 
 function emptyRecord(): Record {
@@ -54,6 +60,8 @@ function emptyRecord(): Record {
     winRp: 0,
     difficultySum: 0,
     difficultyCount: 0,
+    partnerSum: 0,
+    partnerCount: 0,
   };
 }
 
@@ -102,6 +110,24 @@ export function predictRankings(
     return record;
   };
 
+  const oprOf = (teamNumber: number): number => {
+    const team = strengths.get(teamNumber);
+    return team?.hasOpr ? Math.max(0, team.oprAuto) + Math.max(0, team.oprTeleop) : 0;
+  };
+
+  /** Book a team's view of one unscored match: who it faces, and who it plays alongside. */
+  const bookUpcoming = (teamNumber: number, own: SideView, opponent: SideView, chance: number) => {
+    const record = recordFor(teamNumber);
+    record.remaining += 1;
+    record.winRp += WIN_RP * chance;
+    record.difficultySum += opponent.total;
+    record.difficultyCount += 1;
+
+    const partners = scoringTeams(own).filter((candidate) => candidate !== teamNumber);
+    record.partnerSum += partners.reduce((sum, partner) => sum + oprOf(partner), 0);
+    record.partnerCount += 1;
+  };
+
   for (const view of views) {
     if (view.match.level !== 'Quals' || view.sides.length !== 2) continue;
     const [left, right] = view.sides as [SideView, SideView];
@@ -109,18 +135,10 @@ export function predictRankings(
     if (view.projected) {
       const leftChance = winProbability(projectionOf(left), projectionOf(right));
       for (const teamNumber of scoringTeams(left)) {
-        const record = recordFor(teamNumber);
-        record.remaining += 1;
-        record.winRp += WIN_RP * leftChance;
-        record.difficultySum += right.total;
-        record.difficultyCount += 1;
+        bookUpcoming(teamNumber, left, right, leftChance);
       }
       for (const teamNumber of scoringTeams(right)) {
-        const record = recordFor(teamNumber);
-        record.remaining += 1;
-        record.winRp += WIN_RP * (1 - leftChance);
-        record.difficultySum += left.total;
-        record.difficultyCount += 1;
+        bookUpcoming(teamNumber, right, left, 1 - leftChance);
       }
       continue;
     }
@@ -139,6 +157,9 @@ export function predictRankings(
     const baseRp = WIN_RP * record.wins + TIE_RP * record.ties;
     const bonusPerMatch = record.played > 0 ? Math.max(0, (currentRp - baseRp) / record.played) : 0;
     const rpRemaining = record.winRp + bonusPerMatch * record.remaining;
+    const difficulty =
+      record.difficultyCount > 0 ? record.difficultySum / record.difficultyCount : null;
+    const oprTotal = oprOf(team.teamNumber);
 
     return {
       teamNumber: team.teamNumber,
@@ -154,12 +175,11 @@ export function predictRankings(
       losses: record.losses,
       played: record.played,
       remaining: record.remaining,
-      difficulty:
-        record.difficultyCount > 0 ? record.difficultySum / record.difficultyCount : null,
+      difficulty,
+      partnerOpr: record.partnerCount > 0 ? record.partnerSum / record.partnerCount : null,
+      oprMargin: difficulty === null ? null : oprTotal - difficulty,
       difficultyRank: null,
-      oprTotal: team.hasOpr
-        ? Math.max(0, team.oprAuto) + Math.max(0, team.oprTeleop)
-        : 0,
+      oprTotal,
     };
   });
 

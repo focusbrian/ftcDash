@@ -160,6 +160,52 @@ describe('predictRankings', () => {
     expect(byNumber.get(31)?.difficultyRank).toBeNull();
   });
 
+  it('reports the partner it draws and the margin against the opposition', () => {
+    const predictions = predictRankings(
+      // 11 (OPR 28) partners 12 (12) against 21 (15) and 22 (25): partner 12, opposition 40.
+      [view(1, side('Red', [11, 12], 40), side('Blue', [21, 22], 40), { projected: true })],
+      new Map([
+        [11, team(11, null, 0, 20, 8)],
+        [12, team(12, null, 0, 6, 6)],
+        [21, team(21, null, 0, 10, 5)],
+        [22, team(22, null, 0, 20, 5)],
+      ]),
+    );
+    const byNumber = byTeam(predictions);
+
+    expect(byNumber.get(11)?.partnerOpr).toBeCloseTo(12, 5);
+    expect(byNumber.get(11)?.difficulty).toBeCloseTo(40, 5);
+    // 28 own − 40 faced = −12, i.e. an uphill match on paper.
+    expect(byNumber.get(11)?.oprMargin).toBeCloseTo(-12, 5);
+    expect(byNumber.get(21)?.partnerOpr).toBeCloseTo(25, 5);
+    expect(byNumber.get(21)?.oprMargin).toBeCloseTo(-25, 5);
+  });
+
+  it('averages partner and opposition across every match still to play', () => {
+    const predictions = predictRankings(
+      [
+        // Match one: 11 partners 12 (20) and faces 21 + 22 (30).
+        view(1, side('Red', [11, 12], 40), side('Blue', [21, 22], 30), { projected: true }),
+        // Match two: 11 partners 31 (40) and faces 22 (10).
+        view(2, side('Red', [11, 31], 60), side('Blue', [22, 32], 10), { projected: true }),
+      ],
+      new Map([
+        [11, team(11, null, 0, 10, 10)],
+        [12, team(12, null, 0, 15, 5)],
+        [21, team(21, null, 0, 10, 10)],
+        [22, team(22, null, 0, 5, 5)],
+        [31, team(31, null, 0, 20, 20)],
+        [32, team(32, null, 0, 5, 5)],
+      ]),
+    );
+    const team11 = byTeam(predictions).get(11);
+
+    expect(team11?.remaining).toBe(2);
+    expect(team11?.partnerOpr).toBeCloseTo((20 + 40) / 2, 5);
+    expect(team11?.difficulty).toBeCloseTo((30 + 10) / 2, 5);
+    expect(team11?.oprMargin).toBeCloseTo(20 - 20, 5);
+  });
+
   it('leaves playoffs and remote single-alliance matches out of the prediction', () => {
     const remote: MatchView = {
       match: { id: 3, played: true, level: 'Quals' } as Match,

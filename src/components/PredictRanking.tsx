@@ -118,7 +118,7 @@ export function PredictRanking({
           ? remainingMatches > 0
             ? `Ranks teams by ranking points earned plus the points ${remainingMatches} unscored qualification match${remainingMatches === 1 ? '' : 'es'} are expected to add at each team's projected win odds.`
             : 'Every qualification match has a recorded score, so this is the official ranking.'
-          : 'Ranks teams by the projected OPR of the alliances they still have to face — hardest remaining schedule first.'}
+          : 'Ranks teams by the projected OPR of the alliances they still have to face — hardest remaining schedule first. Each row also shows the partner it draws and how its own OPR compares with the opposition.'}
       </p>
 
       <ul className="teams__list">
@@ -159,28 +159,46 @@ export function PredictRanking({
                   <span className="teamrow__name">{entry.name || 'Unknown team'}</span>
                 </span>
                 <span className="teamrow__opr">
-                  <span className="teamrow__total">
+                  <span
+                    className={
+                      mode === 'predicted'
+                        ? 'teamrow__total'
+                        : entry.oprMargin === null
+                          ? 'teamrow__total'
+                          : entry.oprMargin >= 0
+                            ? 'teamrow__total predict__margin predict__margin--up'
+                            : 'teamrow__total predict__margin predict__margin--down'
+                    }
+                  >
                     {mode === 'predicted'
                       ? fmtPoints(entry.projectedRp)
-                      : entry.difficulty === null
+                      : entry.oprMargin === null
                         ? '—'
-                        : fmtPoints(entry.difficulty)}
+                        : `${entry.oprMargin >= 0 ? '+' : '−'}${fmtPoints(Math.abs(entry.oprMargin))}`}
                   </span>
                   <span className="teamrow__total-label">
-                    {mode === 'predicted' ? 'RP proj' : 'Opp OPR'}
+                    {mode === 'predicted' ? 'RP proj' : 'vs opp'}
                   </span>
                 </span>
                 <span className="teamrow__detail">
-                  {mode === 'predicted'
-                    ? entry.currentRank === null
-                      ? `unranked${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`
-                      : `now #${entry.currentRank}${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`
-                    : entry.currentRank === null
-                      ? 'unranked'
-                      : `now #${entry.currentRank}`}
-                  {entry.played > 0 && mode === 'predicted'
-                    ? ` · ${entry.wins}–${entry.losses}${entry.ties > 0 ? `–${entry.ties}` : ''}`
-                    : ''}
+                  {mode === 'predicted' ? (
+                    <>
+                      {entry.currentRank === null
+                        ? `unranked${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`
+                        : `now #${entry.currentRank}${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`}
+                      {entry.played > 0
+                        ? ` · ${entry.wins}–${entry.losses}${entry.ties > 0 ? `–${entry.ties}` : ''}`
+                        : ''}
+                    </>
+                  ) : (
+                    <>
+                      {entry.partnerOpr === null
+                        ? 'Partner —'
+                        : `Partner ${fmtPoints(entry.partnerOpr)}`}
+                      {` · Opp ${entry.difficulty === null ? '—' : fmtPoints(entry.difficulty)}`}
+                      {` · You ${fmtPoints(entry.oprTotal)}`}
+                    </>
+                  )}
                   {entry.remaining > 0 ? ` · ${entry.remaining} to play` : ' · done'}
                 </span>
               </button>
