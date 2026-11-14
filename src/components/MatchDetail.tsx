@@ -227,6 +227,7 @@ export function MatchDetail({
               projected={view.projected}
               assets={assets}
               highlightTeam={highlightTeam}
+              celebrate={!view.projected && view.leader?.alliance === side.alliance}
             />
           </div>
         ))}

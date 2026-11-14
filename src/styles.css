@@ -693,6 +693,75 @@ select {
   accent-color: var(--accent);
 }
 
+/* ---------- follow latest ---------- */
+
+.follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.follow:hover {
+  color: var(--text);
+}
+
+.follow--on {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.follow__switch {
+  position: relative;
+  display: inline-flex;
+}
+
+.follow__switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.follow__track {
+  display: inline-flex;
+  align-items: center;
+  width: 34px;
+  height: 18px;
+  padding: 0 2px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.follow__thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.follow__switch input:checked + .follow__track {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.follow__switch input:checked + .follow__track .follow__thumb {
+  transform: translateX(16px);
+  background: var(--accent);
+}
+
+.follow__switch input:focus-visible + .follow__track {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 /* ---------- detail column ---------- */
 
 .detail-panel {
@@ -901,6 +970,57 @@ select {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+/* ---------- winner confetti ---------- */
+
+.alliance__confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Keep the card's own content above the confetti. */
+.alliance > *:not(.alliance__confetti) {
+  position: relative;
+  z-index: 1;
+}
+
+.confetti__piece {
+  position: absolute;
+  top: -18px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift, 0px), 340px, 0)
+      rotate(var(--confetti-spin, 360deg));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alliance__confetti {
+    display: none;
+  }
 }
 
 .alliance__teams {

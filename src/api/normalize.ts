@@ -133,6 +133,32 @@ export function compareMatches(a: Match, b: Match): number {
   return a.matchNum - b.matchNum;
 }
 
+export interface PlayedMatchInfo {
+  id: number;
+  played: boolean;
+  actualStartTime: string | null;
+  scheduledStartTime: string | null;
+}
+
+/**
+ * The match that was played most recently, by actual start time (falling back to the
+ * scheduled time, then to list order). Used by "follow the latest result".
+ */
+export function latestPlayedMatchId(matches: readonly PlayedMatchInfo[]): number | null {
+  let bestId: number | null = null;
+  let bestTime = '';
+
+  for (const match of matches) {
+    if (!match.played) continue;
+    const time = match.actualStartTime ?? match.scheduledStartTime ?? '';
+    if (bestId === null || time >= bestTime) {
+      bestId = match.id;
+      bestTime = time;
+    }
+  }
+  return bestId;
+}
+
 export function normalizeEvent(raw: RawEvent, season: number): EventData {
   const teams = new Map<number, TeamStrength>();
   const names = new Map<number, string>();

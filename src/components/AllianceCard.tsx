@@ -1,4 +1,5 @@
 import firstLogo from '../assets/first-logo.webp';
+import { Confetti } from './Confetti';
 import { fmtPoints } from '../lib/format';
 import type { AssetStore } from '../lib/assets';
 import type { SideView } from '../lib/model';
@@ -8,6 +9,7 @@ interface Props {
   projected: boolean;
   assets: AssetStore;
   highlightTeam: number | null;
+  celebrate?: boolean;
 }
 
 function Stat({ label, value, total }: { label: string; value: string; total?: boolean }) {
@@ -19,13 +21,14 @@ function Stat({ label, value, total }: { label: string; value: string; total?: b
   );
 }
 
-export function AllianceCard({ side, projected, assets, highlightTeam }: Props) {
+export function AllianceCard({ side, projected, assets, highlightTeam, celebrate }: Props) {
   // Remote seasons recorded alliance totals without an auto/teleop breakdown.
   const breakdownMissing = !projected && side.total > 0 && side.auto === 0 && side.teleop === 0;
   const digits = projected ? 1 : 0;
 
   return (
     <article className={`alliance alliance--${side.alliance.toLowerCase()}`}>
+      {celebrate ? <Confetti tone={side.alliance.toLowerCase()} /> : null}
       <header className="alliance__head">
         <h3>{side.alliance === 'Solo' ? 'Solo run' : `${side.alliance} Alliance`}</h3>
         <span className="alliance__total">

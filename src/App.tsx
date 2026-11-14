@@ -10,6 +10,7 @@ import { useEventList } from './hooks/useEventList';
 import { useSettings } from './hooks/useSettings';
 import { useTeamAssets } from './hooks/useTeamAssets';
 import { pickDefaultEvent } from './lib/events';
+import { latestPlayedMatchId } from './api/normalize';
 import { fmtDateRange } from './lib/format';
 import { buildMatchView } from './lib/model';
 import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
@@ -40,7 +41,7 @@ export default function App() {
     removeAsset,
     replaceAll: replaceAssets,
   } = useTeamAssets();
-  const { settings, setRefreshSeconds } = useSettings();
+  const { settings, setRefreshSeconds, setFollowLatest } = useSettings();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const seasons = useMemo(() => {
@@ -127,6 +128,23 @@ export default function App() {
     [views, matchId],
   );
 
+  const latestPlayedId = useMemo(() => latestPlayedMatchId(event?.matches ?? []), [event]);
+
+  const selectMatch = useCallback(
+    (id: number) => {
+      setMatchId(id);
+      // Picking a match by hand means the viewer no longer wants to follow the newest result.
+      if (settings.followLatest) setFollowLatest(false);
+    },
+    [settings.followLatest, setFollowLatest],
+  );
+
+  // "Follow the latest result": keep the newest played match open, including across refreshes.
+  useEffect(() => {
+    if (!settings.followLatest || latestPlayedId === null) return;
+    setMatchId(latestPlayedId);
+  }, [settings.followLatest, latestPlayedId]);
+
   // Once an event loads, open the first match that has not been played yet.
   useEffect(() => {
     if (!event || event.code !== code) return;
@@ -153,8 +171,8 @@ export default function App() {
 
   const jumpToNext = useCallback(() => {
     const next = views.find((candidate) => !candidate.match.played) ?? views[0];
-    if (next) setMatchId(next.match.id);
-  }, [views]);
+    if (next) selectMatch(next.match.id);
+  }, [views, selectMatch]);
 
   const playedCount = event?.matches.filter((match) => match.played).length ?? 0;
 
@@ -260,6 +278,26 @@ export default function App() {
                   }
                 />
               ) : null}
+
+              {event && event.matches.length > 0 ? (
+                <label
+                  className={settings.followLatest ? 'follow follow--on' : 'follow'}
+                  title="Automatically open the most recently played match as results come in"
+                >
+                  <span className="follow__switch">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      checked={settings.followLatest}
+                      onChange={(changeEvent) => setFollowLatest(changeEvent.target.checked)}
+                    />
+                    <span className="follow__track" aria-hidden="true">
+                      <span className="follow__thumb" />
+                    </span>
+                  </span>
+                  Follow latest result
+                </label>
+              ) : null}
             </header>
 
             <div className="schedule__list">
@@ -274,7 +312,7 @@ export default function App() {
                   highlightTeam={highlightTeam}
                   timezone={event.timezone}
                   assets={assets}
-                  onSelect={setMatchId}
+                  onSelect={selectMatch}
                 />
               ) : null}
               {onlyHighlighted && highlightTeam !== null && event && visibleViews.length === 0 ? (

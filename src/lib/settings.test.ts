@@ -16,14 +16,28 @@ describe('parseSettings', () => {
   });
 
   it('keeps a supported refresh interval, including off', () => {
-    expect(parseSettings(JSON.stringify({ refreshSeconds: 0 }))).toEqual({ refreshSeconds: 0 });
-    expect(parseSettings(JSON.stringify({ refreshSeconds: 60 }))).toEqual({ refreshSeconds: 60 });
+    expect(parseSettings(JSON.stringify({ refreshSeconds: 0 }))).toEqual({
+      refreshSeconds: 0,
+      followLatest: false,
+    });
+    expect(parseSettings(JSON.stringify({ refreshSeconds: 60 }))).toEqual({
+      refreshSeconds: 60,
+      followLatest: false,
+    });
   });
 
   it('rejects values outside the offered options', () => {
     expect(parseSettings(JSON.stringify({ refreshSeconds: 7 }))).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings(JSON.stringify({ refreshSeconds: -30 }))).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings(JSON.stringify({ refreshSeconds: '30' }))).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('reads the follow-latest flag', () => {
+    expect(parseSettings(JSON.stringify({ refreshSeconds: 30, followLatest: true }))).toEqual({
+      refreshSeconds: 30,
+      followLatest: true,
+    });
+    expect(parseSettings(JSON.stringify({ followLatest: 'yes' }))).toEqual(DEFAULT_SETTINGS);
   });
 });
 

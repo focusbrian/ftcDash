@@ -80,6 +80,12 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   background: scores update in place without unmounting the page, resetting your scroll position or
   dropping the selected match, and they are skipped while the tab is hidden. “Refresh now” in the
   same menu forces an immediate update.
+- **Follow latest result:** the switch under the team search keeps the most recently played match
+  open in the detail panel, including as new scores arrive on a refresh. Picking a match by hand
+  turns it back off; the setting is remembered.
+- **Celebration:** when a played match has a winner, that alliance's card gets a light confetti
+  animation — clipped to the card, behind its text, and clear of the robot line-up. It is skipped
+  entirely when the visitor prefers reduced motion.
 - **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, and `#/config`
   opens the asset configuration. The season and event pickers stay in sync with the URL.
 

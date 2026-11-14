@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeEvent, normalizeScores } from './normalize';
+import { latestPlayedMatchId, normalizeEvent, normalizeScores } from './normalize';
 import { buildMatchView } from '../lib/model';
 import type { RawEvent } from './raw';
 
@@ -146,6 +146,51 @@ describe('buildMatchView', () => {
     expect(blue.entries).toHaveLength(1);
     expect(blue.entries[0]?.noShow).toBe(true);
     expect(blue.missingTeams).toEqual([]);
+  });
+});
+
+describe('latestPlayedMatchId', () => {
+  const match = (
+    id: number,
+    played: boolean,
+    actual: string | null,
+    scheduled: string | null = null,
+  ) => ({ id, played, actualStartTime: actual, scheduledStartTime: scheduled });
+
+  it('returns null when nothing has been played', () => {
+    expect(latestPlayedMatchId([])).toBeNull();
+    expect(latestPlayedMatchId([match(1, false, null, '2026-01-10T15:00:00.000Z')])).toBeNull();
+  });
+
+  it('picks the played match with the latest start time', () => {
+    const matches = [
+      match(1, true, '2026-01-10T15:00:00.000Z'),
+      match(2, true, '2026-01-10T15:30:00.000Z'),
+      match(3, false, null, '2026-01-10T16:00:00.000Z'),
+      match(4, true, '2026-01-10T14:45:00.000Z'),
+    ];
+    expect(latestPlayedMatchId(matches)).toBe(2);
+  });
+
+  it('falls back to the scheduled time when no actual start was recorded', () => {
+    const matches = [
+      match(1, true, null, '2026-01-10T15:00:00.000Z'),
+      match(2, true, null, '2026-01-10T16:00:00.000Z'),
+    ];
+    expect(latestPlayedMatchId(matches)).toBe(2);
+  });
+
+  it('prefers a real start time over a later scheduled one', () => {
+    const matches = [
+      match(1, true, '2026-01-10T15:05:00.000Z', '2026-01-10T15:00:00.000Z'),
+      match(2, true, '2026-01-10T15:40:00.000Z', '2026-01-10T15:30:00.000Z'),
+    ];
+    expect(latestPlayedMatchId(matches)).toBe(2);
+  });
+
+  it('keeps list order as the tie-breaker', () => {
+    const same = '2026-01-10T15:00:00.000Z';
+    expect(latestPlayedMatchId([match(1, true, same), match(2, true, same)])).toBe(2);
   });
 });
 

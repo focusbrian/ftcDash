@@ -1,6 +1,8 @@
 export interface AppSettings {
   /** Auto-refresh interval for the match list, in seconds. 0 disables it. */
   refreshSeconds: number;
+  /** Keep the most recently played match open in the detail panel. */
+  followLatest: boolean;
 }
 
 export const SETTINGS_STORAGE_KEY = 'ftcdash.settings.v1';
@@ -8,7 +10,7 @@ export const SETTINGS_STORAGE_KEY = 'ftcdash.settings.v1';
 /** Choices offered in the refresh menu: off, then 10 s up to 2 min. */
 export const REFRESH_OPTIONS = [0, 10, 15, 30, 60, 120] as const;
 
-export const DEFAULT_SETTINGS: AppSettings = { refreshSeconds: 30 };
+export const DEFAULT_SETTINGS: AppSettings = { refreshSeconds: 30, followLatest: false };
 
 export function parseSettings(raw: string | null): AppSettings {
   if (!raw) return DEFAULT_SETTINGS;
@@ -21,13 +23,18 @@ export function parseSettings(raw: string | null): AppSettings {
   }
   if (!parsed || typeof parsed !== 'object') return DEFAULT_SETTINGS;
 
-  const value = (parsed as Record<string, unknown>).refreshSeconds;
+  const record = parsed as Record<string, unknown>;
   const refreshSeconds =
-    typeof value === 'number' && REFRESH_OPTIONS.includes(value as (typeof REFRESH_OPTIONS)[number])
-      ? value
+    typeof record.refreshSeconds === 'number' &&
+    REFRESH_OPTIONS.includes(record.refreshSeconds as (typeof REFRESH_OPTIONS)[number])
+      ? record.refreshSeconds
       : DEFAULT_SETTINGS.refreshSeconds;
 
-  return { refreshSeconds };
+  return {
+    refreshSeconds,
+    followLatest:
+      typeof record.followLatest === 'boolean' ? record.followLatest : DEFAULT_SETTINGS.followLatest,
+  };
 }
 
 export function loadSettings(): AppSettings {
