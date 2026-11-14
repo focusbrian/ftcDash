@@ -6,13 +6,14 @@ import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
 import { PredictRanking } from './components/PredictRanking';
-import { RefreshSettings } from './components/RefreshSettings';
+import { SettingsMenu } from './components/SettingsMenu';
 import { PredictIcon, RankingIcon, ScheduleIcon } from './components/TabIcons';
 import { TeamList } from './components/TeamList';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
 import { useEventList } from './hooks/useEventList';
 import { useSeasonOprFallback } from './hooks/useSeasonOprFallback';
+import { useAutoScroll } from './hooks/useAutoScroll';
 import { useSettings } from './hooks/useSettings';
 import { useTeamAssets } from './hooks/useTeamAssets';
 import { pickDefaultEvent } from './lib/events';
@@ -21,6 +22,7 @@ import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { applySeasonOpr, rankTeams } from './lib/teams';
+import { nextAutoScrollView } from './lib/settings';
 import { eventRecords } from './lib/records';
 import { buildHash, defaultSeason, EARLIEST_SEASON, parseRoute, type RouteView } from './lib/route';
 import type { TeamStrength } from './types';
@@ -41,7 +43,6 @@ export default function App() {
   const [leftView, setLeftView] = useState<LeftView>('matches');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
   const [onlyHighlighted, setOnlyHighlighted] = useState(false);
-
   const { events, loading: eventsLoading, error: eventsError } = useEventList(season);
   const {
     data: event,
@@ -57,8 +58,15 @@ export default function App() {
     removeAsset,
     replaceAll: replaceAssets,
   } = useTeamAssets();
-  const { settings, setRefreshSeconds, setFollowLatest } = useSettings();
+  const {
+    settings,
+    setRefreshSeconds,
+    setFollowLatest,
+    toggleAutoScrollView,
+    setScrollSpeed,
+  } = useSettings();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const scheduleListRef = useRef<HTMLDivElement | null>(null);
 
   const seasons = useMemo(() => {
     const latest = Math.max(defaultSeason(), season);
@@ -148,6 +156,20 @@ export default function App() {
 
   // Event-wide records, so a filtered list still stars the true high scores.
   const records = useMemo(() => eventRecords(views), [views]);
+
+  const cycleView = useCallback(() => {
+    const next = nextAutoScrollView(settings.autoScrollViews, leftView);
+    if (next) setLeftView(next);
+  }, [settings.autoScrollViews, leftView]);
+
+  useAutoScroll({
+    target: scheduleListRef,
+    // Nothing to cycle through (or no event loaded) means nothing to scroll.
+    enabled: settings.autoScrollViews.length > 0 && event !== null,
+    speed: settings.scrollSpeed,
+    view: leftView,
+    onCycle: cycleView,
+  });
 
   const visibleViews = useMemo(() => {
     if (!onlyHighlighted || highlightSet.size === 0) return views;
@@ -290,12 +312,15 @@ export default function App() {
 
         <div className="topbar__actions">
           {view === 'dashboard' ? (
-            <RefreshSettings
-              seconds={settings.refreshSeconds}
+            <SettingsMenu
+              settings={settings}
               lastUpdated={lastUpdated}
               disabled={!code || eventLoading}
-              onSelect={setRefreshSeconds}
+              onSelectRefresh={setRefreshSeconds}
               onRefresh={reload}
+              onFollowLatestChange={setFollowLatest}
+              onAutoScrollViewChange={toggleAutoScrollView}
+              onScrollSpeedChange={setScrollSpeed}
               onOpenAssets={() => setView('config')}
             />
           ) : null}
@@ -381,26 +406,6 @@ export default function App() {
                   }
                 />
               ) : null}
-
-              {event && event.matches.length > 0 ? (
-                <label
-                  className={settings.followLatest ? 'follow follow--on' : 'follow'}
-                  title="Automatically open the most recently played match as results come in"
-                >
-                  <span className="follow__switch">
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      checked={settings.followLatest}
-                      onChange={(changeEvent) => setFollowLatest(changeEvent.target.checked)}
-                    />
-                    <span className="follow__track" aria-hidden="true">
-                      <span className="follow__thumb" />
-                    </span>
-                  </span>
-                  Follow latest result
-                </label>
-              ) : null}
             </header>
 
             <div className="schedule__tabs" role="group" aria-label="Matches, ranking or prediction">
@@ -447,7 +452,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="schedule__list">
+            <div className="schedule__list" ref={scheduleListRef}>
               {eventLoading && !event ? <p className="empty">Loading schedule…</p> : null}
               {!code && !eventLoading ? (
                 <p className="empty">Choose an event above to load its match schedule.</p>

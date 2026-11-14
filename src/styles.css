@@ -183,12 +183,35 @@ select {
   top: calc(100% + 8px);
   right: 0;
   z-index: 30;
-  width: 264px;
+  width: 268px;
+  max-height: min(600px, calc(100vh - 88px));
+  overflow-y: auto;
   padding: 14px;
   border-radius: 12px;
   border: 1px solid var(--line-strong);
   background: var(--bg-panel);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.settings__section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.settings__section .settings__hint {
+  margin: 6px 0 0;
+}
+
+.settings__label {
+  margin: 10px 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .settings__title {
@@ -533,9 +556,13 @@ select {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  /* Room at the top so the fade below never dims a card that is sitting at rest. */
+  padding: 22px 12px 12px;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+  /* Cards sliding up behind the tab buttons dissolve into the panel instead of hitting a hard edge. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 20px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 20px);
 }
 
 /* ---------- matches / teams toggle ---------- */
@@ -543,7 +570,7 @@ select {
 .schedule__tabs {
   display: flex;
   gap: 6px;
-  padding: 10px 16px 0;
+  padding: 10px 16px 8px;
 }
 
 .schedule__tab {
@@ -1191,34 +1218,35 @@ select {
   accent-color: var(--accent);
 }
 
-/* ---------- follow latest ---------- */
+/* ---------- switch, as used in the settings panel ---------- */
 
-.follow {
-  display: inline-flex;
+.switch {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  justify-content: space-between;
+  gap: 10px;
   font-size: 12px;
   color: var(--text-dim);
   cursor: pointer;
   user-select: none;
 }
 
-.follow:hover {
+.switch:hover .switch__text {
   color: var(--text);
 }
 
-.follow--on {
+.switch__text--on {
   color: var(--accent-strong);
   font-weight: 600;
 }
 
-.follow__switch {
+.switch__control {
   position: relative;
   display: inline-flex;
+  flex: none;
 }
 
-.follow__switch input {
+.switch__control input {
   position: absolute;
   inset: 0;
   margin: 0;
@@ -1226,7 +1254,7 @@ select {
   cursor: pointer;
 }
 
-.follow__track {
+.switch__track {
   display: inline-flex;
   align-items: center;
   width: 34px;
@@ -1238,7 +1266,7 @@ select {
   transition: background 140ms ease, border-color 140ms ease;
 }
 
-.follow__thumb {
+.switch__thumb {
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -1246,17 +1274,17 @@ select {
   transition: transform 140ms ease, background 140ms ease;
 }
 
-.follow__switch input:checked + .follow__track {
+.switch__control input:checked + .switch__track {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
 
-.follow__switch input:checked + .follow__track .follow__thumb {
+.switch__control input:checked + .switch__track .switch__thumb {
   transform: translateX(16px);
   background: var(--accent);
 }
 
-.follow__switch input:focus-visible + .follow__track {
+.switch__control input:focus-visible + .switch__track {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 

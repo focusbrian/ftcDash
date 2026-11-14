@@ -133,15 +133,20 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   two robots overlapping slightly and a tight drop shadow keeping them visually separate. A team with
   no photo yet stands in as the same kitbot at 30% opacity, so the line-up is always there to be
   filled and a placeholder is never mistaken for the real robot.
-- **Auto-refresh:** the gear in the header opens the settings menu, which sets how often the match
-  list re-fetches — Off, 10s, 15s, 30s, 1m or 2m (default 30s), remembered in this browser. Refreshes
-  run in the background: scores update in place without unmounting the page, resetting your scroll
-  position or dropping the selected match, and they are skipped while the tab is hidden. “Refresh now”
-  in the same menu forces an immediate update, and **Team assets** at the bottom of the menu opens the
-  configuration page.
-- **Follow latest result:** the switch under the team search keeps the most recently played match
-  open in the detail panel, including as new scores arrive on a refresh. Picking a match by hand
-  turns it back off; the setting is remembered.
+- **Settings:** the gear in the header opens the settings menu, which is remembered in this browser.
+  - **Match list refresh** sets how often the match list re-fetches — Off, 10s, 15s, 30s, 1m or 2m
+    (default 30s). Refreshes run in the background: scores update in place without unmounting the
+    page, resetting your scroll position or dropping the selected match, and they are skipped while
+    the tab is hidden. “Refresh now” forces an immediate update.
+  - **Follow latest result** keeps the most recently played match open in the detail panel, including
+    as new scores arrive on a refresh. Picking a match by hand turns it back off.
+  - **Auto-scroll** picks which of the left column's lists take part — Matches, Ranking and Predict,
+    any combination. The chosen list scrolls itself, rests a moment at the end, then moves to the
+    next one in the order above and starts again from the top, so an unattended screen works through
+    the whole event. **Speed** sets the pace (Slow 20 px/s, Medium 40, Fast 80). Turning a wheel or
+    grabbing the list pauses it for a couple of seconds so a reader can take over. Nothing selected
+    leaves the lists still.
+  - **Team assets** at the bottom of the menu opens the configuration page.
 - **Celebration:** when a played match has a winner, that alliance's card gets a light confetti
   animation — clipped to the card, behind its text, and clear of the robot line-up. It is skipped
   entirely when the visitor prefers reduced motion.
@@ -197,13 +202,14 @@ src/
                normalize.ts (raw -> domain model)
   assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
                (favicon source)
-  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts
+  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts,
+               useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts
   lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), predict.ts (predicted
                ranking and schedule difficulty), model.ts (match views), format.ts, events.ts,
                route.ts, teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image
                handling), settings.ts, backup.ts
   components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, TeamList,
-               PredictRanking, ConfigView, RefreshSettings, Confetti
+               PredictRanking, ConfigView, SettingsMenu, Confetti
   types.ts     shared domain types
 public/        favicon.png, apple-touch-icon.png (served from the site root)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
