@@ -1,0 +1,141 @@
+import { useMemo } from 'react';
+import firstLogo from '../assets/first-logo.webp';
+import { fmtPoints, fmtTime, groupByLevel, matchShortLabel, singleAllianceLabel } from '../lib/format';
+import type { AssetStore } from '../lib/assets';
+import type { MatchView, SideView } from '../lib/model';
+
+interface Props {
+  views: MatchView[];
+  selectedId: number | null;
+  highlightTeam: number | null;
+  timezone: string;
+  assets: AssetStore;
+  onSelect: (matchId: number) => void;
+}
+
+function hasProjectionData(side: SideView): boolean {
+  return side.entries.some((entry) => !entry.noShow && entry.strength?.hasOpr);
+}
+
+function sideTotal(side: SideView, projected: boolean): string {
+  if (projected && !hasProjectionData(side)) return '—';
+  return fmtPoints(side.total, projected ? 1 : 0);
+}
+
+export function MatchList({
+  views,
+  selectedId,
+  highlightTeam,
+  timezone,
+  assets,
+  onSelect,
+}: Props) {
+  const groups = useMemo(() => groupByLevel(views, (view) => view.match.level), [views]);
+
+  if (views.length === 0) {
+    return (
+      <p className="empty">
+        No matches have been published for this event yet. FTC Scout usually adds the schedule a
+        few days before the event starts.
+      </p>
+    );
+  }
+
+  return (
+    <div className={highlightTeam === null ? 'matches' : 'matches matches--focused'}>
+      {groups.map((group) => (
+        <section key={group.level} className="matches__group">
+          <h3 className="matches__title">
+            {group.label}
+            <span className="matches__count">{group.items.length}</span>
+          </h3>
+          {group.items.map((view) => {
+            const topTotal = Math.max(...view.sides.map((side) => side.total));
+            const highlighted =
+              highlightTeam !== null &&
+              view.sides.some((side) =>
+                side.entries.some((entry) => entry.teamNumber === highlightTeam),
+              );
+
+            return (
+              <button
+                key={view.match.id}
+                type="button"
+                className={highlighted ? 'card card--highlight' : 'card'}
+                aria-pressed={view.match.id === selectedId}
+                onClick={() => onSelect(view.match.id)}
+              >
+                <span className="card__head">
+                  <span className="card__label">
+                    {matchShortLabel(view.match)}
+                    {singleAllianceLabel(view.match)}
+                  </span>
+                  <span className="card__time">
+                    {fmtTime(view.match.scheduledStartTime, timezone)}
+                  </span>
+                  {view.projected ? (
+                    <span className="chip chip--proj" title="Projected from team OPR">
+                      PROJ
+                    </span>
+                  ) : (
+                    <span className="chip chip--final">FINAL</span>
+                  )}
+                </span>
+                {view.sides.map((side) => (
+                  <span
+                    key={side.alliance}
+                    className={`card__side card__side--${side.alliance.toLowerCase()}`}
+                  >
+                    <span className="card__teams">
+                      {side.entries
+                        .filter((entry) => !entry.noShow)
+                        .map((entry) => {
+                          const logo = assets[String(entry.teamNumber)]?.logo;
+                          return (
+                            <span
+                              key={`${entry.teamNumber}-${entry.station}`}
+                              className={
+                                entry.teamNumber === highlightTeam
+                                  ? 'card__team card__team--on'
+                                  : 'card__team'
+                              }
+                            >
+                              {logo ? (
+                                <img
+                                  className="card__team-logo"
+                                  src={logo}
+                                  alt=""
+                                  title={`Team ${entry.teamNumber} logo`}
+                                />
+                              ) : (
+                                <img
+                                  className="card__team-logo card__team-logo--placeholder"
+                                  src={firstLogo}
+                                  alt=""
+                                  title="No team logo yet — showing the FIRST logo"
+                                />
+                              )}
+                              {entry.teamNumber}
+                            </span>
+                          );
+                        })}
+                    </span>
+                    <span
+                      className={`card__total${
+                        view.sides.length > 1 && side.total === topTotal && topTotal > 0
+                          ? ' card__total--lead'
+                          : ''
+                      }`}
+                    >
+                      {sideTotal(side, view.projected)}
+                    </span>
+                  </span>
+                ))}
+              </button>
+            );
+          })}
+        </section>
+      ))}
+    </div>
+  );
+}
