@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySeasonOpr, rankTeams } from './teams';
+import { applySeasonOpr, rankTeams, sortTeamsBy } from './teams';
 import type { TeamStrength } from '../types';
 
 function team(
@@ -45,6 +45,32 @@ describe('rankTeams', () => {
       team(35561, null, 0, 0, false),
     ]);
     expect(sorted.map((entry) => entry.teamNumber)).toEqual([35559, 35560, 35561]);
+  });
+});
+
+describe('sortTeamsBy', () => {
+  const teams = [
+    team(10, 1, 5, 5),
+    team(11, 2, 40, 40),
+    team(12, 3, 1, 1),
+    team(13, null, 60, 60),
+  ];
+
+  it('keeps the official order when sorting by rank', () => {
+    expect(sortTeamsBy(teams, 'rank').map((entry) => entry.teamNumber)).toEqual([10, 11, 12, 13]);
+  });
+
+  it('puts the strongest OPR first, ranked or not, and ties with the official rank', () => {
+    expect(sortTeamsBy(teams, 'opr').map((entry) => entry.teamNumber)).toEqual([13, 11, 10, 12]);
+
+    const tied = sortTeamsBy([team(2, 5, 10, 10), team(1, 3, 10, 10)], 'opr');
+    expect(tied.map((entry) => entry.teamNumber)).toEqual([1, 2]);
+  });
+
+  it('sinks teams with no OPR and leaves the input alone', () => {
+    const input = [team(20, 1, 0, 0, false), team(21, 2, 3, 4)];
+    expect(sortTeamsBy(input, 'opr').map((entry) => entry.teamNumber)).toEqual([21, 20]);
+    expect(input.map((entry) => entry.teamNumber)).toEqual([20, 21]);
   });
 });
 

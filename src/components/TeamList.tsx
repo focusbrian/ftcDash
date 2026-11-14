@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react';
 import firstLogo from '../assets/first-logo.webp';
 import { InfoIcon } from './InfoIcon';
 import { TeamSummary } from './TeamSummary';
 import { useTeamHover } from '../hooks/useTeamHover';
 import { fmtPoints } from '../lib/format';
+import { sortTeamsBy, type TeamSort } from '../lib/teams';
 import type { AssetStore } from '../lib/assets';
 import type { TeamStrength } from '../types';
 
@@ -17,7 +19,7 @@ interface Props {
  * The row's OPR column. A team with no OPR at this event yet carries its season OPR instead, in
  * parentheses — the same way the hover card marks a carried value.
  */
-function OprCells({ team }: { team: TeamStrength }) {
+function OprCells({ team, rank }: { team: TeamStrength; rank: string | null }) {
   const auto = Math.max(0, team.oprAuto);
   const teleop = Math.max(0, team.oprTeleop);
   const total = fmtPoints(auto + teleop);
@@ -32,6 +34,7 @@ function OprCells({ team }: { team: TeamStrength }) {
         <span className="teamrow__total-label">OPR</span>
       </span>
       <span className="teamrow__detail">
+        {rank ? `${rank} · ` : ''}
         {team.hasOpr ? (team.oprFromSeason ? `Season OPR · ${split}` : split) : 'No OPR published yet'}
         {team.rp === null ? '' : ` · RP ${fmtPoints(team.rp)}`}
         {team.matchesPlayed > 0
@@ -43,8 +46,10 @@ function OprCells({ team }: { team: TeamStrength }) {
 }
 
 export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props) {
+  const [sort, setSort] = useState<TeamSort>('rank');
   const highlighted = new Set(highlightTeams);
   const { hovered, pinned, show, hide, togglePin, unpin } = useTeamHover();
+  const ordered = useMemo(() => sortTeamsBy(teams, sort), [teams, sort]);
 
   if (teams.length === 0) {
     return (
@@ -57,11 +62,35 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
 
   return (
     <div className="teams">
+      <div className="segmented" role="group" aria-label="Sort the ranking">
+        <button
+          type="button"
+          className={sort === 'rank' ? 'segmented__option segmented__option--active' : 'segmented__option'}
+          aria-pressed={sort === 'rank'}
+          onClick={() => setSort('rank')}
+        >
+          Rank
+        </button>
+        <button
+          type="button"
+          className={sort === 'opr' ? 'segmented__option segmented__option--active' : 'segmented__option'}
+          aria-pressed={sort === 'opr'}
+          onClick={() => setSort('opr')}
+        >
+          OPR
+        </button>
+      </div>
+
       <ul className="teams__list">
-        {teams.map((team) => {
+        {ordered.map((team, at) => {
           const logo = assets[String(team.teamNumber)]?.logo;
           const isOn = highlighted.has(team.teamNumber);
           const isOpen = pinned && hovered?.team.teamNumber === team.teamNumber;
+          // Ordering by OPR makes the left column the OPR position, so the official rank moves to the
+          // detail line rather than sitting there out of sequence.
+          const position =
+            sort === 'opr' ? at + 1 : null;
+          const official = team.rank === null ? 'unranked' : `now #${team.rank}`;
 
           return (
             <li key={team.teamNumber} className={isOn ? 'teams__row teams__row--on' : 'teams__row'}>
@@ -77,7 +106,13 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
                 onBlur={hide}
               >
                 <span className="teamrow__rank">
-                  {team.rank === null ? <span className="teamrow__rank--none">—</span> : `#${team.rank}`}
+                  {sort === 'opr' ? (
+                    `#${position}`
+                  ) : team.rank === null ? (
+                    <span className="teamrow__rank--none">—</span>
+                  ) : (
+                    `#${team.rank}`
+                  )}
                 </span>
                 <img
                   className={logo ? 'teamrow__logo' : 'teamrow__logo teamrow__logo--placeholder'}
@@ -89,7 +124,7 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
                   <span className="teamrow__num">{team.teamNumber}</span>
                   <span className="teamrow__name">{team.name || 'Unknown team'}</span>
                 </span>
-                <OprCells team={team} />
+                <OprCells team={team} rank={sort === 'opr' ? official : null} />
               </button>
               <button
                 type="button"

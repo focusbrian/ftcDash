@@ -623,20 +623,14 @@ select {
   color: var(--accent-strong);
 }
 
-/* ---------- predicted ranking / schedule difficulty ---------- */
+/* ---------- segmented control, shared by the predict and ranking switches ---------- */
 
-.predict {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.predict__switch {
+.segmented {
   display: flex;
   gap: 4px;
 }
 
-.predict__option {
+.segmented__option {
   flex: 1;
   height: 26px;
   padding: 0 8px;
@@ -650,15 +644,23 @@ select {
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.predict__option:hover {
+.segmented__option:hover {
   background: var(--bg-raised-2);
   color: var(--text);
 }
 
-.predict__option--active {
+.segmented__option--active {
   border-color: var(--accent-line);
   background: var(--accent-soft);
   color: var(--text);
+}
+
+/* ---------- predicted ranking / schedule difficulty ---------- */
+
+.predict {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .predict__hint {
@@ -682,6 +684,7 @@ select {
 .teams {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .teams__list {

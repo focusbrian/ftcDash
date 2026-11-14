@@ -56,3 +56,26 @@ export function rankTeams(teams: Iterable<TeamStrength>): TeamStrength[] {
     return a.teamNumber - b.teamNumber;
   });
 }
+
+/** How the ranking list is ordered: the official table, or strongest OPR first. */
+export type TeamSort = 'rank' | 'opr';
+
+/**
+ * The ranking list in the chosen order. OPR order puts the highest effective OPR (event OPR, or the
+ * season stand-in) first and breaks ties with the official rank, so the two orders stay comparable.
+ */
+export function sortTeamsBy(teams: readonly TeamStrength[], sort: TeamSort): TeamStrength[] {
+  if (sort === 'rank') return rankTeams(teams);
+
+  return [...teams].sort((a, b) => {
+    const oprA = oprTotal(a);
+    const oprB = oprTotal(b);
+    if (oprA !== oprB) return oprB - oprA;
+
+    const rankA = a.rank ?? Number.POSITIVE_INFINITY;
+    const rankB = b.rank ?? Number.POSITIVE_INFINITY;
+    if (rankA !== rankB) return rankA - rankB;
+
+    return a.teamNumber - b.teamNumber;
+  });
+}
