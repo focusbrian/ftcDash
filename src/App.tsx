@@ -5,7 +5,9 @@ import { EventInfo } from './components/EventInfo';
 import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
+import { PredictRanking } from './components/PredictRanking';
 import { RefreshSettings } from './components/RefreshSettings';
+import { PredictIcon, RankingIcon, ScheduleIcon } from './components/TabIcons';
 import { TeamList } from './components/TeamList';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
@@ -26,8 +28,8 @@ import type { TeamStrength } from './types';
 /** Which of the two stacked panes a narrow screen shows; ignored on wide layouts. */
 type Pane = 'schedule' | 'match';
 
-/** What the left column lists: the match schedule or the event's team ranking. */
-type LeftView = 'matches' | 'ranking';
+/** What the left column lists: the match schedule, the team ranking, or the predicted finish. */
+type LeftView = 'matches' | 'ranking' | 'predict';
 
 export default function App() {
   const initialRoute = useMemo(() => parseRoute(window.location.hash), []);
@@ -401,7 +403,7 @@ export default function App() {
               ) : null}
             </header>
 
-            <div className="schedule__tabs" role="group" aria-label="Matches or ranking">
+            <div className="schedule__tabs" role="group" aria-label="Matches, ranking or prediction">
               <button
                 type="button"
                 className={
@@ -412,6 +414,7 @@ export default function App() {
                 aria-pressed={leftView === 'matches'}
                 onClick={() => setLeftView('matches')}
               >
+                <ScheduleIcon />
                 Matches
                 {visibleViews.length > 0 ? (
                   <span className="schedule__tab-count">{visibleViews.length}</span>
@@ -425,10 +428,22 @@ export default function App() {
                 aria-pressed={leftView === 'ranking'}
                 onClick={() => setLeftView('ranking')}
               >
+                <RankingIcon />
                 Ranking
                 {rankedTeams.length > 0 ? (
                   <span className="schedule__tab-count">{rankedTeams.length}</span>
                 ) : null}
+              </button>
+              <button
+                type="button"
+                className={
+                  leftView === 'predict' ? 'schedule__tab schedule__tab--active' : 'schedule__tab'
+                }
+                aria-pressed={leftView === 'predict'}
+                onClick={() => setLeftView('predict')}
+              >
+                <PredictIcon />
+                Predict
               </button>
             </div>
 
@@ -441,6 +456,16 @@ export default function App() {
               {leftView === 'ranking' && event ? (
                 <TeamList
                   teams={rankedTeams}
+                  highlightTeams={highlightTeams}
+                  assets={assets}
+                  onToggleTeam={handleToggleTeam}
+                />
+              ) : null}
+
+              {leftView === 'predict' && event ? (
+                <PredictRanking
+                  teams={rankedTeams}
+                  views={views}
                   highlightTeams={highlightTeams}
                   assets={assets}
                   onToggleTeam={handleToggleTeam}
