@@ -944,6 +944,22 @@ select {
   max-width: 1080px;
 }
 
+/* Replays whenever another match is opened, because the panel is keyed by match id. */
+.detail--enter {
+  animation: detail-in 200ms ease-out backwards;
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .detail__head {
   display: flex;
   justify-content: space-between;
@@ -1188,6 +1204,10 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .alliance__confetti {
     display: none;
+  }
+
+  .detail--enter {
+    animation: none;
   }
 }
 

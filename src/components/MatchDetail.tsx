@@ -174,7 +174,7 @@ export function MatchDetail({
   const anyRobots = lineups.some((lineup) => lineup.photos.length > 0);
 
   return (
-    <div className="detail">
+    <div className="detail detail--enter" key={view.match.id}>
       <header className="detail__head">
         <div>
           <p className="detail__kicker">{event.name}</p>

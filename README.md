@@ -77,7 +77,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   auto/teleop/total, and average ranking points.
 - **Detail (right):** scheduled time and status, the scoreline (real or projected), a Red/Blue win
   probability bar for projections, then per-alliance cards with the auto/teleop/total split and each
-  team's OPR contribution, event rank, and surrogate/DQ/no-show flags.
+  team's OPR contribution, event rank, and surrogate/DQ/no-show flags. Picking another match fades
+  the panel into the new one — a background refresh of the same match does not, and visitors who
+  prefer reduced motion skip the fade.
 - **Robots:** team logos appear beside team numbers in both the schedule and the alliance cards
   (teams without a logo show the FIRST logo as a placeholder), and uploaded robot photos stand in a
   line-up above their alliance card — tucked behind the card like fighters entering the arena, with
