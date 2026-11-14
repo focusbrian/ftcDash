@@ -127,3 +127,21 @@ query TeamEvents($season: Int!, $number: Int!) {
     }
   }
 }`;
+
+/** OPR at each event of a season, oldest first — the season sparkline in the team hover card. */
+export const TEAM_OPR_HISTORY_QUERY = `
+query TeamOprHistory($season: Int!, $number: Int!) {
+  teamByNumber(number: $number) {
+    number
+    events(season: $season) {
+      event {
+        code
+        name
+        start
+      }
+      stats {
+        __typename${statsFragments}
+      }
+    }
+  }
+}`;

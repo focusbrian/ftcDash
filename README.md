@@ -72,7 +72,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   team at the event in official rank order — rank, number and name, OPR total, then the auton/teleop
   split with average ranking points and matches played. Teams that are not ranked yet fall in below the
   ranked ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
-  hovering a row shows the same team summary card.
+  hovering a row shows the same team summary card. On touch screens, where there is no hover, each row
+  carries an ⓘ button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or
+  anywhere outside to dismiss (Escape works too).
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no
@@ -91,7 +93,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   the match you are looking at without going back to the search box.
 - **Team summary on hover:** hovering — or keyboard-focusing — a team in either the schedule or an
   alliance card pops up a small summary beside the row with its event rank, matches played, OPR
-  auto/teleop/total, and average ranking points.
+  auto/teleop/total, and average ranking points. Two sparklines show how the team's OPR moved: one
+  across every event of the season FTC Scout has OPR for, and one running estimate after each
+  qualification match of the current event.
 - **Detail (right):** scheduled time and status, the scoreline (real or projected), a Red/Blue win
   probability bar for projections, then per-alliance cards with the auto/teleop/total split and each
   team's OPR contribution, event rank, and surrogate/DQ/no-show flags. Picking another match fades

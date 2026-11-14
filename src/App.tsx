@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigView } from './components/ConfigView';
+import { EventChartsProvider } from './components/EventChartsContext';
 import { EventInfo } from './components/EventInfo';
 import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
@@ -231,8 +232,11 @@ export default function App() {
 
   const playedCount = event?.matches.filter((match) => match.played).length ?? 0;
 
+  const charts = useMemo(() => ({ season, views }), [season, views]);
+
   return (
-    <div className="app">
+    <EventChartsProvider value={charts}>
+      <div className="app">
       <header className="topbar">
         <div className="brand">
           <span className="brand__mark">
@@ -474,6 +478,7 @@ export default function App() {
           </section>
         </main>
       )}
-    </div>
+      </div>
+    </EventChartsProvider>
   );
 }

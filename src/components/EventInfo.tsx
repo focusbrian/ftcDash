@@ -1,20 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { InfoIcon } from './InfoIcon';
 import { fmtDateRange } from '../lib/format';
 import type { EventData } from '../types';
 
 interface Props {
   event: EventData | null;
-}
-
-function InfoIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18.2a8.2 8.2 0 1 1 0-16.4 8.2 8.2 0 0 1 0 16.4ZM11 10.6h2v6.1h-2v-6.1Zm0-3.6h2v2.1h-2V7Z"
-      />
-    </svg>
-  );
 }
 
 const TYPE_LABELS: Record<string, string> = {

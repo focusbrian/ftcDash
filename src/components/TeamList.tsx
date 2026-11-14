@@ -1,4 +1,5 @@
 import firstLogo from '../assets/first-logo.webp';
+import { InfoIcon } from './InfoIcon';
 import { TeamSummary } from './TeamSummary';
 import { useTeamHover } from '../hooks/useTeamHover';
 import { fmtPoints } from '../lib/format';
@@ -14,7 +15,7 @@ interface Props {
 
 export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props) {
   const highlighted = new Set(highlightTeams);
-  const { hovered, show, hide } = useTeamHover();
+  const { hovered, pinned, show, hide, togglePin, unpin } = useTeamHover();
 
   if (teams.length === 0) {
     return (
@@ -33,6 +34,7 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
           const auto = Math.max(0, team.oprAuto);
           const teleop = Math.max(0, team.oprTeleop);
           const isOn = highlighted.has(team.teamNumber);
+          const isOpen = pinned && hovered?.team.teamNumber === team.teamNumber;
 
           return (
             <li key={team.teamNumber} className={isOn ? 'teams__row teams__row--on' : 'teams__row'}>
@@ -74,11 +76,26 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
                     : ''}
                 </span>
               </button>
+              <button
+                type="button"
+                className={isOpen ? 'teamrow__info teamrow__info--on' : 'teamrow__info'}
+                aria-label={`Team ${team.teamNumber} summary`}
+                aria-expanded={isOpen}
+                aria-haspopup="dialog"
+                onClick={(event) => togglePin(team, event.currentTarget)}
+              >
+                <InfoIcon size={15} />
+              </button>
             </li>
           );
         })}
       </ul>
-      <TeamSummary state={hovered} hint="Click to highlight this team’s matches" />
+      <TeamSummary
+        state={hovered}
+        pinned={pinned}
+        onClose={unpin}
+        hint="Click to highlight this team’s matches"
+      />
     </div>
   );
 }

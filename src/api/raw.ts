@@ -89,3 +89,13 @@ export interface RawTeamSeason {
   name: string;
   events: { event: RawEventSummary }[];
 }
+
+export interface RawTeamOprEvent {
+  event: { code: string; name: string; start: string };
+  stats: RawTeamStats | null;
+}
+
+export interface RawTeamOprHistory {
+  number: number;
+  events: RawTeamOprEvent[];
+}

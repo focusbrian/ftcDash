@@ -603,6 +603,7 @@ select {
 }
 
 .teams__row {
+  position: relative;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--bg-raised);
@@ -719,6 +720,11 @@ select {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);
+}
+
+/* Only touch screens need it: they have no hover, so the summary is tap-to-open. */
+.teamrow__info {
+  display: none;
 }
 
 .matches {
@@ -1228,11 +1234,54 @@ select {
 }
 
 .teamcard__name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
   font-size: 13px;
+}
+
+.teamcard__close {
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.teamcard__close:hover {
+  background: var(--bg-raised-2);
+  color: var(--text);
+}
+
+/* ---------- tapped-open team summary (touch screens) ---------- */
+
+.teamcard__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(8, 9, 11, 0.64);
+}
+
+.teamcard--pinned {
+  left: 50%;
+  top: 50%;
+  width: min(320px, calc(100vw - 28px));
+  max-height: min(78vh, 430px);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
 }
 
 .teamcard__school {
@@ -1268,6 +1317,97 @@ select {
   margin: 10px 0 0;
   font-size: 10px;
   color: var(--text-faint);
+}
+
+/* ---------- sparklines in the team hover card ---------- */
+
+.spark {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.spark__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spark__title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.spark__caption {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.spark__empty {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.spark__chart {
+  display: block;
+  width: 100%;
+  height: 34px;
+  margin: 5px 0 4px;
+  overflow: visible;
+}
+
+.spark__axis {
+  stroke: var(--line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark__line {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark__dot {
+  stroke: var(--bg-panel);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.spark__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.spark__key strong {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.spark__swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
 }
 
 /* ---------- detail column ---------- */
@@ -2360,7 +2500,35 @@ select {
 
 /* Touch screens have no hover state, and tapping a team already toggles its highlight. */
 @media (hover: none) {
-  .teamcard {
+  .teamcard:not(.teamcard--pinned) {
     display: none;
+  }
+
+  .teamrow__info {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-raised-2);
+    color: var(--text-dim);
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .teamrow__info--on {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Keeps the OPR column clear of the info button. */
+  .teamrow {
+    padding-right: 44px;
   }
 }
