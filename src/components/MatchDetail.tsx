@@ -1,3 +1,4 @@
+import kitbot from '../assets/kitbot.webp';
 import { AllianceCard } from './AllianceCard';
 import { fmtPercent, fmtPoints, fmtTime, matchLongLabel, singleAllianceLabel } from '../lib/format';
 import { robotForSeason, type AssetStore } from '../lib/assets';
@@ -19,6 +20,8 @@ interface RobotPhoto {
   teamNumber: number;
   name: string;
   url: string;
+  /** True when this is the kitbot stand-in, not a photo of the team's robot. */
+  placeholder: boolean;
 }
 
 /** Robot photos for the teams that actually take the field for one alliance, for the event's season. */
@@ -30,7 +33,12 @@ function robotPhotos(side: SideView, assets: AssetStore, season: number): RobotP
     if (entry.noShow || seen.has(entry.teamNumber)) continue;
     seen.add(entry.teamNumber);
     const url = robotForSeason(assets[String(entry.teamNumber)], season);
-    if (url) photos.push({ teamNumber: entry.teamNumber, name: entry.name, url });
+    photos.push({
+      teamNumber: entry.teamNumber,
+      name: entry.name,
+      url: url ?? kitbot,
+      placeholder: !url,
+    });
   }
   return photos;
 }
@@ -216,10 +224,20 @@ export function MatchDetail({
                 {photos.map((photo) => (
                   <img
                     key={photo.teamNumber}
-                    className="lineup__robot"
+                    className={
+                      photo.placeholder ? 'lineup__robot lineup__robot--placeholder' : 'lineup__robot'
+                    }
                     src={photo.url}
-                    alt={`Team ${photo.teamNumber} robot`}
-                    title={`${photo.teamNumber} · ${photo.name}`}
+                    alt={
+                      photo.placeholder
+                        ? `Placeholder robot for team ${photo.teamNumber}`
+                        : `Team ${photo.teamNumber} robot`
+                    }
+                    title={
+                      photo.placeholder
+                        ? `${photo.teamNumber} · ${photo.name} — no robot photo yet`
+                        : `${photo.teamNumber} · ${photo.name}`
+                    }
                   />
                 ))}
               </div>

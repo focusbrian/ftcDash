@@ -2,10 +2,12 @@ import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkline } from './Sparkline';
+import type { SparkPoint, SparkSeries } from './Sparkline';
 import { useEventCharts } from './EventChartsContext';
 import { useTeamOprHistory } from '../hooks/useTeamOprHistory';
 import { fmtPoints } from '../lib/format';
 import { rollingOprForTeam } from '../lib/opr';
+import type { SeasonOprPoint } from '../lib/seasonOpr';
 import type { TeamHoverState } from '../hooks/useTeamHover';
 
 interface Props {
@@ -17,7 +19,7 @@ interface Props {
 }
 
 const CARD_WIDTH = 268;
-const ESTIMATED_HEIGHT = 366;
+const ESTIMATED_HEIGHT = 380;
 const GAP = 12;
 
 /** Colours shared with the record stars on the schedule cards. */
@@ -37,6 +39,19 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 function countLabel(count: number, one: string, many: string): string {
   if (count === 0) return 'none yet';
   return `${count} ${count === 1 ? one : many}`;
+}
+
+/** Season OPR slots -> sparkline points, keeping track of what was carried and from where. */
+function seasonPoints(
+  points: readonly SeasonOprPoint[],
+  key: 'auto' | 'teleop' | 'total',
+): SparkPoint[] {
+  return points.map((point) => ({
+    value: point[key],
+    label: point.kind === 'prior' ? `${point.season} season OPR` : point.name,
+    baseline: point.kind === 'prior',
+    estimated: point.kind === 'estimate',
+  }));
 }
 
 /** Small fixed-position summary shown while hovering a team, or as a sheet when tapped open. */
@@ -79,15 +94,29 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
   const auto = Math.max(0, team.oprAuto);
   const teleop = Math.max(0, team.oprTeleop);
 
-  const seasonSeries = [
-    { label: 'Auton', color: AUTO_COLOR, values: seasonOpr.points.map((point) => point.auto) },
-    { label: 'Teleop', color: TELEOP_COLOR, values: seasonOpr.points.map((point) => point.teleop) },
-    { label: 'Total', color: TOTAL_COLOR, values: seasonOpr.points.map((point) => point.total) },
+  const seasonEventCount = seasonOpr.points.filter((point) => point.kind !== 'prior').length;
+  const pending = seasonOpr.points.filter((point) => point.kind === 'estimate').length;
+  const anchor = seasonOpr.points.find((point) => point.kind === 'prior') ?? null;
+  const seasonNote = [
+    anchor ? `${anchor.season} OPR as the start` : null,
+    pending > 0 ? `${countLabel(pending, 'event', 'events')} without OPR yet` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  const seasonLines: SparkSeries[] = [
+    { label: 'Auton', color: AUTO_COLOR, points: seasonPoints(seasonOpr.points, 'auto') },
+    { label: 'Teleop', color: TELEOP_COLOR, points: seasonPoints(seasonOpr.points, 'teleop') },
+    { label: 'Total', color: TOTAL_COLOR, points: seasonPoints(seasonOpr.points, 'total') },
   ];
-  const eventSeries = [
-    { label: 'Auton', color: AUTO_COLOR, values: eventOpr.map((point) => point.auto) },
-    { label: 'Teleop', color: TELEOP_COLOR, values: eventOpr.map((point) => point.teleop) },
-    { label: 'Total', color: TOTAL_COLOR, values: eventOpr.map((point) => point.total) },
+  const eventLines: SparkSeries[] = [
+    { label: 'Auton', color: AUTO_COLOR, points: eventOpr.map((point) => ({ value: point.auto })) },
+    {
+      label: 'Teleop',
+      color: TELEOP_COLOR,
+      points: eventOpr.map((point) => ({ value: point.teleop })),
+    },
+    { label: 'Total', color: TOTAL_COLOR, points: eventOpr.map((point) => ({ value: point.total })) },
   ];
 
   return createPortal(
@@ -140,22 +169,23 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
               ? 'loading…'
               : seasonOpr.status === 'error'
                 ? 'unavailable'
-                : countLabel(seasonOpr.points.length, 'event', 'events')
+                : countLabel(seasonEventCount, 'event', 'events')
           }
           empty={
             seasonOpr.status === 'loading'
               ? 'Loading season OPR…'
               : seasonOpr.status === 'error'
                 ? 'Season OPR unavailable'
-                : 'No other events this season'
+                : 'No OPR published yet'
           }
-          series={seasonSeries}
+          series={seasonLines}
+          note={seasonOpr.status === 'ready' ? seasonNote : undefined}
         />
         <Sparkline
           title="OPR this event"
           caption={countLabel(eventOpr.length, 'match', 'matches')}
           empty="No qualification matches yet"
-          series={eventSeries}
+          series={eventLines}
         />
 
         {hint ? <p className="teamcard__hint">{hint}</p> : null}

@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react';
 import { gql } from '../api/client';
 import { TEAM_OPR_HISTORY_QUERY } from '../api/queries';
-import type { RawTeamOprHistory } from '../api/raw';
+import { seasonOprBaseline, seasonOprSeries } from '../lib/seasonOpr';
+import { EARLIEST_SEASON } from '../lib/route';
+import type { SeasonOprPoint } from '../lib/seasonOpr';
+import type { RawTeamOprEvent, RawTeamOprHistory } from '../api/raw';
 
 /** Delay so sweeping the pointer across a list of teams doesn't fire a request per row. */
 const DEBOUNCE_MS = 180;
 
-export interface SeasonOprPoint {
-  code: string;
-  name: string;
-  start: string;
-  auto: number;
-  teleop: number;
-  total: number;
-}
-
 export interface SeasonOprHistory {
   status: 'idle' | 'loading' | 'ready' | 'error';
+  /** Oldest first; the previous season's final OPR anchors the series when there is one. */
   points: SeasonOprPoint[];
 }
 
@@ -26,6 +21,19 @@ const EMPTY: SeasonOprHistory = { status: 'idle', points: [] };
 interface HistoryState {
   key: string | null;
   history: SeasonOprHistory;
+}
+
+async function eventsOf(
+  season: number,
+  teamNumber: number,
+  signal: AbortSignal,
+): Promise<RawTeamOprEvent[]> {
+  const { teamByNumber } = await gql<{ teamByNumber: RawTeamOprHistory | null }>(
+    TEAM_OPR_HISTORY_QUERY,
+    { season, number: teamNumber },
+    signal,
+  );
+  return teamByNumber?.events ?? [];
 }
 
 /** One OPR point per event a team played that season, oldest first. */
@@ -41,7 +49,7 @@ export function useTeamOprHistory(
   });
 
   useEffect(() => {
-    if (key === null) {
+    if (key === null || season === null || teamNumber === null) {
       setState({ key, history: EMPTY });
       return;
     }
@@ -56,25 +64,22 @@ export function useTeamOprHistory(
     setState({ key, history: { status: 'loading', points: [] } });
 
     const timer = window.setTimeout(() => {
-      gql<{ teamByNumber: RawTeamOprHistory | null }>(
-        TEAM_OPR_HISTORY_QUERY,
-        { season, number: teamNumber },
-        controller.signal,
-      )
-        .then(({ teamByNumber }) => {
+      const previous = season - 1;
+      const hasPrevious = previous >= EARLIEST_SEASON;
+      Promise.all([
+        eventsOf(season, teamNumber, controller.signal),
+        // A team that sat out the previous season is normal — never fail the series over it.
+        hasPrevious
+          ? eventsOf(previous, teamNumber, controller.signal).catch((): RawTeamOprEvent[] => [])
+          : Promise.resolve<RawTeamOprEvent[]>([]),
+      ])
+        .then(([events, priorEvents]) => {
           if (controller.signal.aborted) return;
-          const points = (teamByNumber?.events ?? [])
-            .filter((entry) => entry.stats?.opr)
-            .map((entry) => ({
-              code: entry.event.code,
-              name: entry.event.name,
-              start: entry.event.start,
-              auto: Math.max(0, entry.stats?.opr?.autoPoints ?? 0),
-              teleop: Math.max(0, entry.stats?.opr?.dcPoints ?? 0),
-              total: Math.max(0, entry.stats?.opr?.totalPointsNp ?? 0),
-            }))
-            .sort((a, b) => a.start.localeCompare(b.start));
-
+          const points = seasonOprSeries(
+            season,
+            events,
+            hasPrevious ? seasonOprBaseline(previous, priorEvents) : null,
+          );
           cache.set(key, points);
           setState({ key, history: { status: 'ready', points } });
         })

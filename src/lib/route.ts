@@ -12,6 +12,9 @@ export function defaultSeason(date = new Date()): number {
   return date.getMonth() >= 7 ? date.getFullYear() : date.getFullYear() - 1;
 }
 
+/** FTC Scout's earliest season; asking it for anything older fails the whole query. */
+export const EARLIEST_SEASON = 2019;
+
 export function parseRoute(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
 

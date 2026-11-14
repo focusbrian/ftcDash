@@ -19,9 +19,7 @@ import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { rankTeams } from './lib/teams';
 import { eventRecords } from './lib/records';
-import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
-
-const EARLIEST_SEASON = 2019;
+import { buildHash, defaultSeason, EARLIEST_SEASON, parseRoute, type RouteView } from './lib/route';
 
 /** Which of the two stacked panes a narrow screen shows; ignored on wide layouts. */
 type Pane = 'schedule' | 'match';

@@ -14,7 +14,7 @@ import {
   parseBackup,
 } from '../lib/backup';
 import { fileToImageDataUrl, isImageFile } from '../lib/image';
-import { defaultSeason } from '../lib/route';
+import { defaultSeason, EARLIEST_SEASON } from '../lib/route';
 import { searchTeams } from '../lib/teamSearch';
 import type { TeamStrength } from '../types';
 
@@ -30,7 +30,6 @@ interface Props {
 }
 
 const MAX_EDGE: Record<AssetKind, number> = { logo: 192, robot: 640 };
-const EARLIEST_SEASON = 2019;
 
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;

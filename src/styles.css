@@ -1375,10 +1375,27 @@ select {
   vector-effect: non-scaling-stroke;
 }
 
+/* A value that was carried rather than recorded: dashed, so it never reads as measured. */
+.spark__line--ghost {
+  stroke-dasharray: 3 2;
+  opacity: 0.85;
+}
+
 .spark__dot {
   stroke: var(--bg-panel);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+
+.spark__dot--open {
+  stroke-width: 1.3;
+}
+
+.spark__note {
+  margin: 4px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
 }
 
 .spark__legend {
@@ -1890,6 +1907,11 @@ select {
 
 .lineup--group .lineup__robot + .lineup__robot {
   margin-left: -2.5rem;
+}
+
+/* The kitbot stand-in, faded so it never reads as the team's actual robot. */
+.lineup__robot--placeholder {
+  opacity: 0.3;
 }
 
 /* ---------- config page ---------- */

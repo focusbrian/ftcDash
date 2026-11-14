@@ -70,11 +70,13 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   alliance total without an auto/teleop split don't earn the split stars. Hover a star for the value.
 - **Team ranking (left):** the Matches / Ranking switch above the list swaps the schedule for every
   team at the event in official rank order — rank, number and name, OPR total, then the auton/teleop
-  split with average ranking points and matches played. Teams that are not ranked yet fall in below the
-  ranked ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
-  hovering a row shows the same team summary card. On touch screens, where there is no hover, each row
-  carries an ⓘ button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or
-  anywhere outside to dismiss (Escape works too).
+  split with average ranking points and matches played. Until the event publishes OPR, the OPR column
+  carries the team's season OPR at that point in parentheses instead of a dash, and the row's detail
+  line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked ones, best OPR
+  first. Clicking a team highlights its matches exactly like the search box, and hovering a row shows
+  the same team summary card. On touch screens, where there is no hover, each row carries an ⓘ button
+  that opens the summary as a centred sheet with a backdrop — tap it, the ×, or anywhere outside to
+  dismiss (Escape works too).
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no
@@ -94,8 +96,11 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Team summary on hover:** hovering — or keyboard-focusing — a team in either the schedule or an
   alliance card pops up a small summary beside the row with its event rank, matches played, OPR
   auto/teleop/total, and average ranking points. Two sparklines show how the team's OPR moved: one
-  across every event of the season FTC Scout has OPR for, and one running estimate after each
-  qualification match of the current event.
+  across every event of the season, and one running estimate after each qualification match of the
+  current event. The season line starts at the OPR the team finished last season with — drawn
+  dashed and hollow so it reads as an anchor, not a result — and an event FTC Scout has no OPR for
+  yet still keeps its place on the line, holding the last published value in parentheses (“(24.3)”)
+  in the tooltip and legend.
 - **Detail (right):** scheduled time and status, the scoreline (real or projected), a Red/Blue win
   probability bar for projections, then per-alliance cards with the auto/teleop/total split and each
   team's OPR contribution, event rank, and surrogate/DQ/no-show flags. Picking another match fades
@@ -104,7 +109,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Robots:** team logos appear beside team numbers in both the schedule and the alliance cards
   (teams without a logo show the FIRST logo as a placeholder), and uploaded robot photos stand in a
   line-up above their alliance card — tucked behind the card like fighters entering the arena, with
-  two robots overlapping slightly and a tight drop shadow keeping them visually separate.
+  two robots overlapping slightly and a tight drop shadow keeping them visually separate. A team with
+  no photo yet stands in as the same kitbot at 30% opacity, so the line-up is always there to be
+  filled and a placeholder is never mistaken for the real robot.
 - **Auto-refresh:** the gear in the header opens the settings menu, which sets how often the match
   list re-fetches — Off, 10s, 15s, 30s, 1m or 2m (default 30s), remembered in this browser. Refreshes
   run in the background: scores update in place without unmounting the page, resetting your scroll
@@ -166,11 +173,12 @@ actions; alliance colors stay red/blue because they carry meaning, muted to fit 
 src/
   api/         client.ts (fetch wrapper), queries.ts (GraphQL documents), raw.ts (response types),
                normalize.ts (raw -> domain model)
-  assets/      first-logo.webp (placeholder logo), robofalcons-icon.jpg (favicon source)
+  assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
+               (favicon source)
   hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts
-  lib/         projection.ts (OPR math), model.ts (match views), format.ts, events.ts, route.ts,
-               teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image handling),
-               settings.ts, backup.ts
+  lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), model.ts (match views),
+               format.ts, events.ts, route.ts, teamSearch.ts (team matching), assets.ts (local asset
+               store), image.ts (image handling), settings.ts, backup.ts
   components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, ConfigView,
                RefreshSettings, Confetti
   types.ts     shared domain types
@@ -180,8 +188,8 @@ public/        favicon.png, apple-touch-icon.png (served from the site root)
 ```
 
 Tests cover the projection math, raw-data normalization (including remote seasons and matches with no
-OPR), team search ranking, image format handling, the local asset store, and picker/route helpers:
-`npm test`.
+OPR), the season OPR series (last season's anchor and carried-forward values), team search ranking,
+image format handling, the local asset store, and picker/route helpers: `npm test`.
 
 ## Deploying
 
