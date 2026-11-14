@@ -1203,21 +1203,6 @@ select {
   color: var(--text);
 }
 
-.teamsearch__toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text-dim);
-  cursor: pointer;
-  user-select: none;
-}
-
-.teamsearch__toggle input {
-  accent-color: var(--accent);
-}
-
 /* ---------- switch, as used in the settings panel ---------- */
 
 .switch {

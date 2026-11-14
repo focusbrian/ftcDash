@@ -42,7 +42,6 @@ export default function App() {
   const [pane, setPane] = useState<Pane>(initialRoute.matchId !== null ? 'match' : 'schedule');
   const [leftView, setLeftView] = useState<LeftView>('matches');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
-  const [onlyHighlighted, setOnlyHighlighted] = useState(false);
   const { events, loading: eventsLoading, error: eventsError } = useEventList(season);
   const {
     data: event,
@@ -62,6 +61,7 @@ export default function App() {
     settings,
     setRefreshSeconds,
     setFollowLatest,
+    setHideUnhighlighted,
     toggleAutoScrollView,
     setScrollSpeed,
   } = useSettings();
@@ -171,10 +171,19 @@ export default function App() {
     onCycle: cycleView,
   });
 
+  /** The highlight filter only bites once there is something to keep. */
+  const hidingOthers = settings.hideUnhighlighted && highlightSet.size > 0;
+
   const visibleViews = useMemo(() => {
-    if (!onlyHighlighted || highlightSet.size === 0) return views;
+    if (!hidingOthers) return views;
     return views.filter(hasHighlightedTeam);
-  }, [views, onlyHighlighted, highlightSet, hasHighlightedTeam]);
+  }, [views, hidingOthers, hasHighlightedTeam]);
+
+  // Ranking and prediction rows follow the same filter, so all three lists agree.
+  const visibleTeams = useMemo(
+    () => (hidingOthers ? rankedTeams.filter((team) => highlightSet.has(team.teamNumber)) : rankedTeams),
+    [hidingOthers, rankedTeams, highlightSet],
+  );
 
   const selectedView = useMemo(
     () => views.find((candidate) => candidate.match.id === matchId) ?? null,
@@ -248,13 +257,7 @@ export default function App() {
 
   const handleClearTeams = useCallback(() => {
     setHighlightTeams([]);
-    setOnlyHighlighted(false);
   }, []);
-
-  // The "only these" filter makes no sense without highlighted teams.
-  useEffect(() => {
-    if (highlightTeams.length === 0) setOnlyHighlighted(false);
-  }, [highlightTeams.length]);
 
   const jumpToNext = useCallback(() => {
     const next = views.find((candidate) => !candidate.match.played) ?? views[0];
@@ -316,9 +319,11 @@ export default function App() {
               settings={settings}
               lastUpdated={lastUpdated}
               disabled={!code || eventLoading}
+              hasHighlights={highlightTeams.length > 0}
               onSelectRefresh={setRefreshSeconds}
               onRefresh={reload}
               onFollowLatestChange={setFollowLatest}
+              onHideUnhighlightedChange={setHideUnhighlighted}
               onAutoScrollViewChange={toggleAutoScrollView}
               onScrollSpeedChange={setScrollSpeed}
               onOpenAssets={() => setView('config')}
@@ -389,21 +394,7 @@ export default function App() {
                   onAdd={handleAddTeam}
                   onRemove={handleRemoveTeam}
                   onClear={handleClearTeams}
-                  statusExtra={
-                    <>
-                      <span>· {teamMatchCount} matches</span>
-                      {teamMatchCount > 0 ? (
-                        <label className="teamsearch__toggle">
-                          <input
-                            type="checkbox"
-                            checked={onlyHighlighted}
-                            onChange={(changeEvent) => setOnlyHighlighted(changeEvent.target.checked)}
-                          />
-                          Only these
-                        </label>
-                      ) : null}
-                    </>
-                  }
+                  statusExtra={<span>· {teamMatchCount} matches</span>}
                 />
               ) : null}
             </header>
@@ -435,8 +426,8 @@ export default function App() {
               >
                 <RankingIcon />
                 Ranking
-                {rankedTeams.length > 0 ? (
-                  <span className="schedule__tab-count">{rankedTeams.length}</span>
+                {visibleTeams.length > 0 ? (
+                  <span className="schedule__tab-count">{visibleTeams.length}</span>
                 ) : null}
               </button>
               <button
@@ -459,25 +450,40 @@ export default function App() {
               ) : null}
 
               {leftView === 'ranking' && event ? (
-                <TeamList
-                  teams={rankedTeams}
-                  highlightTeams={highlightTeams}
-                  assets={assets}
-                  onToggleTeam={handleToggleTeam}
-                />
+                hidingOthers && visibleTeams.length === 0 && rankedTeams.length > 0 ? (
+                  <p className="empty">
+                    No highlighted team is in this event’s ranking. Turn off “Only highlighted
+                    teams” in settings to see everyone.
+                  </p>
+                ) : (
+                  <TeamList
+                    teams={visibleTeams}
+                    highlightTeams={highlightTeams}
+                    assets={assets}
+                    onToggleTeam={handleToggleTeam}
+                  />
+                )
               ) : null}
 
               {leftView === 'predict' && event ? (
-                <PredictRanking
-                  teams={rankedTeams}
-                  views={views}
-                  highlightTeams={highlightTeams}
-                  assets={assets}
-                  onToggleTeam={handleToggleTeam}
-                />
+                hidingOthers && visibleTeams.length === 0 && rankedTeams.length > 0 ? (
+                  <p className="empty">
+                    No highlighted team is in the prediction. Turn off “Only highlighted teams” in
+                    settings to see everyone.
+                  </p>
+                ) : (
+                  <PredictRanking
+                    teams={rankedTeams}
+                    views={views}
+                    filterTo={hidingOthers ? highlightSet : null}
+                    highlightTeams={highlightTeams}
+                    assets={assets}
+                    onToggleTeam={handleToggleTeam}
+                  />
+                )
               ) : null}
 
-              {leftView === 'matches' && event && !(onlyHighlighted && visibleViews.length === 0) ? (
+              {leftView === 'matches' && event && !(hidingOthers && visibleViews.length === 0) ? (
                 <MatchList
                   views={visibleViews}
                   selectedId={matchId}
@@ -488,14 +494,10 @@ export default function App() {
                   onSelect={selectMatch}
                 />
               ) : null}
-              {leftView === 'matches' &&
-              onlyHighlighted &&
-              highlightTeams.length > 0 &&
-              event &&
-              visibleViews.length === 0 ? (
+              {leftView === 'matches' && hidingOthers && event && visibleViews.length === 0 ? (
                 <p className="empty">
-                  No matches for the highlighted teams at this event. Untick “Only these” to see the
-                  full schedule.
+                  No matches for the highlighted teams at this event. Turn off “Only highlighted
+                  teams” in settings to see the full schedule.
                 </p>
               ) : null}
             </div>

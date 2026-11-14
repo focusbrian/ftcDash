@@ -109,8 +109,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Team highlight:** the search box under the event header matches a team by number *or* name
   (exact number, then number prefix, then name/school). Picking a team adds it as a chip, and you can
   keep adding teams — each chip has its own × and the ✕ at the end of the box clears them all. Every
-  match containing any highlighted team is highlighted, those teams' numbers turn orange on the cards
-  and in the alliance list, and “Only these” narrows the schedule to matches with at least one of them.
+  match containing any highlighted team is highlighted, and those teams' numbers turn orange on the
+  cards and in the alliance list. **Only highlighted teams** in the settings menu narrows the schedule,
+  the ranking and the prediction to just those — the tab counts follow the filter, and with nothing
+  highlighted it leaves every list complete.
 - **Click a team to highlight:** in the alliance cards on the right, clicking a team row adds that
   team to the highlights (and clicking it again removes it), so you can build a list straight from
   the match you are looking at without going back to the search box.
@@ -140,6 +142,8 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
     the tab is hidden. “Refresh now” forces an immediate update.
   - **Follow latest result** keeps the most recently played match open in the detail panel, including
     as new scores arrive on a refresh. Picking a match by hand turns it back off.
+  - **Only highlighted teams** hides every match, ranking row and prediction that does not involve a
+    team you highlighted in the search box, and the tab counts follow.
   - **Auto-scroll** picks which of the left column's lists take part — Matches, Ranking and Predict,
     any combination. The chosen list scrolls itself, rests a moment at the end, then moves to the
     next one in the order above and starts again from the top, so an unattended screen works through

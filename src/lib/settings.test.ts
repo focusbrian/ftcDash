@@ -46,6 +46,12 @@ describe('parseSettings', () => {
     expect(parseSettings(JSON.stringify({ followLatest: 'yes' }))).toEqual(DEFAULT_SETTINGS);
   });
 
+  it('reads the hide-unhighlighted flag, defaulting to showing everything', () => {
+    expect(parseSettings(JSON.stringify({ hideUnhighlighted: true })).hideUnhighlighted).toBe(true);
+    expect(parseSettings(JSON.stringify({ hideUnhighlighted: 'true' }))).toEqual(DEFAULT_SETTINGS);
+    expect(DEFAULT_SETTINGS.hideUnhighlighted).toBe(false);
+  });
+
   it('keeps known auto-scroll views in tab order and drops anything else', () => {
     expect(
       parseSettings(JSON.stringify({ autoScrollViews: ['predict', 'matches', 'bogus', 'matches'] }))

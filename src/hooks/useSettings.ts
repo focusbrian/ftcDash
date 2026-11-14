@@ -12,6 +12,7 @@ export interface SettingsState {
   settings: AppSettings;
   setRefreshSeconds: (seconds: number) => void;
   setFollowLatest: (enabled: boolean) => void;
+  setHideUnhighlighted: (enabled: boolean) => void;
   /** Adds or removes a list from the auto-scroll cycle, keeping tab order. */
   toggleAutoScrollView: (view: AutoScrollView, enabled: boolean) => void;
   setScrollSpeed: (speed: number) => void;
@@ -38,6 +39,11 @@ export function useSettings(): SettingsState {
     [commit],
   );
 
+  const setHideUnhighlighted = useCallback(
+    (enabled: boolean) => commit({ hideUnhighlighted: enabled }),
+    [commit],
+  );
+
   const toggleAutoScrollView = useCallback((view: AutoScrollView, enabled: boolean) => {
     setSettings((current) => {
       const picked = new Set(current.autoScrollViews);
@@ -54,5 +60,12 @@ export function useSettings(): SettingsState {
 
   const setScrollSpeed = useCallback((speed: number) => commit({ scrollSpeed: speed }), [commit]);
 
-  return { settings, setRefreshSeconds, setFollowLatest, toggleAutoScrollView, setScrollSpeed };
+  return {
+    settings,
+    setRefreshSeconds,
+    setFollowLatest,
+    setHideUnhighlighted,
+    toggleAutoScrollView,
+    setScrollSpeed,
+  };
 }

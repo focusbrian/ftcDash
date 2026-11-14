@@ -3,6 +3,8 @@ export interface AppSettings {
   refreshSeconds: number;
   /** Keep the most recently played match open in the detail panel. */
   followLatest: boolean;
+  /** Left-column lists hiding everything that does not involve a highlighted team. */
+  hideUnhighlighted: boolean;
   /** Left-column lists in the auto-scroll cycle, in tab order. Empty means auto-scroll is off. */
   autoScrollViews: AutoScrollView[];
   /** Auto-scroll speed, in CSS pixels per second. */
@@ -31,6 +33,7 @@ export const SCROLL_SPEED_OPTIONS = [20, 40, 80] as const;
 export const DEFAULT_SETTINGS: AppSettings = {
   refreshSeconds: 30,
   followLatest: false,
+  hideUnhighlighted: false,
   autoScrollViews: [],
   scrollSpeed: 40,
 };
@@ -74,6 +77,10 @@ export function parseSettings(raw: string | null): AppSettings {
     refreshSeconds,
     followLatest:
       typeof record.followLatest === 'boolean' ? record.followLatest : DEFAULT_SETTINGS.followLatest,
+    hideUnhighlighted:
+      typeof record.hideUnhighlighted === 'boolean'
+        ? record.hideUnhighlighted
+        : DEFAULT_SETTINGS.hideUnhighlighted,
     autoScrollViews: parseAutoScrollViews(record.autoScrollViews),
     scrollSpeed,
   };

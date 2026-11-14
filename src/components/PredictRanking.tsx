@@ -11,8 +11,11 @@ import type { AssetStore } from '../lib/assets';
 import type { TeamStrength } from '../types';
 
 interface Props {
+  /** Every team at the event — the prediction runs over all of them, then the rows are filtered. */
   teams: readonly TeamStrength[];
   views: readonly MatchView[];
+  /** When set, only these teams are listed; ranks stay relative to the whole event. */
+  filterTo?: ReadonlySet<number> | null;
   highlightTeams: readonly number[];
   assets: AssetStore;
   onToggleTeam: (teamNumber: number) => void;
@@ -31,7 +34,14 @@ function deltaLabel(entry: TeamPrediction): string {
  * Predicted finish and remaining-schedule difficulty. Both are ordered rankings over the same event,
  * so the switch stays at the top and the row layout matches the ranking list.
  */
-export function PredictRanking({ teams, views, highlightTeams, assets, onToggleTeam }: Props) {
+export function PredictRanking({
+  teams,
+  views,
+  filterTo = null,
+  highlightTeams,
+  assets,
+  onToggleTeam,
+}: Props) {
   const [mode, setMode] = useState<Mode>('predicted');
   const highlighted = new Set(highlightTeams);
   const { hovered, pinned, show, hide, togglePin, unpin } = useTeamHover();
@@ -51,17 +61,20 @@ export function PredictRanking({ teams, views, highlightTeams, assets, onToggleT
   );
 
   const rows = useMemo(() => {
-    if (mode === 'predicted') return predictions;
-    // Hardest schedule first, then whoever has nothing left to play.
-    return [...predictions].sort((a, b) => {
-      if (a.difficultyRank !== null && b.difficultyRank !== null) {
-        return a.difficultyRank - b.difficultyRank;
-      }
-      if (a.difficultyRank !== null) return -1;
-      if (b.difficultyRank !== null) return 1;
-      return a.teamNumber - b.teamNumber;
-    });
-  }, [mode, predictions]);
+    const all =
+      mode === 'predicted'
+        ? predictions
+        : // Hardest schedule first, then whoever has nothing left to play.
+          [...predictions].sort((a, b) => {
+            if (a.difficultyRank !== null && b.difficultyRank !== null) {
+              return a.difficultyRank - b.difficultyRank;
+            }
+            if (a.difficultyRank !== null) return -1;
+            if (b.difficultyRank !== null) return 1;
+            return a.teamNumber - b.teamNumber;
+          });
+    return filterTo ? all.filter((entry) => filterTo.has(entry.teamNumber)) : all;
+  }, [mode, predictions, filterTo]);
 
   if (teams.length === 0) {
     return (
