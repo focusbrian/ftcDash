@@ -512,8 +512,8 @@ export default function App() {
               {leftView === 'ranking' && event ? (
                 hidingOthers && visibleTeams.length === 0 && rankedTeams.length > 0 ? (
                   <p className="empty">
-                    No highlighted team is in this event’s ranking. Turn off “Only highlighted
-                    teams” in settings to see everyone.
+                    No highlighted team is in this event’s ranking. Clear the filter beside the
+                    highlighted teams to see everyone.
                   </p>
                 ) : (
                   <TeamList
@@ -534,8 +534,8 @@ export default function App() {
               {leftView === 'predict' && event ? (
                 hidingOthers && visibleTeams.length === 0 && rankedTeams.length > 0 ? (
                   <p className="empty">
-                    No highlighted team is in the prediction. Turn off “Only highlighted teams” in
-                    settings to see everyone.
+                    No highlighted team is in the prediction. Clear the filter beside the highlighted
+                    teams to see everyone.
                   </p>
                 ) : (
                   <PredictRanking
@@ -562,8 +562,8 @@ export default function App() {
               ) : null}
               {leftView === 'matches' && hidingOthers && event && visibleViews.length === 0 ? (
                 <p className="empty">
-                  No matches for the highlighted teams at this event. Turn off “Only highlighted
-                  teams” in settings to see the full schedule.
+                  No matches for the highlighted teams at this event. Clear the filter beside the
+                  highlighted teams to see the full schedule.
                 </p>
               ) : null}
             </div>
