@@ -123,12 +123,15 @@ actions; alliance colors stay red/blue because they carry meaning, muted to fit 
 src/
   api/         client.ts (fetch wrapper), queries.ts (GraphQL documents), raw.ts (response types),
                normalize.ts (raw -> domain model)
-  assets/      first-logo.webp (placeholder logo for teams without one)
-  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts
+  assets/      first-logo.webp (placeholder logo), robofalcons-icon.jpg (favicon source)
+  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts
   lib/         projection.ts (OPR math), model.ts (match views), format.ts, events.ts, route.ts,
-               teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image handling)
-  components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, ConfigView
+               teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image handling),
+               settings.ts, backup.ts
+  components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, ConfigView,
+               RefreshSettings, Confetti
   types.ts     shared domain types
+public/        favicon.png, apple-touch-icon.png (served from the site root)
 .github/
   workflows/   deploy.yml (typecheck + test + build + publish to GitHub Pages)
 ```
