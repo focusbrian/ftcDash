@@ -10,6 +10,11 @@ const event: RawEvent = {
   end: '2026-01-11',
   timezone: 'America/New_York',
   hasMatches: true,
+  address: '1 Main St',
+  website: null,
+  liveStreamURL: null,
+  type: 'Qualifier',
+  fieldCount: 2,
   location: { venue: 'Gym', city: 'Boston', state: 'MA', country: 'USA' },
   teams: [
     {

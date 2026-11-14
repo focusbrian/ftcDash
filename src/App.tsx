@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigView } from './components/ConfigView';
+import { EventInfo } from './components/EventInfo';
 import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
@@ -266,6 +267,7 @@ export default function App() {
             error={eventsError}
             selectedCode={code}
             onSelect={handleSelectEvent}
+            trailing={<EventInfo event={event} />}
           />
         ) : null}
 

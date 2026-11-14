@@ -67,6 +67,11 @@ query EventData($season: Int!, $code: String!) {
     end
     timezone
     hasMatches
+    address
+    website
+    liveStreamURL
+    type
+    fieldCount
     location { venue city state country }
     matches {
       id

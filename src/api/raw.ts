@@ -65,6 +65,11 @@ export interface RawEvent {
   end: string;
   timezone: string;
   hasMatches: boolean;
+  address: string | null;
+  website: string | null;
+  liveStreamURL: string | null;
+  type: string;
+  fieldCount: number | null;
   location: { venue: string | null; city: string; state: string; country: string };
   matches: RawMatch[];
   teams: RawEventParticipation[];

@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { filterEvents, sortEventsForPicker } from '../lib/events';
 import { fmtDate } from '../lib/format';
 import type { EventSummary } from '../types';
@@ -14,6 +15,8 @@ interface Props {
   error: string | null;
   selectedCode: string | null;
   onSelect: (code: string) => void;
+  /** Rendered beside the event selection — the info button. */
+  trailing?: ReactNode;
 }
 
 function seasonLabel(season: number): string {
@@ -42,6 +45,7 @@ export function EventPicker({
   error,
   selectedCode,
   onSelect,
+  trailing,
 }: Props) {
   const [query, setQuery] = useState('');
   // Narrow screens show the fields in a drop-down menu instead of inline in the header.
@@ -155,6 +159,8 @@ export function EventPicker({
         ) : null}
         {error ? <p className="picker__hint picker__hint--error">{error}</p> : null}
       </div>
+
+      {trailing}
     </div>
   );
 }

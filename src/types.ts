@@ -70,6 +70,13 @@ export interface EventData {
   start: string;
   end: string;
   timezone: string;
+  /** Street address as published by FIRST, when there is one. */
+  address: string | null;
+  website: string | null;
+  liveStreamUrl: string | null;
+  /** Qualifier, LeagueMeet, Championship, … */
+  type: string;
+  fieldCount: number | null;
   location: EventLocation;
   teams: Map<number, TeamStrength>;
   matches: Match[];
