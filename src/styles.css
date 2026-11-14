@@ -74,6 +74,7 @@ select {
   border-bottom: 1px solid var(--line);
   background: rgba(23, 24, 26, 0.82);
   backdrop-filter: blur(10px);
+  position: relative;
   z-index: 5;
 }
 
@@ -227,15 +228,29 @@ select {
   grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
 }
 
+/* Shown only on narrow screens, where the two panes are stacked instead of side by side. */
+.panes {
+  display: none;
+}
+
 /* ---------- picker ---------- */
 
 .picker {
+  position: relative;
+  flex: 1 1 520px;
+  max-width: 900px;
+}
+
+.picker__fields {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 10px;
-  flex: 1 1 520px;
-  max-width: 900px;
+}
+
+/* Collapsed event menu — only used by the phone layout. */
+.picker__toggle {
+  display: none;
 }
 
 .field {
@@ -1715,5 +1730,253 @@ select {
 
   .lineup--group .lineup__robot + .lineup__robot {
     margin-left: -1.5rem;
+  }
+}
+
+/* ---------- phones: one pane at a time ---------- */
+
+@media (max-width: 720px) {
+  .topbar {
+    align-items: flex-start;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 10px;
+    gap: 6px 10px;
+  }
+
+  .brand {
+    order: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    padding-right: 0;
+  }
+
+  .brand__mark {
+    font-size: 19px;
+  }
+
+  .brand__sub {
+    display: none;
+  }
+
+  .brand__credit {
+    margin-top: 0;
+    font-size: 10px;
+  }
+
+  .topbar__assets {
+    display: none;
+  }
+
+  .topbar__actions {
+    order: 3;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Shares the second row with the action buttons so the header stays two lines tall. */
+  .picker {
+    order: 2;
+    flex: 1 1 120px;
+    min-width: 0;
+    max-width: none;
+    position: static;
+  }
+
+  .picker__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 40px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-raised);
+    color: var(--text);
+    font-weight: 600;
+    text-align: left;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .picker__toggle-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+  }
+
+  .picker__toggle-icon {
+    display: inline-flex;
+    color: var(--text-dim);
+    transition: transform 140ms ease;
+  }
+
+  .picker--open .picker__toggle {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+  }
+
+  .picker--open .picker__toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .picker__fields {
+    display: none;
+  }
+
+  /* The menu floats over the dashboard so opening it never shifts the layout. */
+  .picker--open .picker__fields {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--bg-panel);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .picker--open .field--grow,
+  .picker--open .field--wide {
+    flex: 0 0 auto;
+  }
+
+  /* 16px stops iOS from zooming the page when a control takes focus. */
+  .field__control,
+  .teamsearch__input {
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .button,
+  .iconbutton {
+    height: 40px;
+  }
+
+  .iconbutton {
+    width: 40px;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .workspace--schedule .detail-panel,
+  .workspace--match .schedule {
+    display: none;
+  }
+
+  .panes {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(30, 32, 35, 0.6);
+  }
+
+  .panes__tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 0;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .panes__tab--active {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  .panes__count {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+  }
+
+  .schedule {
+    border-right: none;
+    border-bottom: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .schedule__head {
+    padding: 12px 12px 10px;
+  }
+
+  /* The pane scrolls as a whole, so the list must not become a nested scroller. */
+  .schedule__list {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 10px 12px calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .team__hit {
+    padding: 11px 6px;
+  }
+
+  .card {
+    padding: 10px 12px 11px;
+  }
+
+  .detail {
+    padding: 14px 12px calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .detail__head h2 {
+    font-size: 20px;
+  }
+
+  .detail__meta {
+    gap: 14px;
+    text-align: left;
+  }
+
+  .verdict {
+    padding: 12px 14px 14px;
+  }
+
+  .config {
+    padding: calc(14px + env(safe-area-inset-top)) 12px calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .config__head h1 {
+    font-size: 20px;
+  }
+}
+
+/* Touch screens have no hover state, and tapping a team already toggles its highlight. */
+@media (hover: none) {
+  .teamcard {
+    display: none;
   }
 }

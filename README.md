@@ -96,6 +96,19 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, and `#/config`
   opens the asset configuration. The season and event pickers stay in sync with the URL.
 
+### On a phone
+
+Below 720px wide the two columns become one pane at a time, with a **Schedule / Match** switch under
+the header: tapping a match in the schedule opens it and switches to the Match pane, and the switch
+takes you back. The schedule pane scrolls as a single column, so the event header and team search
+scroll away instead of being pinned above a short list.
+
+The event picker collapses into a button in the header showing the current event code and name;
+tapping it opens a menu with the season, event filter, and event list, which closes on a selection,
+an outside tap, or `Esc`. “Team assets” is hidden at that width, so the configuration page is only
+reachable on a wider screen. Fields grow to 40px tall and 16px text so the browser does not zoom when
+one takes focus, and the layout honours the notch and home-bar safe areas.
+
 ## Configuration page (`#/config`, “Team assets” button)
 
 - Enter a team number (or search the loaded event by name), then upload a logo and a photo of the

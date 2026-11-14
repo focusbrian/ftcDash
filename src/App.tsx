@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigView } from './components/ConfigView';
 import { EventPicker } from './components/EventPicker';
 import { MatchDetail } from './components/MatchDetail';
@@ -11,12 +11,15 @@ import { useSettings } from './hooks/useSettings';
 import { useTeamAssets } from './hooks/useTeamAssets';
 import { pickDefaultEvent } from './lib/events';
 import { latestPlayedMatchId } from './api/normalize';
-import { fmtDateRange } from './lib/format';
+import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
 
 const EARLIEST_SEASON = 2019;
+
+/** Which of the two stacked panes a narrow screen shows; ignored on wide layouts. */
+type Pane = 'schedule' | 'match';
 
 export default function App() {
   const initialRoute = useMemo(() => parseRoute(window.location.hash), []);
@@ -24,6 +27,7 @@ export default function App() {
   const [season, setSeason] = useState(initialRoute.season);
   const [code, setCode] = useState<string | null>(initialRoute.code);
   const [matchId, setMatchId] = useState<number | null>(initialRoute.matchId);
+  const [pane, setPane] = useState<Pane>(initialRoute.matchId !== null ? 'match' : 'schedule');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
   const [onlyHighlighted, setOnlyHighlighted] = useState(false);
 
@@ -96,6 +100,7 @@ export default function App() {
       setSeason(route.season);
       setCode(route.code);
       setMatchId(route.matchId);
+      if (route.matchId !== null) setPane('match');
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -131,11 +136,22 @@ export default function App() {
     [views, matchId],
   );
 
+  const detailPanelRef = useRef<HTMLElement | null>(null);
+  const selectedMatchId = selectedView?.match.id ?? null;
+
+  // Opening a different match should start at the top of its detail, not inherit the last scroll.
+  useEffect(() => {
+    const panel = detailPanelRef.current;
+    if (panel) panel.scrollTop = 0;
+  }, [selectedMatchId]);
+
   const latestPlayedId = useMemo(() => latestPlayedMatchId(event?.matches ?? []), [event]);
 
   const selectMatch = useCallback(
     (id: number) => {
       setMatchId(id);
+      // On a phone the two panes are stacked, so opening a match has to bring it into view.
+      setPane('match');
       // Picking a match by hand means the viewer no longer wants to follow the newest result.
       if (settings.followLatest) setFollowLatest(false);
     },
@@ -246,7 +262,11 @@ export default function App() {
               >
                 {eventLoading ? 'Refreshing…' : 'Refresh'}
               </button>
-              <button type="button" className="button" onClick={() => setView('config')}>
+              <button
+                type="button"
+                className="button topbar__assets"
+                onClick={() => setView('config')}
+              >
                 Team assets
               </button>
               <RefreshSettings
@@ -272,7 +292,29 @@ export default function App() {
           onBack={() => setView('dashboard')}
         />
       ) : (
-        <main className="workspace">
+        <main className={`workspace workspace--${pane}`}>
+          <div className="panes" role="group" aria-label="Schedule or match view">
+            <button
+              type="button"
+              className={pane === 'schedule' ? 'panes__tab panes__tab--active' : 'panes__tab'}
+              aria-pressed={pane === 'schedule'}
+              onClick={() => setPane('schedule')}
+            >
+              Schedule
+              {visibleViews.length > 0 ? (
+                <span className="panes__count">{visibleViews.length}</span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className={pane === 'match' ? 'panes__tab panes__tab--active' : 'panes__tab'}
+              aria-pressed={pane === 'match'}
+              onClick={() => setPane('match')}
+            >
+              {selectedView ? `Match ${matchShortLabel(selectedView.match)}` : 'Match'}
+            </button>
+          </div>
+
           <section className="schedule">
             <header className="schedule__head">
               <h1>{event?.name ?? (code ? 'Loading event…' : 'No event selected')}</h1>
@@ -364,7 +406,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="detail-panel">
+          <section className="detail-panel" ref={detailPanelRef}>
             <MatchDetail
               view={selectedView}
               event={event}
