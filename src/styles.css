@@ -806,7 +806,7 @@ select {
 
 .card__record--auto,
 .card__record--teleop {
-  font-size: 10px;
+  font-size: 11px;
   text-shadow: none;
 }
 
@@ -815,7 +815,7 @@ select {
 }
 
 .card__record--teleop {
-  color: #7ed191;
+  color: #4ade80;
 }
 
 .card__side {
