@@ -108,3 +108,22 @@ query SeasonEvents($season: Int!, $limit: Int!) {
     hasMatches
   }
 }`;
+
+/** Every event one team attended in a season — powers searching the picker by team number. */
+export const TEAM_EVENTS_QUERY = `
+query TeamEvents($season: Int!, $number: Int!) {
+  teamByNumber(number: $number) {
+    number
+    name
+    events(season: $season) {
+      event {
+        code
+        name
+        start
+        end
+        type
+        hasMatches
+      }
+    }
+  }
+}`;

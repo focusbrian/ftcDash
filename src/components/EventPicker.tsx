@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTeamEventLookup } from '../hooks/useTeamEventLookup';
 import { filterEvents, sortEventsForPicker } from '../lib/events';
 import { fmtDate } from '../lib/format';
 import type { EventSummary } from '../types';
@@ -54,10 +55,45 @@ export function EventPicker({
   const panelId = useId();
 
   const sorted = useMemo(() => sortEventsForPicker(events), [events]);
-  const filtered = useMemo(() => filterEvents(sorted, query), [sorted, query]);
+  const teamLookup = useTeamEventLookup(season, query);
+  // A team number replaces the text filter with that team's events, when it has any this season.
+  const teamCodes = useMemo(
+    () =>
+      teamLookup.status === 'ready' && teamLookup.codes.length > 0
+        ? new Set(teamLookup.codes)
+        : null,
+    [teamLookup.status, teamLookup.codes],
+  );
+  const filtered = useMemo(() => {
+    // A team number is never matched as text: show that team's events, or everything while the
+    // lookup is in flight or when the team has none.
+    if (teamLookup.teamNumber !== null) {
+      return teamCodes ? sorted.filter((event) => teamCodes.has(event.code)) : sorted;
+    }
+    return filterEvents(sorted, query);
+  }, [sorted, query, teamLookup.teamNumber, teamCodes]);
   const visible = filtered.slice(0, MAX_OPTIONS);
   const selected = events.find((event) => event.code === selectedCode) ?? null;
   const truncated = filtered.length > visible.length;
+
+  const teamHint = (() => {
+    const number = teamLookup.teamNumber;
+    if (number === null) return null;
+    if (teamLookup.status === 'loading') return `Looking up team ${number}…`;
+    if (teamLookup.status === 'error') {
+      return `Could not look up team ${number} — showing every event.`;
+    }
+    const label = teamLookup.teamName
+      ? `${teamLookup.teamName} (${number})`
+      : `Team ${number}`;
+    if (teamLookup.codes.length === 0) {
+      return `${label} has no events this season — showing every event.`;
+    }
+    if (!teamCodes) {
+      return `${label} played ${teamLookup.codes.length} event${teamLookup.codes.length === 1 ? '' : 's'}, none of them in this season's list.`;
+    }
+    return `${label} — ${teamLookup.codes.length} event${teamLookup.codes.length === 1 ? '' : 's'} this season.`;
+  })();
 
   useEffect(() => {
     if (!open) return;
@@ -157,6 +193,7 @@ export function EventPicker({
             Showing {visible.length} of {filtered.length} events — keep typing to narrow it down.
           </p>
         ) : null}
+        {teamHint ? <p className="picker__hint">{teamHint}</p> : null}
         {error ? <p className="picker__hint picker__hint--error">{error}</p> : null}
       </div>
 

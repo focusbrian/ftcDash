@@ -53,3 +53,14 @@ export function filterEvents(events: EventSummary[], query: string): EventSummar
     return tokens.every((token) => haystack.includes(token));
   });
 }
+
+/**
+ * A query that is nothing but a team number ("10136", "#10136"), which the picker answers with that
+ * team's events. Two digits minimum so the lookup doesn't fire on the first keystroke of a year.
+ */
+export function teamNumberQuery(query: string): number | null {
+  const match = /^#?\s*(\d{2,5})$/.exec(query.trim());
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}

@@ -73,6 +73,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   split with average ranking points and matches played. Teams that are not ranked yet fall in below the
   ranked ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
   hovering a row shows the same team summary card.
+- **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
+  team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
+  events it attended that season, showing the team's name and event count underneath; a number with no
+  events falls back to the full list.
 - **Event info:** the ⓘ button beside the event picker opens a card with the event type, dates, venue,
   street address, city and time zone, plus shortcuts for directions (Google Maps), the event's FTC
   Scout page, and its own website or livestream when FIRST publishes one. It closes on Escape, an

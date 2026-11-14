@@ -83,3 +83,9 @@ export interface RawEventSummary {
   type: string;
   hasMatches: boolean;
 }
+
+export interface RawTeamSeason {
+  number: number;
+  name: string;
+  events: { event: RawEventSummary }[];
+}

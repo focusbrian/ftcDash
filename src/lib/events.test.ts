@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterEvents, pickDefaultEvent, sortEventsForPicker } from './events';
+import { filterEvents, pickDefaultEvent, sortEventsForPicker, teamNumberQuery } from './events';
 import { buildHash, parseRoute } from './route';
 import type { EventSummary } from '../types';
 
@@ -95,5 +95,20 @@ describe('route', () => {
   it('routes to the config page', () => {
     expect(buildHash({ view: 'config', season: 2026, code: 'USCMP', matchId: 3 })).toBe('#/config');
     expect(parseRoute('#/config').view).toBe('config');
+  });
+});
+
+describe('teamNumberQuery', () => {
+  it('reads a bare team number, with an optional hash', () => {
+    expect(teamNumberQuery('10136')).toBe(10136);
+    expect(teamNumberQuery('  #21036 ')).toBe(21036);
+  });
+
+  it('ignores anything that is not just a team number', () => {
+    expect(teamNumberQuery('')).toBeNull();
+    expect(teamNumberQuery('7')).toBeNull();
+    expect(teamNumberQuery('10136 qualifier')).toBeNull();
+    expect(teamNumberQuery('USCMP')).toBeNull();
+    expect(teamNumberQuery('123456')).toBeNull();
   });
 });
