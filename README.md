@@ -64,6 +64,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Schedule (left):** one card per match, grouped into Qualification / Playoff / Semifinal / Final.
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.
+- **Record stars:** the match holding the event's highest single-alliance score carries a gold ★ just
+  left of its `FINAL` chip; the highest autonomous and highest teleop runs get smaller blue and green
+  ★s beside it. Ties are all starred, projected matches never are, and seasons that recorded a single
+  alliance total without an auto/teleop split don't earn the split stars. Hover a star for the value.
 - **Team ranking (left):** the Matches / Ranking switch above the list swaps the schedule for every
   team at the event in official rank order — rank, number and name, OPR total, then the auton/teleop
   split with average ranking points and matches played. Teams that are not ranked yet fall in below the

@@ -17,6 +17,7 @@ import { fmtDateRange, matchShortLabel } from './lib/format';
 import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { rankTeams } from './lib/teams';
+import { eventRecords } from './lib/records';
 import { buildHash, defaultSeason, parseRoute, type RouteView } from './lib/route';
 
 const EARLIEST_SEASON = 2019;
@@ -134,6 +135,9 @@ export default function App() {
   }, [views, highlightSet, hasHighlightedTeam]);
 
   const rankedTeams = useMemo(() => rankTeams(eventTeams), [eventTeams]);
+
+  // Event-wide records, so a filtered list still stars the true high scores.
+  const records = useMemo(() => eventRecords(views), [views]);
 
   const visibleViews = useMemo(() => {
     if (!onlyHighlighted || highlightSet.size === 0) return views;
@@ -455,6 +459,7 @@ export default function App() {
                   highlightTeams={highlightTeams}
                   timezone={event.timezone}
                   assets={assets}
+                  records={records}
                   onSelect={selectMatch}
                 />
               ) : null}

@@ -4,6 +4,7 @@ import { TeamSummary } from './TeamSummary';
 import { useTeamHover } from '../hooks/useTeamHover';
 import { fmtPoints, fmtTime, groupByLevel, matchShortLabel, singleAllianceLabel } from '../lib/format';
 import type { AssetStore } from '../lib/assets';
+import type { EventRecords } from '../lib/records';
 import type { MatchView, SideView } from '../lib/model';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   highlightTeams: readonly number[];
   timezone: string;
   assets: AssetStore;
+  records: EventRecords;
   onSelect: (matchId: number) => void;
 }
 
@@ -30,6 +32,7 @@ export function MatchList({
   highlightTeams,
   timezone,
   assets,
+  records,
   onSelect,
 }: Props) {
   const groups = useMemo(() => groupByLevel(views, (view) => view.match.level), [views]);
@@ -60,6 +63,10 @@ export function MatchList({
               view.sides.some((side) =>
                 side.entries.some((entry) => highlightSet.has(entry.teamNumber)),
               );
+            const isHighTotal = records.total.matches.has(view.match.id);
+            const isHighAuto = records.auto.matches.has(view.match.id);
+            const isHighTeleop = records.teleop.matches.has(view.match.id);
+            const hasRecord = isHighTotal || isHighAuto || isHighTeleop;
 
             return (
               <button
@@ -77,6 +84,40 @@ export function MatchList({
                   <span className="card__time">
                     {fmtTime(view.match.scheduledStartTime, timezone)}
                   </span>
+                  {hasRecord ? (
+                    <span className="card__records">
+                      {isHighTotal ? (
+                        <span
+                          className="card__record card__record--total"
+                          role="img"
+                          aria-label="Highest alliance score at this event"
+                          title={`Highest alliance score at this event: ${fmtPoints(records.total.value)}`}
+                        >
+                          ★
+                        </span>
+                      ) : null}
+                      {isHighAuto ? (
+                        <span
+                          className="card__record card__record--auto"
+                          role="img"
+                          aria-label="Highest autonomous score at this event"
+                          title={`Highest autonomous score at this event: ${fmtPoints(records.auto.value)}`}
+                        >
+                          ★
+                        </span>
+                      ) : null}
+                      {isHighTeleop ? (
+                        <span
+                          className="card__record card__record--teleop"
+                          role="img"
+                          aria-label="Highest teleop score at this event"
+                          title={`Highest teleop score at this event: ${fmtPoints(records.teleop.value)}`}
+                        >
+                          ★
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : null}
                   {view.projected ? (
                     <span className="chip chip--proj" title="Projected from team OPR">
                       PROJ

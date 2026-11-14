@@ -790,6 +790,34 @@ select {
   border: 1px solid var(--accent);
 }
 
+/* Event records: gold for the high score, then quieter stars for auton and teleop. */
+.card__records {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.card__record {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--warn);
+  text-shadow: 0 0 9px rgba(255, 200, 97, 0.5);
+}
+
+.card__record--auto,
+.card__record--teleop {
+  font-size: 10px;
+  text-shadow: none;
+}
+
+.card__record--auto {
+  color: #6fb3f2;
+}
+
+.card__record--teleop {
+  color: #7ed191;
+}
+
 .card__side {
   display: flex;
   align-items: center;
