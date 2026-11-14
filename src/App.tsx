@@ -177,6 +177,14 @@ export default function App() {
     setHighlightTeams((current) => current.filter((value) => value !== teamNumber));
   }, []);
 
+  const handleToggleTeam = useCallback((teamNumber: number) => {
+    setHighlightTeams((current) =>
+      current.includes(teamNumber)
+        ? current.filter((value) => value !== teamNumber)
+        : [...current, teamNumber],
+    );
+  }, []);
+
   const handleClearTeams = useCallback(() => {
     setHighlightTeams([]);
     setOnlyHighlighted(false);
@@ -364,6 +372,7 @@ export default function App() {
               error={eventError}
               assets={assets}
               highlightTeams={highlightTeams}
+              onToggleTeam={handleToggleTeam}
               onJumpToNext={jumpToNext}
             />
           </section>

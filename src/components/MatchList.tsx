@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import firstLogo from '../assets/first-logo.webp';
+import { TeamSummary } from './TeamSummary';
+import { useTeamHover } from '../hooks/useTeamHover';
 import { fmtPoints, fmtTime, groupByLevel, matchShortLabel, singleAllianceLabel } from '../lib/format';
 import type { AssetStore } from '../lib/assets';
 import type { MatchView, SideView } from '../lib/model';
@@ -32,6 +34,7 @@ export function MatchList({
 }: Props) {
   const groups = useMemo(() => groupByLevel(views, (view) => view.match.level), [views]);
   const highlightSet = useMemo(() => new Set(highlightTeams), [highlightTeams]);
+  const { hovered, show, hide } = useTeamHover();
 
   if (views.length === 0) {
     return (
@@ -100,6 +103,8 @@ export function MatchList({
                                   ? 'card__team card__team--on'
                                   : 'card__team'
                               }
+                              onMouseEnter={(event) => show(entry.strength, event.currentTarget)}
+                              onMouseLeave={hide}
                             >
                               {logo ? (
                                 <img
@@ -137,6 +142,7 @@ export function MatchList({
           })}
         </section>
       ))}
+      <TeamSummary state={hovered} />
     </div>
   );
 }

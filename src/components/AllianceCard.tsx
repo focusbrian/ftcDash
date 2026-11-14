@@ -1,6 +1,8 @@
 import firstLogo from '../assets/first-logo.webp';
 import { Confetti } from './Confetti';
+import { TeamSummary } from './TeamSummary';
 import { fmtPoints } from '../lib/format';
+import { useTeamHover } from '../hooks/useTeamHover';
 import type { AssetStore } from '../lib/assets';
 import type { SideView } from '../lib/model';
 
@@ -9,6 +11,7 @@ interface Props {
   projected: boolean;
   assets: AssetStore;
   highlightTeams: readonly number[];
+  onToggleTeam: (teamNumber: number) => void;
   celebrate?: boolean;
 }
 
@@ -21,11 +24,19 @@ function Stat({ label, value, total }: { label: string; value: string; total?: b
   );
 }
 
-export function AllianceCard({ side, projected, assets, highlightTeams, celebrate }: Props) {
+export function AllianceCard({
+  side,
+  projected,
+  assets,
+  highlightTeams,
+  onToggleTeam,
+  celebrate,
+}: Props) {
   // Remote seasons recorded alliance totals without an auto/teleop breakdown.
   const breakdownMissing = !projected && side.total > 0 && side.auto === 0 && side.teleop === 0;
   const digits = projected ? 1 : 0;
   const highlighted = new Set(highlightTeams);
+  const { hovered, show, hide } = useTeamHover();
 
   return (
     <article className={`alliance alliance--${side.alliance.toLowerCase()}`}>
@@ -47,54 +58,68 @@ export function AllianceCard({ side, projected, assets, highlightTeams, celebrat
 
           return (
             <li key={`${entry.teamNumber}-${entry.station}`} className={classes.join(' ')}>
-              <span className="team__num">
-                {logo ? (
-                  <img className="team__logo" src={logo} alt={`Team ${entry.teamNumber} logo`} />
-                ) : (
-                  <img
-                    className="team__logo team__logo--placeholder"
-                    src={firstLogo}
-                    alt=""
-                    title="No team logo yet — showing the FIRST logo"
-                  />
-                )}
-                {entry.teamNumber}
-              </span>
-              <span className="team__name">{entry.name || 'Unknown team'}</span>
-              <span className="team__flags">
-                {entry.strength?.rank ? (
-                  <span className="team__rank" title="Event rank">
-                    #{entry.strength.rank}
-                  </span>
-                ) : null}
-                {entry.surrogate ? (
-                  <span
-                    className="team__flag"
-                    title="Surrogate — score does not count for this team"
-                  >
-                    SUR
-                  </span>
-                ) : null}
-                {entry.dq ? (
-                  <span className="team__flag" title="Disqualified">
-                    DQ
-                  </span>
-                ) : null}
-                {entry.noShow ? (
-                  <span className="team__flag" title="No show">
-                    DNS
-                  </span>
-                ) : null}
-              </span>
-              <span className="team__opr" title="This team's OPR: auto + teleop">
-                {entry.contribution
-                  ? `OPR A ${fmtPoints(entry.contribution.auto)} · T ${fmtPoints(entry.contribution.teleop)}`
-                  : 'no OPR'}
-              </span>
+              <button
+                type="button"
+                className="team__hit"
+                aria-pressed={highlighted.has(entry.teamNumber)}
+                title={`Highlight team ${entry.teamNumber}`}
+                onClick={() => onToggleTeam(entry.teamNumber)}
+                onMouseEnter={(event) => show(entry.strength, event.currentTarget)}
+                onMouseLeave={hide}
+                onFocus={(event) => show(entry.strength, event.currentTarget)}
+                onBlur={hide}
+              >
+                <span className="team__num">
+                  {logo ? (
+                    <img className="team__logo" src={logo} alt={`Team ${entry.teamNumber} logo`} />
+                  ) : (
+                    <img
+                      className="team__logo team__logo--placeholder"
+                      src={firstLogo}
+                      alt=""
+                      title="No team logo yet — showing the FIRST logo"
+                    />
+                  )}
+                  {entry.teamNumber}
+                </span>
+                <span className="team__name">{entry.name || 'Unknown team'}</span>
+                <span className="team__flags">
+                  {entry.strength?.rank ? (
+                    <span className="team__rank" title="Event rank">
+                      #{entry.strength.rank}
+                    </span>
+                  ) : null}
+                  {entry.surrogate ? (
+                    <span
+                      className="team__flag"
+                      title="Surrogate — score does not count for this team"
+                    >
+                      SUR
+                    </span>
+                  ) : null}
+                  {entry.dq ? (
+                    <span className="team__flag" title="Disqualified">
+                      DQ
+                    </span>
+                  ) : null}
+                  {entry.noShow ? (
+                    <span className="team__flag" title="No show">
+                      DNS
+                    </span>
+                  ) : null}
+                </span>
+                <span className="team__opr" title="This team's OPR: auto + teleop">
+                  {entry.contribution
+                    ? `OPR A ${fmtPoints(entry.contribution.auto)} · T ${fmtPoints(entry.contribution.teleop)}`
+                    : 'no OPR'}
+                </span>
+              </button>
             </li>
           );
         })}
       </ul>
+
+      <TeamSummary state={hovered} hint="Click to highlight this team’s matches" />
 
       <dl className="alliance__splits">
         <Stat label="Auto" value={breakdownMissing ? '—' : fmtPoints(side.auto, digits)} />

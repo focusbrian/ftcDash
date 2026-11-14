@@ -69,6 +69,12 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   keep adding teams — each chip has its own × and the ✕ at the end of the box clears them all. Every
   match containing any highlighted team is highlighted, those teams' numbers turn orange on the cards
   and in the alliance list, and “Only these” narrows the schedule to matches with at least one of them.
+- **Click a team to highlight:** in the alliance cards on the right, clicking a team row adds that
+  team to the highlights (and clicking it again removes it), so you can build a list straight from
+  the match you are looking at without going back to the search box.
+- **Team summary on hover:** hovering — or keyboard-focusing — a team in either the schedule or an
+  alliance card pops up a small summary beside the row with its event rank, matches played, OPR
+  auto/teleop/total, and average ranking points.
 - **Detail (right):** scheduled time and status, the scoreline (real or projected), a Red/Blue win
   probability bar for projections, then per-alliance cards with the auto/teleop/total split and each
   team's OPR contribution, event rank, and surrogate/DQ/no-show flags.
