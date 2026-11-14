@@ -176,6 +176,12 @@ export default function App() {
   /** The highlight filter only bites once there is something to keep. */
   const hidingOthers = settings.hideUnhighlighted && highlightSet.size > 0;
 
+  /**
+   * Filtering already leaves nothing but highlighted teams in the lists, so the orange accent there
+   * would only add noise. The match view still highlights: it is where you read one line-up at a time.
+   */
+  const accentTeams = hidingOthers ? [] : highlightTeams;
+
   const visibleViews = useMemo(() => {
     if (!hidingOthers) return views;
     return views.filter(hasHighlightedTeam);
@@ -460,7 +466,7 @@ export default function App() {
                 ) : (
                   <TeamList
                     teams={visibleTeams}
-                    highlightTeams={highlightTeams}
+                    highlightTeams={accentTeams}
                     assets={assets}
                     onToggleTeam={handleToggleTeam}
                   />
@@ -478,7 +484,7 @@ export default function App() {
                     teams={rankedTeams}
                     views={views}
                     filterTo={hidingOthers ? highlightSet : null}
-                    highlightTeams={highlightTeams}
+                    highlightTeams={accentTeams}
                     assets={assets}
                     onToggleTeam={handleToggleTeam}
                   />
@@ -489,7 +495,7 @@ export default function App() {
                 <MatchList
                   views={visibleViews}
                   selectedId={matchId}
-                  highlightTeams={highlightTeams}
+                  highlightTeams={accentTeams}
                   timezone={event.timezone}
                   assets={assets}
                   records={records}
