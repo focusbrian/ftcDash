@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySeasonOpr, rankTeams, sortTeamsBy } from './teams';
+import { applySeasonOpr, oprPositions, rankTeams, sortTeamsBy } from './teams';
 import type { TeamStrength } from '../types';
 
 function team(
@@ -71,6 +71,23 @@ describe('sortTeamsBy', () => {
     const input = [team(20, 1, 0, 0, false), team(21, 2, 3, 4)];
     expect(sortTeamsBy(input, 'opr').map((entry) => entry.teamNumber)).toEqual([21, 20]);
     expect(input.map((entry) => entry.teamNumber)).toEqual([20, 21]);
+  });
+});
+
+describe('oprPositions', () => {
+  it('numbers every team by OPR so a filtered list keeps the event-wide places', () => {
+    const positions = oprPositions([
+      team(10, 1, 5, 5),
+      team(11, 3, 40, 40),
+      team(12, 2, 20, 20),
+    ]);
+
+    expect(positions.get(11)).toBe(1);
+    expect(positions.get(12)).toBe(2);
+    expect(positions.get(10)).toBe(3);
+    // Filtering to a subset must not renumber the survivors.
+    const filtered = oprPositions([team(10, 1, 5, 5), team(12, 2, 20, 20)]);
+    expect(filtered.get(10)).toBe(2);
   });
 });
 

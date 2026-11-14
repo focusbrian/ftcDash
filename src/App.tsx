@@ -23,6 +23,7 @@ import { buildMatchView } from './lib/model';
 import type { MatchView } from './lib/model';
 import { applySeasonOpr, rankTeams } from './lib/teams';
 import { nextAutoScrollView, dwellMsFor } from './lib/settings';
+import { loadDrafted, saveDrafted } from './lib/selection';
 import { eventRecords } from './lib/records';
 import { buildHash, defaultSeason, EARLIEST_SEASON, parseRoute, type RouteView } from './lib/route';
 import type { TeamStrength } from './types';
@@ -42,6 +43,8 @@ export default function App() {
   const [pane, setPane] = useState<Pane>(initialRoute.matchId !== null ? 'match' : 'schedule');
   const [leftView, setLeftView] = useState<LeftView>('matches');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [draftedTeams, setDraftedTeams] = useState<number[]>([]);
   const { events, loading: eventsLoading, error: eventsError } = useEventList(season);
   const {
     data: event,
@@ -267,6 +270,35 @@ export default function App() {
     setHighlightTeams([]);
   }, []);
 
+  // Alliance selection: the board is per event, so switching events starts from a clean slate.
+  const eventSeason = event?.season ?? null;
+  const eventCode = event?.code ?? null;
+  useEffect(() => {
+    if (eventSeason === null || eventCode === null) return;
+    setDraftedTeams(loadDrafted(eventSeason, eventCode));
+    setSelectionMode(false);
+  }, [eventSeason, eventCode]);
+
+  const toggleDrafted = useCallback(
+    (teamNumber: number) => {
+      setDraftedTeams((current) => {
+        const next = current.includes(teamNumber)
+          ? current.filter((value) => value !== teamNumber)
+          : [...current, teamNumber];
+        if (eventSeason !== null && eventCode !== null) {
+          saveDrafted(eventSeason, eventCode, next);
+        }
+        return next;
+      });
+    },
+    [eventSeason, eventCode],
+  );
+
+  const clearDrafted = useCallback(() => {
+    setDraftedTeams([]);
+    if (eventSeason !== null && eventCode !== null) saveDrafted(eventSeason, eventCode, []);
+  }, [eventSeason, eventCode]);
+
   const jumpToNext = useCallback(() => {
     const next = views.find((candidate) => !candidate.match.played) ?? views[0];
     if (next) selectMatch(next.match.id);
@@ -466,9 +498,15 @@ export default function App() {
                 ) : (
                   <TeamList
                     teams={visibleTeams}
+                    allTeams={rankedTeams}
                     highlightTeams={accentTeams}
                     assets={assets}
                     onToggleTeam={handleToggleTeam}
+                    selectionMode={selectionMode}
+                    onToggleSelectionMode={() => setSelectionMode((on) => !on)}
+                    draftedTeams={draftedTeams}
+                    onToggleDrafted={toggleDrafted}
+                    onClearDrafted={clearDrafted}
                   />
                 )
               ) : null}

@@ -175,7 +175,7 @@ describe('predictRankings', () => {
 
     expect(byNumber.get(11)?.partnerOpr).toBeCloseTo(12, 5);
     expect(byNumber.get(11)?.difficulty).toBeCloseTo(40, 5);
-    // 28 own − 40 faced = −12, i.e. an uphill match on paper.
+    // 28 own against 40 faced is -12, i.e. an uphill match on paper.
     expect(byNumber.get(11)?.oprMargin).toBeCloseTo(-12, 5);
     expect(byNumber.get(21)?.partnerOpr).toBeCloseTo(25, 5);
     expect(byNumber.get(21)?.oprMargin).toBeCloseTo(-25, 5);

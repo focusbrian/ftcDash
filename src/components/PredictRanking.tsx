@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import firstLogo from '../assets/first-logo.webp';
 import { InfoIcon } from './InfoIcon';
 import { TeamSummary } from './TeamSummary';
@@ -11,7 +11,7 @@ import type { AssetStore } from '../lib/assets';
 import type { TeamStrength } from '../types';
 
 interface Props {
-  /** Every team at the event â€” the prediction runs over all of them, then the rows are filtered. */
+  /** Every team at the event — the prediction runs over all of them, then the rows are filtered. */
   teams: readonly TeamStrength[];
   views: readonly MatchView[];
   /** When set, only these teams are listed; ranks stay relative to the whole event. */
@@ -26,8 +26,8 @@ type Mode = 'predicted' | 'difficulty';
 function deltaLabel(entry: TeamPrediction): string {
   if (entry.currentRank === null || entry.remaining === 0) return '';
   const move = entry.currentRank - entry.predictedRank;
-  if (move === 0) return ' Â· holds';
-  return move > 0 ? ` Â· â–²${move}` : ` Â· â–¼${-move}`;
+  if (move === 0) return ' · holds';
+  return move > 0 ? ` · ▲${move}` : ` · ▼${-move}`;
 }
 
 /**
@@ -118,7 +118,7 @@ export function PredictRanking({
           ? remainingMatches > 0
             ? `Ranks teams by ranking points earned plus the points ${remainingMatches} unscored qualification match${remainingMatches === 1 ? '' : 'es'} are expected to add at each team's projected win odds.`
             : 'Every qualification match has a recorded score, so this is the official ranking.'
-          : 'Ranks teams by the projected OPR of the alliances they still have to face â€” hardest remaining schedule first. Each row also shows the partner it draws and how its own OPR compares with the opposition.'}
+          : 'Ranks teams by the projected OPR of the alliances they still have to face — hardest remaining schedule first. Each row also shows the partner it draws and how its own OPR compares with the opposition.'}
       </p>
 
       <ul className="teams__list">
@@ -146,13 +146,13 @@ export function PredictRanking({
                 onBlur={hide}
               >
                 <span className="teamrow__rank">
-                  {rank === null ? <span className="teamrow__rank--none">â€”</span> : `#${rank}`}
+                  {rank === null ? <span className="teamrow__rank--none">—</span> : `#${rank}`}
                 </span>
                 <img
                   className={logo ? 'teamrow__logo' : 'teamrow__logo teamrow__logo--placeholder'}
                   src={logo ?? firstLogo}
                   alt=""
-                  title={logo ? `Team ${entry.teamNumber} logo` : 'No team logo yet â€” showing the FIRST logo'}
+                  title={logo ? `Team ${entry.teamNumber} logo` : 'No team logo yet — showing the FIRST logo'}
                 />
                 <span className="teamrow__id">
                   <span className="teamrow__num">{entry.teamNumber}</span>
@@ -173,8 +173,8 @@ export function PredictRanking({
                     {mode === 'predicted'
                       ? fmtPoints(entry.projectedRp)
                       : entry.oprMargin === null
-                        ? 'â€”'
-                        : `${entry.oprMargin >= 0 ? '+' : 'âˆ’'}${fmtPoints(Math.abs(entry.oprMargin))}`}
+                        ? '—'
+                        : `${entry.oprMargin >= 0 ? '+' : '-'}${fmtPoints(Math.abs(entry.oprMargin))}`}
                   </span>
                   <span className="teamrow__total-label">
                     {mode === 'predicted' ? 'RP proj' : 'vs opp'}
@@ -184,22 +184,22 @@ export function PredictRanking({
                   {mode === 'predicted' ? (
                     <>
                       {entry.currentRank === null
-                        ? `unranked${deltaLabel(entry)} Â· RP ${fmtPoints(entry.currentRp)}`
-                        : `now #${entry.currentRank}${deltaLabel(entry)} Â· RP ${fmtPoints(entry.currentRp)}`}
+                        ? `unranked${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`
+                        : `now #${entry.currentRank}${deltaLabel(entry)} · RP ${fmtPoints(entry.currentRp)}`}
                       {entry.played > 0
-                        ? ` Â· ${entry.wins}â€“${entry.losses}${entry.ties > 0 ? `â€“${entry.ties}` : ''}`
+                        ? ` · ${entry.wins}–${entry.losses}${entry.ties > 0 ? `–${entry.ties}` : ''}`
                         : ''}
                     </>
                   ) : (
                     <>
                       {entry.partnerOpr === null
-                        ? 'Partner â€”'
+                        ? 'Partner —'
                         : `Partner ${fmtPoints(entry.partnerOpr)}`}
-                      {` Â· Opp ${entry.difficulty === null ? 'â€”' : fmtPoints(entry.difficulty)}`}
-                      {` Â· You ${fmtPoints(entry.oprTotal)}`}
+                      {` · Opp ${entry.difficulty === null ? '—' : fmtPoints(entry.difficulty)}`}
+                      {` · You ${fmtPoints(entry.oprTotal)}`}
                     </>
                   )}
-                  {entry.remaining > 0 ? ` Â· ${entry.remaining} to play` : ' Â· done'}
+                  {entry.remaining > 0 ? ` · ${entry.remaining} to play` : ' · done'}
                 </span>
               </button>
               <button
@@ -222,7 +222,7 @@ export function PredictRanking({
         state={hovered}
         pinned={pinned}
         onClose={unpin}
-        hint="Click to highlight this teamâ€™s matches"
+        hint="Click to highlight this team’s matches"
       />
     </div>
   );

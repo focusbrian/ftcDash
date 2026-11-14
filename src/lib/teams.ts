@@ -79,3 +79,11 @@ export function sortTeamsBy(teams: readonly TeamStrength[], sort: TeamSort): Tea
     return a.teamNumber - b.teamNumber;
   });
 }
+
+/**
+ * Each team's place in the event-wide OPR order, so a filtered list can still show where a team sits
+ * among everyone rather than renumbering the survivors.
+ */
+export function oprPositions(teams: readonly TeamStrength[]): Map<number, number> {
+  return new Map(sortTeamsBy(teams, 'opr').map((team, at) => [team.teamNumber, at + 1]));
+}

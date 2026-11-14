@@ -4,15 +4,23 @@ import { InfoIcon } from './InfoIcon';
 import { TeamSummary } from './TeamSummary';
 import { useTeamHover } from '../hooks/useTeamHover';
 import { fmtPoints } from '../lib/format';
-import { sortTeamsBy, type TeamSort } from '../lib/teams';
+import { sortTeamsBy, oprPositions, type TeamSort } from '../lib/teams';
 import type { AssetStore } from '../lib/assets';
 import type { TeamStrength } from '../types';
 
 interface Props {
   teams: readonly TeamStrength[];
+  /** Every team at the event, so OPR positions stay event-wide when the list is filtered. */
+  allTeams?: readonly TeamStrength[];
   highlightTeams: readonly number[];
   assets: AssetStore;
   onToggleTeam: (teamNumber: number) => void;
+  /** Alliance selection: clicking a row crosses a team off instead of highlighting it. */
+  selectionMode?: boolean;
+  onToggleSelectionMode?: () => void;
+  draftedTeams?: readonly number[];
+  onToggleDrafted?: (teamNumber: number) => void;
+  onClearDrafted?: () => void;
 }
 
 /**
@@ -45,11 +53,34 @@ function OprCells({ team, rank }: { team: TeamStrength; rank: string | null }) {
   );
 }
 
-export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props) {
+export function TeamList({
+  teams,
+  allTeams,
+  highlightTeams,
+  assets,
+  onToggleTeam,
+  selectionMode = false,
+  onToggleSelectionMode,
+  draftedTeams = [],
+  onToggleDrafted,
+  onClearDrafted,
+}: Props) {
   const [sort, setSort] = useState<TeamSort>('rank');
   const highlighted = new Set(highlightTeams);
+  const drafted = new Set(draftedTeams);
   const { hovered, pinned, show, hide, togglePin, unpin } = useTeamHover();
   const ordered = useMemo(() => sortTeamsBy(teams, sort), [teams, sort]);
+  // Numbering comes from the whole event, so filtering out teams does not renumber the ones left.
+  const oprRank = useMemo(() => oprPositions(allTeams ?? teams), [allTeams, teams]);
+
+  // While picking alliances, teams already taken drop to the bottom so the top names are all free.
+  const rows = useMemo(() => {
+    if (!selectionMode) return ordered;
+    return [...ordered].sort(
+      (a, b) => Number(drafted.has(a.teamNumber)) - Number(drafted.has(b.teamNumber)),
+    );
+  }, [ordered, selectionMode, drafted]);
+  const remaining = ordered.filter((team) => !drafted.has(team.teamNumber)).length;
 
   if (teams.length === 0) {
     return (
@@ -62,44 +93,82 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
 
   return (
     <div className="teams">
-      <div className="segmented" role="group" aria-label="Sort the ranking">
+      <div className="teams__tools">
+        <div className="segmented" role="group" aria-label="Sort the ranking">
+          <button
+            type="button"
+            className={sort === 'rank' ? 'segmented__option segmented__option--active' : 'segmented__option'}
+            aria-pressed={sort === 'rank'}
+            onClick={() => setSort('rank')}
+          >
+            Rank
+          </button>
+          <button
+            type="button"
+            className={sort === 'opr' ? 'segmented__option segmented__option--active' : 'segmented__option'}
+            aria-pressed={sort === 'opr'}
+            onClick={() => setSort('opr')}
+          >
+            OPR
+          </button>
+        </div>
         <button
           type="button"
-          className={sort === 'rank' ? 'segmented__option segmented__option--active' : 'segmented__option'}
-          aria-pressed={sort === 'rank'}
-          onClick={() => setSort('rank')}
+          className={
+            selectionMode ? 'teams__draft teams__draft--on' : 'teams__draft'
+          }
+          aria-pressed={selectionMode}
+          title="Alliance selection: click teams to cross them off as they are taken"
+          onClick={onToggleSelectionMode}
         >
-          Rank
-        </button>
-        <button
-          type="button"
-          className={sort === 'opr' ? 'segmented__option segmented__option--active' : 'segmented__option'}
-          aria-pressed={sort === 'opr'}
-          onClick={() => setSort('opr')}
-        >
-          OPR
+          Draft
         </button>
       </div>
 
+      {selectionMode ? (
+        <p className="teams__pool">
+          <span>
+            {remaining} of {ordered.length} left
+          </span>
+          {drafted.size > 0 ? (
+            <button type="button" className="teams__reset" onClick={onClearDrafted}>
+              Reset
+            </button>
+          ) : null}
+        </p>
+      ) : null}
+
       <ul className="teams__list">
-        {ordered.map((team, at) => {
+        {rows.map((team) => {
           const logo = assets[String(team.teamNumber)]?.logo;
           const isOn = highlighted.has(team.teamNumber);
+          const isDrafted = drafted.has(team.teamNumber);
           const isOpen = pinned && hovered?.team.teamNumber === team.teamNumber;
           // Ordering by OPR makes the left column the OPR position, so the official rank moves to the
           // detail line rather than sitting there out of sequence.
-          const position =
-            sort === 'opr' ? at + 1 : null;
+          const position = oprRank.get(team.teamNumber) ?? null;
           const official = team.rank === null ? 'unranked' : `now #${team.rank}`;
+          const classes = ['teams__row'];
+          if (isOn) classes.push('teams__row--on');
+          // The board is only shown while selecting; the crossings themselves are remembered per event.
+          if (isDrafted && selectionMode) classes.push('teams__row--drafted');
 
           return (
-            <li key={team.teamNumber} className={isOn ? 'teams__row teams__row--on' : 'teams__row'}>
+            <li key={team.teamNumber} className={classes.join(' ')}>
               <button
                 type="button"
                 className="teamrow"
-                aria-pressed={isOn}
-                title={`Highlight team ${team.teamNumber}`}
-                onClick={() => onToggleTeam(team.teamNumber)}
+                aria-pressed={selectionMode ? isDrafted : isOn}
+                title={
+                  selectionMode
+                    ? isDrafted
+                      ? `Put ${team.teamNumber} back in the pool`
+                      : `Cross ${team.teamNumber} off as taken`
+                    : `Highlight team ${team.teamNumber}`
+                }
+                onClick={() =>
+                  selectionMode ? onToggleDrafted?.(team.teamNumber) : onToggleTeam(team.teamNumber)
+                }
                 onMouseEnter={(event) => show(team, event.currentTarget)}
                 onMouseLeave={hide}
                 onFocus={(event) => show(team, event.currentTarget)}
@@ -107,7 +176,11 @@ export function TeamList({ teams, highlightTeams, assets, onToggleTeam }: Props)
               >
                 <span className="teamrow__rank">
                   {sort === 'opr' ? (
-                    `#${position}`
+                    position === null ? (
+                      <span className="teamrow__rank--none">—</span>
+                    ) : (
+                      `#${position}`
+                    )
                   ) : team.rank === null ? (
                     <span className="teamrow__rank--none">—</span>
                   ) : (

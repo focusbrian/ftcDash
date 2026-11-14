@@ -84,14 +84,15 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Team ranking (left):** the Matches / Ranking / Predict switch above the list swaps the schedule
   for every team at the event, with a **Rank / OPR** control at the top of the list choosing the
   order: the official table, or strongest OPR first (the left column becomes the OPR position and the
-  official rank moves into the detail line). Rows carry rank, number and name, OPR total, then the
-  auton/teleop split with ranking points and matches played. Until the event publishes OPR, the OPR
-  column carries the team's season OPR at that point in parentheses instead of a dash, and the row's
-  detail line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked ones, best
-  OPR first. Clicking a team highlights its matches exactly like the search box, and hovering a row
-  shows the same team summary card. On touch screens, where there is no hover, each row carries an ⓘ
-  button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or anywhere
-  outside to dismiss (Escape works too).
+  official rank moves into the detail line). Those OPR positions are numbered across the whole event,
+  so filtering teams out never renumbers the ones left. Rows carry rank, number and name, OPR total,
+  then the auton/teleop split with ranking points and matches played. Until the event publishes OPR,
+  the OPR column carries the team's season OPR at that point in parentheses instead of a dash, and the
+  row's detail line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked
+  ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
+  hovering a row shows the same team summary card. On touch screens, where there is no hover, each row
+  carries an ⓘ button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or
+  anywhere outside to dismiss (Escape works too).
 - **Predict (left):** predicts the final qualification ranking. Each team keeps the ranking points it
   has banked and gains the points its remaining matches are expected to produce — two for a win, plus
   its own observed bonus-point rate, weighted by each match's projected win probability — so the list
@@ -102,6 +103,13 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   matches are all scored drop to the bottom with dashes. Playoff matches and the 2020/2021
   single-alliance seasons are left out, since neither decided a qualification rank on head-to-head
   results.
+- **Alliance selection (Ranking tab):** the **Draft** button beside Rank / OPR turns the ranking into
+  a selection board. Clicking a team crosses it off — struck through and dimmed — and sinks it to the
+  bottom, so the top of the list is always the strongest team still available in whichever order you
+  picked. A line above the list counts what is left (`18 of 23 left`), **Reset** clears the board and
+  clicking a crossed-off team puts it back. Crossings are remembered per event in this browser, so a
+  reload mid-selection keeps them; the board itself only shows while Draft is on, and with Draft off
+  clicking a row highlights as usual.
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no
@@ -218,9 +226,9 @@ src/
   hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts,
                useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts
   lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), predict.ts (predicted
-               ranking and schedule difficulty), model.ts (match views), format.ts, events.ts,
-               route.ts, teamSearch.ts (team matching), assets.ts (local asset store), image.ts (image
-               handling), settings.ts, backup.ts
+               ranking and schedule difficulty), selection.ts (alliance-selection board), model.ts
+               (match views), format.ts, events.ts, route.ts, teamSearch.ts (team matching), assets.ts
+               (local asset store), image.ts (image handling), settings.ts, backup.ts
   components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, TeamList,
                PredictRanking, ConfigView, SettingsMenu, Confetti
   types.ts     shared domain types

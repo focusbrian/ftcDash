@@ -687,6 +687,79 @@ select {
   gap: 8px;
 }
 
+.teams__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teams__tools .segmented {
+  flex: 1;
+}
+
+/* Alliance selection mode: crossing teams off as they are taken. */
+.teams__draft {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.teams__draft:hover {
+  background: var(--bg-raised-2);
+  color: var(--text);
+}
+
+.teams__draft--on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.teams__pool {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+}
+
+.teams__reset {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.teams__reset:hover {
+  text-decoration: underline;
+}
+
+.teams__row--drafted {
+  opacity: 0.55;
+}
+
+.teams__row--drafted .teamrow__num,
+.teams__row--drafted .teamrow__name {
+  text-decoration: line-through;
+}
+
+.teams__row--drafted .teamrow__rank {
+  color: var(--text-faint);
+}
+
 .teams__list {
   display: flex;
   flex-direction: column;
