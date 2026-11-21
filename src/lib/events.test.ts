@@ -71,14 +71,33 @@ describe('filterEvents', () => {
 
 describe('route', () => {
   it('round-trips season, event and match', () => {
-    const hash = buildHash({ view: 'dashboard', season: 2026, code: 'USCMP', matchId: 12 });
+    const hash = buildHash({
+      view: 'dashboard',
+      season: 2026,
+      code: 'USCMP',
+      matchId: 12,
+      teamNumber: null,
+    });
     expect(hash).toBe('#/2026/USCMP/m/12');
     expect(parseRoute(hash)).toEqual({
       view: 'dashboard',
       season: 2026,
       code: 'USCMP',
       matchId: 12,
+      teamNumber: null,
     });
+  });
+
+  it('round-trips a team page', () => {
+    const hash = buildHash({
+      view: 'dashboard',
+      season: 2026,
+      code: 'AUBRQ2',
+      matchId: null,
+      teamNumber: 14380,
+    });
+    expect(hash).toBe('#/2026/AUBRQ2/t/14380');
+    expect(parseRoute(hash).teamNumber).toBe(14380);
   });
 
   it('handles a partial route and an empty hash', () => {
@@ -87,13 +106,16 @@ describe('route', () => {
       season: 2025,
       code: 'AECMP',
       matchId: null,
+      teamNumber: null,
     });
     expect(parseRoute('').code).toBeNull();
     expect(parseRoute('').season).toBeGreaterThan(2000);
   });
 
   it('routes to the config page', () => {
-    expect(buildHash({ view: 'config', season: 2026, code: 'USCMP', matchId: 3 })).toBe('#/config');
+    expect(
+      buildHash({ view: 'config', season: 2026, code: 'USCMP', matchId: 3, teamNumber: null }),
+    ).toBe('#/config');
     expect(parseRoute('#/config').view).toBe('config');
   });
 });

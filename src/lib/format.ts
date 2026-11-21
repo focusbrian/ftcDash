@@ -67,7 +67,8 @@ export function matchShortLabel(match: Match): string {
     case 'Quals':
       return `Q${match.matchNum}`;
     case 'DoubleElim':
-      return `P${match.matchNum}`;
+      // The bracket restarts at match 1 in every series, so the series is what tells them apart.
+      return match.series > 0 ? `P${match.series}·${match.matchNum}` : `P${match.matchNum}`;
     case 'Semis':
       return match.series > 0 ? `SF${match.series}·${match.matchNum}` : `SF${match.matchNum}`;
     case 'Finals':
@@ -80,7 +81,9 @@ export function matchLongLabel(match: Match): string {
     case 'Quals':
       return `Qualification Match ${match.matchNum}`;
     case 'DoubleElim':
-      return `Playoff Match ${match.matchNum}`;
+      return match.series > 0
+        ? `Playoff Match ${match.series}, Match ${match.matchNum}`
+        : `Playoff Match ${match.matchNum}`;
     case 'Semis':
       return match.series > 0
         ? `Semifinal ${match.series}, Match ${match.matchNum}`

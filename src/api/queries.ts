@@ -145,3 +145,22 @@ query TeamOprHistory($season: Int!, $number: Int!) {
     }
   }
 }`;
+
+/** What one team won across a season — the awards list on its page. */
+export const TEAM_AWARDS_QUERY = `
+query TeamAwards($season: Int!, $number: Int!) {
+  teamByNumber(number: $number) {
+    number
+    awards(season: $season) {
+      type
+      placement
+      divisionName
+      personName
+      event {
+        code
+        name
+        start
+      }
+    }
+  }
+}`;

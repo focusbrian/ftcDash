@@ -18,7 +18,7 @@ interface Props {
   filterTo?: ReadonlySet<number> | null;
   highlightTeams: readonly number[];
   assets: AssetStore;
-  onToggleTeam: (teamNumber: number) => void;
+  onOpenTeam?: (teamNumber: number) => void;
 }
 
 type Mode = 'predicted' | 'difficulty';
@@ -40,7 +40,7 @@ export function PredictRanking({
   filterTo = null,
   highlightTeams,
   assets,
-  onToggleTeam,
+  onOpenTeam,
 }: Props) {
   const [mode, setMode] = useState<Mode>('predicted');
   const highlighted = new Set(highlightTeams);
@@ -137,9 +137,8 @@ export function PredictRanking({
               <button
                 type="button"
                 className="teamrow"
-                aria-pressed={isOn}
-                title={`Highlight team ${entry.teamNumber}`}
-                onClick={() => onToggleTeam(entry.teamNumber)}
+                title={`Open team ${entry.teamNumber}`}
+                onClick={() => onOpenTeam?.(entry.teamNumber)}
                 onMouseEnter={(event) => team && show(team, event.currentTarget)}
                 onMouseLeave={hide}
                 onFocus={(event) => team && show(team, event.currentTarget)}
@@ -222,7 +221,7 @@ export function PredictRanking({
         state={hovered}
         pinned={pinned}
         onClose={unpin}
-        hint="Click to highlight this team’s matches"
+        hint="Click to open the team page"
       />
     </div>
   );

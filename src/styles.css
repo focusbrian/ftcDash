@@ -2740,3 +2740,334 @@ select {
     padding-right: 44px;
   }
 }
+
+/* ---------- team page ---------- */
+
+.team-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px 28px;
+}
+
+.team-page__head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-page__head .button {
+  align-self: flex-start;
+}
+
+.team-page__id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.team-page__logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+}
+
+.team-page__logo--placeholder {
+  opacity: 0.3;
+}
+
+.team-page__id h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.team-page__num {
+  color: var(--accent);
+}
+
+.team-page__school {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.team-page__top {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.team-page__robot {
+  margin: 0;
+}
+
+.team-page__robot-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.team-page__robot-img--placeholder {
+  opacity: 0.3;
+}
+
+.team-page__robot figcaption {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.team-page__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin: 0;
+}
+
+.team-page__stats dt {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.team-page__stats dd {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-page__note {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.team-page__block h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.team-page__awards,
+.team-page__matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-page__award {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.team-page__award-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.team-page__award-name em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.team-page__award-event {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+.team-page__award-event span {
+  color: var(--text-faint);
+}
+
+.team-page__match {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  padding: 8px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.team-page__match:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-raised-2);
+}
+
+.team-page__match-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.team-page__match-score {
+  grid-row: 1;
+  grid-column: 3;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.team-page__match-detail {
+  grid-row: 2;
+  grid-column: 2 / -1;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.team-page__result {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.team-page__result--win {
+  color: #4ade80;
+}
+
+.team-page__result--loss {
+  color: var(--red);
+}
+
+.team-page__result--tie {
+  color: var(--text-dim);
+}
+
+.team-page__result--open {
+  color: var(--text-faint);
+}
+
+@media (max-width: 720px) {
+  /* Stacked, the robot photo would push the stats off the first screen. */
+  .team-page {
+    padding: 14px 14px 24px;
+  }
+
+  .team-page__top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-page__robot {
+    max-width: 220px;
+  }
+}
+/* The chart stretches to its container, so cap it here or the markers turn into ellipses. */
+.team-page .spark {
+  max-width: 300px;
+}
+.team-page__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Adds the team to the highlight list the search box and the match view feed. */
+.team-page__hl {
+  flex: none;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.team-page__hl:hover {
+  background: var(--bg-raised-2);
+  color: var(--text);
+}
+
+.team-page__hl--on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.team-page__bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-page__editor {
+  padding: 12px 14px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-panel);
+}
+
+.team-page__editor-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* Two tiles share the row; the config grid already sizes and spaces them. */
+.team-page__editor .config__assets {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 12px;
+}
+
+.team-page__editor .asset__preview {
+  height: 112px;
+}
+
+.team-page__error {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--red);
+}

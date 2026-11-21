@@ -99,3 +99,40 @@ export interface RawTeamOprHistory {
   number: number;
   events: RawTeamOprEvent[];
 }
+
+/** Every award FTC Scout has for one team in a season. */
+export type RawTeamAwardType =
+  | 'DeansListFinalist'
+  | 'DeansListSemiFinalist'
+  | 'DeansListWinner'
+  | 'JudgesChoice'
+  | 'DivisionFinalist'
+  | 'DivisionWinner'
+  | 'ConferenceFinalist'
+  | 'Compass'
+  | 'Promote'
+  | 'Control'
+  | 'Motivate'
+  | 'Reach'
+  | 'Sustain'
+  | 'Design'
+  | 'Innovate'
+  | 'Connect'
+  | 'Think'
+  | 'TopRanked'
+  | 'Inspire'
+  | 'Winner'
+  | 'Finalist';
+
+export interface RawTeamAward {
+  type: RawTeamAwardType;
+  placement: number;
+  divisionName: string | null;
+  personName: string | null;
+  event: { code: string; name: string; start: string };
+}
+
+export interface RawTeamAwards {
+  number: number;
+  awards: RawTeamAward[];
+}

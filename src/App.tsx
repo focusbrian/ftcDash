@@ -9,6 +9,7 @@ import { PredictRanking } from './components/PredictRanking';
 import { SettingsMenu } from './components/SettingsMenu';
 import { FilterIcon, PredictIcon, RankingIcon, ScheduleIcon } from './components/TabIcons';
 import { TeamList } from './components/TeamList';
+import { TeamPage } from './components/TeamPage';
 import { TeamSearch } from './components/TeamSearch';
 import { useEventData } from './hooks/useEventData';
 import { useEventList } from './hooks/useEventList';
@@ -40,6 +41,7 @@ export default function App() {
   const [season, setSeason] = useState(initialRoute.season);
   const [code, setCode] = useState<string | null>(initialRoute.code);
   const [matchId, setMatchId] = useState<number | null>(initialRoute.matchId);
+  const [teamNumber, setTeamNumber] = useState<number | null>(initialRoute.teamNumber);
   const [pane, setPane] = useState<Pane>(initialRoute.matchId !== null ? 'match' : 'schedule');
   const [leftView, setLeftView] = useState<LeftView>('matches');
   const [highlightTeams, setHighlightTeams] = useState<number[]>([]);
@@ -98,11 +100,18 @@ export default function App() {
   }, [code, events]);
 
   useEffect(() => {
-    const hash = buildHash({ view, season, code, matchId });
+    // The URL shows whichever panel is open, so a team page does not carry the last match in it.
+    const hash = buildHash({
+      view,
+      season,
+      code,
+      matchId: teamNumber === null ? matchId : null,
+      teamNumber,
+    });
     if (window.location.hash !== hash) {
       window.history.replaceState(null, '', hash);
     }
-  }, [view, season, code, matchId]);
+  }, [view, season, code, matchId, teamNumber]);
 
   // Auto-refresh the event (and therefore the match list) on the configured interval.
   // Uses the silent refresh so scores update in place without clearing the page.
@@ -129,7 +138,8 @@ export default function App() {
       setSeason(route.season);
       setCode(route.code);
       setMatchId(route.matchId);
-      if (route.matchId !== null) setPane('match');
+      setTeamNumber(route.teamNumber);
+      if (route.matchId !== null || route.teamNumber !== null) setPane('match');
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -204,11 +214,27 @@ export default function App() {
   const detailPanelRef = useRef<HTMLElement | null>(null);
   const selectedMatchId = selectedView?.match.id ?? null;
 
-  // Opening a different match should start at the top of its detail, not inherit the last scroll.
+  // Both panels should start at the top when they change, not inherit the previous panel's scroll.
+  const openTeam = useCallback(
+    (number: number) => {
+      setTeamNumber(number);
+      setPane('match');
+      if (settings.followLatest) setFollowLatest(false);
+    },
+    [settings.followLatest, setFollowLatest],
+  );
+
+  const closeTeam = useCallback(() => setTeamNumber(null), []);
+
+  const openTeamPage = useMemo(
+    () => (teamNumber === null ? null : strengths.get(teamNumber) ?? null),
+    [strengths, teamNumber],
+  );
+
   useEffect(() => {
     const panel = detailPanelRef.current;
     if (panel) panel.scrollTop = 0;
-  }, [selectedMatchId]);
+  }, [selectedMatchId, teamNumber]);
 
   const latestPlayedId = useMemo(() => latestPlayedMatchId(event?.matches ?? []), [event]);
 
@@ -221,6 +247,15 @@ export default function App() {
       if (settings.followLatest) setFollowLatest(false);
     },
     [settings.followLatest, setFollowLatest],
+  );
+
+  /** Picking one of a team's matches leaves the team page and shows that match. */
+  const openMatchFromTeam = useCallback(
+    (id: number) => {
+      setTeamNumber(null);
+      selectMatch(id);
+    },
+    [selectMatch],
   );
 
   // "Follow the latest result": keep the newest played match open, including across refreshes.
@@ -400,7 +435,11 @@ export default function App() {
               aria-pressed={pane === 'match'}
               onClick={() => setPane('match')}
             >
-              {selectedView ? `Match ${matchShortLabel(selectedView.match)}` : 'Match'}
+              {teamNumber !== null
+                ? `Team ${teamNumber}`
+                : selectedView
+                  ? `Match ${matchShortLabel(selectedView.match)}`
+                  : 'Match'}
             </button>
           </div>
 
@@ -521,7 +560,7 @@ export default function App() {
                     allTeams={rankedTeams}
                     highlightTeams={accentTeams}
                     assets={assets}
-                    onToggleTeam={handleToggleTeam}
+                    onOpenTeam={openTeam}
                     selectionMode={selectionMode}
                     onToggleSelectionMode={() => setSelectionMode((on) => !on)}
                     draftedTeams={draftedTeams}
@@ -544,7 +583,7 @@ export default function App() {
                     filterTo={hidingOthers ? highlightSet : null}
                     highlightTeams={accentTeams}
                     assets={assets}
-                    onToggleTeam={handleToggleTeam}
+                    onOpenTeam={openTeam}
                   />
                 )
               ) : null}
@@ -570,16 +609,46 @@ export default function App() {
           </section>
 
           <section className="detail-panel" ref={detailPanelRef}>
-            <MatchDetail
-              view={selectedView}
-              event={event}
-              loading={eventLoading}
-              error={eventError}
-              assets={assets}
-              highlightTeams={highlightTeams}
-              onToggleTeam={handleToggleTeam}
-              onJumpToNext={jumpToNext}
-            />
+            {openTeamPage && event ? (
+              <TeamPage
+                team={openTeamPage}
+                event={event}
+                views={views}
+                asset={assets[String(openTeamPage.teamNumber)]}
+                highlighted={highlightSet.has(openTeamPage.teamNumber)}
+                onToggleHighlight={() => handleToggleTeam(openTeamPage.teamNumber)}
+                onSetAsset={setAsset}
+                onRemoveAsset={removeAsset}
+                assetError={assetError}
+                onBack={closeTeam}
+                onSelectMatch={openMatchFromTeam}
+              />
+            ) : teamNumber !== null ? (
+              <div className="team-page detail--enter">
+                <header className="team-page__head">
+                  <button
+                    type="button"
+                    className="button button--ghost button--small"
+                    onClick={closeTeam}
+                  >
+                    ← Back
+                  </button>
+                  <p className="detail__kicker">Team {teamNumber}</p>
+                  <p className="empty">This team is not in the selected event.</p>
+                </header>
+              </div>
+            ) : (
+              <MatchDetail
+                view={selectedView}
+                event={event}
+                loading={eventLoading}
+                error={eventError}
+                assets={assets}
+                highlightTeams={highlightTeams}
+                onToggleTeam={handleToggleTeam}
+                onJumpToNext={jumpToNext}
+              />
+            )}
           </section>
         </main>
       )}

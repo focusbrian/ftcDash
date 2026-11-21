@@ -89,10 +89,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   then the auton/teleop split with ranking points and matches played. Until the event publishes OPR,
   the OPR column carries the team's season OPR at that point in parentheses instead of a dash, and the
   row's detail line labels it `Season OPR`. Teams that are not ranked yet fall in below the ranked
-  ones, best OPR first. Clicking a team highlights its matches exactly like the search box, and
-  hovering a row shows the same team summary card. On touch screens, where there is no hover, each row
-  carries an ⓘ button that opens the summary as a centred sheet with a backdrop — tap it, the ×, or
-  anywhere outside to dismiss (Escape works too).
+  ones, best OPR first. Clicking a team opens its page in the detail panel; hovering a row shows the
+  same team summary card. On touch screens, where there is no hover, each row carries an ⓘ button
+  that opens the summary as a centred sheet with a backdrop — tap it, the ×, or anywhere outside to
+  dismiss (Escape works too).
 - **Predict (left):** predicts the final qualification ranking. Each team keeps the ranking points it
   has banked and gains the points its remaining matches are expected to produce — two for a win, plus
   its own observed bonus-point rate, weighted by each match's projected win probability — so the list
@@ -109,7 +109,20 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   picked. A line above the list counts what is left (`18 of 23 left`), **Reset** clears the board and
   clicking a crossed-off team puts it back. Crossings are remembered per event in this browser, so a
   reload mid-selection keeps them; the board itself only shows while Draft is on, and with Draft off
-  clicking a row highlights as usual.
+  clicking a row opens that team's page.
+- **Team page (right):** clicking any team in the ranking or the prediction swaps the detail panel for
+  a synopsis of that team: logo, number and name, school, then its event rank, win–loss record,
+  ranking points and OPR split, beside the robot photo (or the kitbot placeholder). Below that are the
+  same two sparklines as the hover card — the whole season against its previous-season anchor, and the
+  running estimate through this event — then every award the team won this season with its placement
+  and event, and finally each of its matches here with a W/L mark, partner and opposition, score, and a
+  click through to the match itself. **Back** (or the browser's back button, since the team is in the
+  URL) returns to the panel you came from, and **+ Highlight** beside it adds the team to the
+  highlight list the search box builds (it reads **✓ Highlighted** once it is in, and clicking again
+  removes it). **✎ Edit** opens the same logo and robot uploader the configuration page offers, right
+  on the team: upload or replace either image, or remove one, and the page, the schedule cards and the
+  alliance line-ups all pick it up — the robot photo is saved against the event's season. Images stay
+  in this browser only.
 - **Finding an event:** the filter above the event list matches an event code or name. Typing a bare
   team number — `10136` or `#10136` — looks the team up on FTC Scout and narrows the list to the
   events it attended that season, showing the team's name and event count underneath; a number with no
@@ -168,8 +181,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Celebration:** when a played match has a winner, that alliance's card gets a light confetti
   animation — clipped to the card, behind its text, and clear of the robot line-up. It is skipped
   entirely when the visitor prefers reduced motion.
-- **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, and `#/config`
-  opens the asset configuration. The season and event pickers stay in sync with the URL.
+- **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, `#/2026/USMIWMM4/t/10136`
+  opens a team page, and `#/config` opens the asset configuration. The season and event pickers stay in
+  sync with the URL.
 
 ### On a phone
 
@@ -221,15 +235,17 @@ src/
   assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
                (favicon source)
   hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts,
-               useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts
-  lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), predict.ts (predicted
-               ranking and schedule difficulty), selection.ts (alliance-selection board), model.ts
-               (match views), format.ts, events.ts, route.ts, teamSearch.ts (team matching), assets.ts
-               (local asset store), image.ts (image handling), settings.ts, backup.ts
+               useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts, useTeamAwards.ts
+  lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), oprSeries.ts (sparkline
+               series and OPR colours), predict.ts (predicted ranking and schedule difficulty),
+               selection.ts (alliance-selection board), awards.ts (team award labels and ordering),
+               model.ts (match views), format.ts, events.ts, route.ts, teamSearch.ts (team matching),
+               assets.ts (local asset store), image.ts (image handling), settings.ts, backup.ts
   components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, TeamList,
-               PredictRanking, ConfigView, SettingsMenu, Confetti
+               PredictRanking, TeamPage, ConfigView, SettingsMenu, Confetti
   types.ts     shared domain types
-public/        favicon.png, apple-touch-icon.png (served from the site root)
+public/        favicon.png, apple-touch-icon.png (served from the site root), .htaccess (Apache
+               caching and compression, copied into dist/ for cPanel hosts)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
 .github/
   workflows/   deploy.yml (typecheck + test + build + publish to GitHub Pages)
@@ -237,8 +253,8 @@ start.cmd      Windows launcher: finds Node, installs dependencies, opens the ap
 
 Tests cover the projection math, raw-data normalization (including remote seasons and matches with no
 OPR), the season OPR series (last season's anchor and carried-forward values), the predicted ranking
-and schedule difficulty, team search ranking, image format handling, the local asset store, and
-picker/route helpers: `npm test`.
+and schedule difficulty, team award labels and ordering, team search ranking, image format handling,
+the local asset store, and picker/route helpers: `npm test`.
 
 ## Deploying
 
@@ -253,10 +269,46 @@ rules: the host only ever serves `index.html`.
 | Vercel | framework preset “Vite”, output `dist` |
 | Cloudflare Pages | build `npm run build`, output `dist` |
 | GitHub Pages | see below |
+| cPanel / Apache shared hosting (InMotion, HostGator, …) | upload the contents of `dist` — see below |
 | nginx / S3 + CloudFront | upload `dist`; `index.html` no-cache, `assets/*` immutable |
 
 Hosts that serve the app from a sub-path need `BASE_PATH`, e.g. `BASE_PATH=/FTCDash/ npm run build`
 (PowerShell: `$env:BASE_PATH='/FTCDash/'; npm run build`). Root-domain hosts keep the default `/`.
+
+### cPanel / InMotion shared hosting
+
+InMotion (and any cPanel host) serves `public_html` with Apache, which is all this build needs. Do the
+build on your own machine — the server never runs Node.
+
+1. Build for the address you will serve it from:
+   - domain root, e.g. `https://example.com/` → `npm run build`
+   - a folder, e.g. `https://example.com/ftcdash/` → PowerShell
+     `$env:BASE_PATH='/ftcdash/'; npm run build` (bash: `BASE_PATH=/ftcdash/ npm run build`)
+   The trailing slash matters. `dist/index.html` should reference `/ftcdash/assets/…` when you are
+   done — open it to check.
+2. Zip the **contents** of `dist/` (not the folder itself): `index.html`, `assets/`, the two PNGs and
+   `.htaccess`.
+3. In cPanel → **File Manager**, open `public_html` (or create `public_html/ftcdash` for the sub-folder
+   build), **Upload** the zip, then **Extract** it there and delete the zip.
+4. Visit the URL. If the page loads without styles, the base path in step 1 did not match the folder.
+
+FTP/SFTP works the same way — drag the contents of `dist/` into the target folder. On plans with SSH
+you can deploy a rebuild in one step (this mirrors `dist/` into the folder and deletes stale files):
+
+```bash
+npm run build
+rsync -avz --delete dist/ user@server.example.com:~/public_html/ftcdash/
+```
+
+`public/.htaccess` ships inside `dist/` and tells Apache to compress text, cache the fingerprinted
+`assets/*` for a year and never cache `index.html` — so a redeploy shows up immediately while repeat
+visitors still avoid re-downloading the bundle. Routing is hash-based, so no rewrite rules are needed
+and no `.htaccess` changes are required for deep links.
+
+Because everything is static, the same steps work on an InMotion VPS: point the Apache (or nginx) site
+root at the uploaded folder. For nginx use `try_files $uri /index.html;` only if you ever add real
+paths; today it is unnecessary.
+
 
 ### GitHub Pages
 

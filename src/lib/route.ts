@@ -5,6 +5,8 @@ export interface Route {
   season: number;
   code: string | null;
   matchId: number | null;
+  /** Team whose page is open in the detail panel, when one is. */
+  teamNumber: number | null;
 }
 
 /** FTC seasons are named for the calendar year the game launches (Sept–Apr). */
@@ -19,19 +21,22 @@ export function parseRoute(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
 
   if (segments[0] === 'config') {
-    return { view: 'config', season: defaultSeason(), code: null, matchId: null };
+    return { view: 'config', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
   }
 
   const season = Number(segments[0]);
   const code = segments[1] ? segments[1].toUpperCase() : null;
   const matchIndex = segments.indexOf('m');
   const matchId = matchIndex >= 0 ? Number(segments[matchIndex + 1]) : NaN;
+  const teamIndex = segments.indexOf('t');
+  const teamNumber = teamIndex >= 0 ? Number(segments[teamIndex + 1]) : NaN;
 
   return {
     view: 'dashboard',
     season: Number.isInteger(season) && season > 2000 ? season : defaultSeason(),
     code,
     matchId: Number.isInteger(matchId) ? matchId : null,
+    teamNumber: Number.isInteger(teamNumber) && teamNumber > 0 ? teamNumber : null,
   };
 }
 
@@ -41,5 +46,6 @@ export function buildHash(route: Route): string {
   const parts = [`#/${route.season}`];
   if (route.code) parts.push(route.code);
   if (route.code && route.matchId !== null) parts.push('m', String(route.matchId));
+  if (route.code && route.teamNumber !== null) parts.push('t', String(route.teamNumber));
   return parts.join('/');
 }

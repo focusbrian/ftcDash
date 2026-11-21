@@ -2,12 +2,11 @@ import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkline } from './Sparkline';
-import type { SparkPoint, SparkSeries } from './Sparkline';
 import { useEventCharts } from './EventChartsContext';
 import { useTeamOprHistory } from '../hooks/useTeamOprHistory';
 import { fmtPoints } from '../lib/format';
 import { rollingOprForTeam } from '../lib/opr';
-import type { SeasonOprPoint } from '../lib/seasonOpr';
+import { OPR_COLORS, eventSparkSeries, seasonSparkSeries } from '../lib/oprSeries';
 import type { TeamHoverState } from '../hooks/useTeamHover';
 
 interface Props {
@@ -21,11 +20,6 @@ interface Props {
 const CARD_WIDTH = 268;
 const ESTIMATED_HEIGHT = 380;
 const GAP = 12;
-
-/** Colours shared with the record stars on the schedule cards. */
-const AUTO_COLOR = '#6fb3f2';
-const TELEOP_COLOR = '#4ade80';
-const TOTAL_COLOR = '#ffc861';
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
@@ -41,19 +35,6 @@ function countLabel(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-/** Season OPR slots -> sparkline points, keeping track of what was carried and from where. */
-function seasonPoints(
-  points: readonly SeasonOprPoint[],
-  key: 'auto' | 'teleop' | 'total',
-): SparkPoint[] {
-  return points.map((point) => ({
-    value: point[key],
-    label: point.kind === 'prior' ? `${point.season} season OPR` : point.name,
-    baseline: point.kind === 'prior',
-    estimated: point.kind === 'estimate',
-  }));
-}
-
 /** Small fixed-position summary shown while hovering a team, or as a sheet when tapped open. */
 export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
   const charts = useEventCharts();
@@ -65,6 +46,9 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
     if (!charts || teamNumber === null) return [];
     return rollingOprForTeam(charts.views, teamNumber);
   }, [charts, teamNumber]);
+
+  const seasonLines = useMemo(() => seasonSparkSeries(seasonOpr.points), [seasonOpr.points]);
+  const eventLines = useMemo(() => eventSparkSeries(eventOpr), [eventOpr]);
 
   if (!state) return null;
 
@@ -104,21 +88,6 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
     .filter(Boolean)
     .join(' · ');
 
-  const seasonLines: SparkSeries[] = [
-    { label: 'Auton', color: AUTO_COLOR, points: seasonPoints(seasonOpr.points, 'auto') },
-    { label: 'Teleop', color: TELEOP_COLOR, points: seasonPoints(seasonOpr.points, 'teleop') },
-    { label: 'Total', color: TOTAL_COLOR, points: seasonPoints(seasonOpr.points, 'total') },
-  ];
-  const eventLines: SparkSeries[] = [
-    { label: 'Auton', color: AUTO_COLOR, points: eventOpr.map((point) => ({ value: point.auto })) },
-    {
-      label: 'Teleop',
-      color: TELEOP_COLOR,
-      points: eventOpr.map((point) => ({ value: point.teleop })),
-    },
-    { label: 'Total', color: TOTAL_COLOR, points: eventOpr.map((point) => ({ value: point.total })) },
-  ];
-
   return createPortal(
     <>
       {pinned ? <div className="teamcard__backdrop" onPointerDown={onClose} /> : null}
@@ -148,16 +117,16 @@ export function TeamSummary({ state, hint, pinned = false, onClose }: Props) {
         <dl className="teamcard__stats">
           <Stat label="Rank" value={team.rank ? `#${team.rank}` : '—'} />
           <Stat label="Matches" value={String(team.matchesPlayed)} />
-          <Stat label="OPR auto" value={team.hasOpr ? fmtPoints(auto) : '—'} tone={AUTO_COLOR} />
+          <Stat label="OPR auto" value={team.hasOpr ? fmtPoints(auto) : '—'} tone={OPR_COLORS.auto} />
           <Stat
             label="OPR teleop"
             value={team.hasOpr ? fmtPoints(teleop) : '—'}
-            tone={TELEOP_COLOR}
+            tone={OPR_COLORS.teleop}
           />
           <Stat
             label="OPR total"
             value={team.hasOpr ? fmtPoints(auto + teleop) : '—'}
-            tone={TOTAL_COLOR}
+            tone={OPR_COLORS.total}
           />
           <Stat label="Rank pts" value={team.rp === null ? '—' : fmtPoints(team.rp)} />
         </dl>

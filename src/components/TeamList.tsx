@@ -14,7 +14,7 @@ interface Props {
   allTeams?: readonly TeamStrength[];
   highlightTeams: readonly number[];
   assets: AssetStore;
-  onToggleTeam: (teamNumber: number) => void;
+  onOpenTeam?: (teamNumber: number) => void;
   /** Alliance selection: clicking a row crosses a team off instead of highlighting it. */
   selectionMode?: boolean;
   onToggleSelectionMode?: () => void;
@@ -58,7 +58,7 @@ export function TeamList({
   allTeams,
   highlightTeams,
   assets,
-  onToggleTeam,
+  onOpenTeam,
   selectionMode = false,
   onToggleSelectionMode,
   draftedTeams = [],
@@ -158,16 +158,18 @@ export function TeamList({
               <button
                 type="button"
                 className="teamrow"
-                aria-pressed={selectionMode ? isDrafted : isOn}
+                aria-pressed={selectionMode ? isDrafted : undefined}
                 title={
                   selectionMode
                     ? isDrafted
                       ? `Put ${team.teamNumber} back in the pool`
                       : `Cross ${team.teamNumber} off as taken`
-                    : `Highlight team ${team.teamNumber}`
+                    : `Open team ${team.teamNumber}`
                 }
                 onClick={() =>
-                  selectionMode ? onToggleDrafted?.(team.teamNumber) : onToggleTeam(team.teamNumber)
+                  selectionMode
+                    ? onToggleDrafted?.(team.teamNumber)
+                    : onOpenTeam?.(team.teamNumber)
                 }
                 onMouseEnter={(event) => show(team, event.currentTarget)}
                 onMouseLeave={hide}
@@ -217,7 +219,7 @@ export function TeamList({
         state={hovered}
         pinned={pinned}
         onClose={unpin}
-        hint="Click to highlight this team’s matches"
+        hint="Click to open the team page"
       />
     </div>
   );
