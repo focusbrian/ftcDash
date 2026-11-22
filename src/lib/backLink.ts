@@ -12,7 +12,10 @@ const MAX_LABEL = 40;
  * become an XSS hole, and this button is meant to return to the site that linked here.
  */
 export function backLinkFrom(search: string, base = 'https://example.invalid/'): BackLink | null {
-  const params = new URLSearchParams(search);
+  // Links copied out of an HTML attribute arrive with `&amp;` between parameters: a browser
+  // decodes that while parsing markup, but not when the URL is pasted or fetched directly.
+  // Without this the label is silently lost, because `amp;backLabel` is not a known key.
+  const params = new URLSearchParams(search.replace(/&amp;/gi, '&'));
   const raw = params.get('back')?.trim();
   if (!raw) return null;
 

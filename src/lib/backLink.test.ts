@@ -16,6 +16,20 @@ describe('backLinkFrom', () => {
     });
   });
 
+  it('reads parameters separated by an HTML-escaped ampersand', () => {
+    // Copied straight out of an href="…" attribute, where &amp; is correct HTML.
+    expect(
+      backLinkFrom('?back=https://example.com/lab&amp;backLabel=Robot%20Lab'),
+    ).toEqual({ href: 'https://example.com/lab', label: 'Robot Lab' });
+    expect(backLinkFrom('?back=https://example.com/lab&AMP;backLabel=Lab')?.label).toBe('Lab');
+  });
+
+  it('leaves an escaped ampersand inside the target alone', () => {
+    expect(
+      backLinkFrom('?back=https%3A%2F%2Fexample.com%2F%3Fa%3D1%26amp%3Bb%3D2')?.href,
+    ).toBe('https://example.com/?a=1&amp;b=2');
+  });
+
   it('resolves relative links against the current page', () => {
     expect(backLinkFrom('?back=..%2Findex.html', 'https://example.com/app/')).toEqual({
       href: 'https://example.com/index.html',

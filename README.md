@@ -250,6 +250,16 @@ const link = `https://focusbrian.github.io/ftcDash/?${params}#/2026/USMISOQ/m/4`
 `URLSearchParams` encodes the value for you (`+` and `%20` both decode as a space), which is why the
 label above reads `Robot+Lab` instead of `Robot%20Lab` — both are fine.
 
+**`&amp;` is only for HTML.** Inside an `href="…"` attribute the separator must be written `&amp;` (as
+above) or the markup is invalid; everywhere else — pasting into the address bar, a Markdown link, a
+`fetch()`, a chat message — use a plain `&`. Writing `&amp;` in the address bar sends a parameter
+literally named `amp;backLabel`, which is why the button can fall back to “Back”. The app tolerates both
+now, but the plain `&` is the correct form:
+
+```
+https://ftcdash.com/?back=https://example.com/lab&backLabel=Robot%20Lab#/2026/USMIWAQ
+```
+
 ### Rules worth knowing
 
 - **Only `http`/`https` targets are accepted.** A `javascript:`, `data:` or `mailto:` value is ignored
