@@ -1,7 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import firstLogo from '../assets/first-logo.webp';
 import { useTeamLookup } from '../hooks/useTeamLookup';
 import {
+  overlayAssets,
   robotSeasons,
   teamsWithAssets,
   type AssetKind,
@@ -22,6 +23,8 @@ interface Props {
   /** Teams at the currently loaded event, used for name lookups and suggestions. */
   teams: TeamStrength[];
   assets: AssetStore;
+  /** Logos and photos that ship with the site; the browser's own copies win. */
+  sharedAssets?: AssetStore;
   storageError: string | null;
   onSetAsset: (teamNumber: number, kind: AssetKind, dataUrl: string, season?: number) => void;
   onRemoveAsset: (teamNumber: number, kind: AssetKind, season?: number) => void;
@@ -35,6 +38,8 @@ function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
+const SHARED_NOTE = 'From the shared library — upload your own image to override it.';
+
 function seasonOptions(extra: number[]): number[] {
   const seasons = new Set<number>([defaultSeason() + 1, defaultSeason(), ...extra]);
   for (let season = defaultSeason(); season >= EARLIEST_SEASON; season -= 1) seasons.add(season);
@@ -44,6 +49,7 @@ function seasonOptions(extra: number[]): number[] {
 export function ConfigView({
   teams,
   assets,
+  sharedAssets = {},
   storageError,
   onSetAsset,
   onRemoveAsset,
@@ -66,15 +72,23 @@ export function ConfigView({
   const teamNumber = /^\d+$/.test(trimmed) ? Number(trimmed) : null;
   const knownTeam = teamNumber === null ? null : teams.find((team) => team.teamNumber === teamNumber);
   const suggestions = teamNumber === null && trimmed ? searchTeams(teams, trimmed, 6) : [];
+  // Editing shows what the dashboard shows; a team can take its logo from the library and its
+  // robot photo from here.
+  const merged = useMemo(() => overlayAssets(sharedAssets, assets), [sharedAssets, assets]);
   const current = teamNumber === null ? undefined : assets[String(teamNumber)];
+  const live = teamNumber === null ? undefined : merged[String(teamNumber)];
+  const libraryTeams = teamsWithAssets(merged);
+  const sharedCount = teamsWithAssets(sharedAssets).length;
 
   const lookup = useTeamLookup(knownTeam ? null : teamNumber);
   const displayName = knownTeam?.name ?? lookup.name;
   const displaySchool = knownTeam?.schoolName ?? lookup.schoolName;
 
-  const savedRobotSeasons = robotSeasons(current);
-  const seasonRobot = current?.robots?.[String(robotSeason)];
-  const robotImage = seasonRobot ?? current?.robot;
+  const savedRobotSeasons = robotSeasons(live);
+  const seasonRobot = live?.robots?.[String(robotSeason)];
+  const robotImage = seasonRobot ?? live?.robot;
+  // The browser's own copy, if any; without one the image is coming from the shared library.
+  const localRobot = current?.robots?.[String(robotSeason)] ?? current?.robot;
   const seasons = seasonOptions(savedRobotSeasons);
 
   const handleFile = async (kind: AssetKind, file: File | undefined) => {
@@ -184,12 +198,12 @@ export function ConfigView({
           >
             {busy === kind ? 'Processing…' : value ? 'Replace image' : 'Upload image'}
           </button>
-          {value ? (
+          {value && extra?.onRemove ? (
             <button
               type="button"
               className="button button--small button--danger"
               disabled={busy !== null}
-              onClick={extra?.onRemove}
+              onClick={extra.onRemove}
             >
               Remove
             </button>
@@ -213,6 +227,9 @@ export function ConfigView({
               match view: logos next to team numbers, robot photos standing above the alliance card.
               Transparent PNGs of the robot work best. Uploads are scaled to fit 48 × 48 px for logos
               and 200 × 200 px for robots, keeping their aspect ratio.
+              {sharedCount > 0
+                ? ` The site also ships ${plural(sharedCount, 'team')} of logos and photos; those show by default, and anything you add here takes precedence.`
+                : ''}
             </p>
           </div>
           <button type="button" className="button button--ghost" onClick={onBack}>
@@ -265,8 +282,12 @@ export function ConfigView({
                 {displaySchool ? <span>· {displaySchool}</span> : null}
               </p>
               <div className="config__assets">
-                {renderTile('logo', 'Team logo', 'No logo yet — a square image works best.', current?.logo, {
-                  onRemove: () => teamNumber !== null && onRemoveAsset(teamNumber, 'logo'),
+                {renderTile('logo', 'Team logo', 'No logo yet — a square image works best.', live?.logo, {
+                  note: live?.logo && !current?.logo ? SHARED_NOTE : undefined,
+                  onRemove:
+                    current?.logo && teamNumber !== null
+                      ? () => onRemoveAsset(teamNumber, 'logo')
+                      : undefined,
                 })}
                 {renderTile(
                   'robot',
@@ -312,17 +333,15 @@ export function ConfigView({
                       </>
                     ),
                     note:
-                      !seasonRobot && current?.robot
+                      !seasonRobot && live?.robot
                         ? `No image for ${robotSeason} — showing the image saved for all seasons.`
+                        : robotImage && !localRobot
+                          ? SHARED_NOTE
+                          : undefined,
+                    onRemove:
+                      localRobot && teamNumber !== null
+                        ? () => onRemoveAsset(teamNumber, 'robot', seasonRobot ? robotSeason : undefined)
                         : undefined,
-                    onRemove: () => {
-                      if (teamNumber === null) return;
-                      if (seasonRobot) {
-                        onRemoveAsset(teamNumber, 'robot', robotSeason);
-                      } else {
-                        onRemoveAsset(teamNumber, 'robot');
-                      }
-                    },
                   },
                 )}
               </div>
@@ -382,14 +401,15 @@ export function ConfigView({
         <section className="config__panel">
           <h2>Saved teams</h2>
           <p className="config__hint">
-            Logos and robot photos you have added, in this browser. Select one to edit it.
+            Logos and robot photos in this browser, plus any the site ships. Select one to edit it.
           </p>
-          {teamsWithAssets(assets).length === 0 ? (
+          {libraryTeams.length === 0 ? (
             <p className="empty">Nothing saved yet.</p>
           ) : (
             <div className="config__library">
-              {teamsWithAssets(assets).map((number) => {
-                const asset = assets[String(number)];
+              {libraryTeams.map((number) => {
+                const asset = merged[String(number)];
+                const mine = assets[String(number)];
                 const name =
                   number === teamNumber
                     ? displayName
@@ -421,6 +441,7 @@ export function ConfigView({
                       <span className="library-card__tags">
                         {asset?.logo ? <span>logo</span> : null}
                         {asset?.robot ? <span>robot</span> : null}
+                        {mine ? null : <span>shared</span>}
                       </span>
                     </span>
                   </button>

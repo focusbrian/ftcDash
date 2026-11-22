@@ -165,6 +165,13 @@ describe('route', () => {
     ).toBe('#/config');
     expect(parseRoute('#/config').view).toBe('config');
   });
+
+  it('routes to the unlinked admin page', () => {
+    expect(
+      buildHash({ view: 'admin', season: 2026, code: null, matchId: null, teamNumber: null }),
+    ).toBe('#/admin');
+    expect(parseRoute('#/admin').view).toBe('admin');
+  });
 });
 
 describe('teamNumberQuery', () => {

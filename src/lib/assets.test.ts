@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  overlayAssets,
   parseAssetStore,
   robotForSeason,
   robotSeasons,
@@ -101,6 +102,35 @@ describe('asset store updates', () => {
   it('lists teams that have assets in numeric order', () => {
     const store = withAsset(withAsset({}, 34235, 'logo', LOGO), 1234, 'robot', ROBOT, 2026);
     expect(teamsWithAssets(store)).toEqual([1234, 34235]);
+  });
+});
+
+describe('overlayAssets', () => {
+  it('returns the baseline when the browser has nothing saved', () => {
+    const shared: AssetStore = { 10136: { logo: LOGO, robots: { 2026: ROBOT } } };
+    expect(overlayAssets(shared, {})).toEqual(shared);
+  });
+
+  it('lets the browser copy win, asset by asset', () => {
+    const shared: AssetStore = { 10136: { logo: LOGO, robots: { 2026: ROBOT } } };
+    const local: AssetStore = { 10136: { logo: 'data:image/png;base64,LOCAL' } };
+
+    expect(overlayAssets(shared, local)['10136']).toEqual({
+      logo: 'data:image/png;base64,LOCAL',
+      robots: { 2026: ROBOT },
+    });
+  });
+
+  it('mixes a season of robot photos from both sides', () => {
+    const shared: AssetStore = { 10136: { robots: { 2025: ROBOT_2025 } } };
+    const local: AssetStore = { 10136: { robots: { 2026: ROBOT } } };
+
+    expect(overlayAssets(shared, local)['10136']?.robots).toEqual({ 2025: ROBOT_2025, 2026: ROBOT });
+  });
+
+  it('adds teams that only one side knows about', () => {
+    const merged = overlayAssets({ 1: { logo: LOGO } }, { 2: { logo: LOGO } });
+    expect(teamsWithAssets(merged)).toEqual([1, 2]);
   });
 });
 

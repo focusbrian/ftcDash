@@ -13,6 +13,10 @@ export type AssetStore = Record<string, TeamAsset>;
 
 export const ASSET_STORAGE_KEY = 'ftcdash.teamAssets.v1';
 export const ASSETS_CHANGED_EVENT = 'ftcdash:assets-changed';
+/** Where the repo-committed library lives, relative to the app's base path. */
+export const SHARED_ASSETS_FILE = 'shared-assets.json';
+/** Unsaved edits on the admin page, so a long upload session survives a reload. */
+export const SHARED_DRAFT_KEY = 'ftcdash.sharedDraft.v1';
 
 function isDataUrl(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith('data:image/');
@@ -128,6 +132,52 @@ export function teamsWithAssets(store: AssetStore): number[] {
     .map(Number)
     .filter((teamNumber) => Number.isInteger(teamNumber))
     .sort((a, b) => a - b);
+}
+
+/**
+ * Layers one store over another, asset by asset: anything the visitor saved in this browser wins,
+ * and the shipped library fills in the rest. A team can take its logo from one and its robot from
+ * the other.
+ */
+export function overlayAssets(base: AssetStore, overrides: AssetStore): AssetStore {
+  const merged: AssetStore = {};
+
+  for (const key of new Set([...Object.keys(base), ...Object.keys(overrides)])) {
+    const shared = base[key];
+    const local = overrides[key];
+    const asset: TeamAsset = {};
+
+    const logo = local?.logo ?? shared?.logo;
+    if (logo) asset.logo = logo;
+
+    const robot = local?.robot ?? shared?.robot;
+    if (robot) asset.robot = robot;
+
+    const robots = { ...shared?.robots, ...local?.robots };
+    if (Object.keys(robots).length > 0) asset.robots = robots;
+
+    if (asset.logo || asset.robot || asset.robots) merged[key] = asset;
+  }
+
+  return merged;
+}
+
+/** Draft edits from the admin page, or null when it has never been used in this browser. */
+export function loadSharedDraft(): AssetStore | null {
+  try {
+    const raw = window.localStorage.getItem(SHARED_DRAFT_KEY);
+    return raw ? parseAssetStore(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveSharedDraft(store: AssetStore): void {
+  window.localStorage.setItem(SHARED_DRAFT_KEY, JSON.stringify(store));
+}
+
+export function clearSharedDraft(): void {
+  window.localStorage.removeItem(SHARED_DRAFT_KEY);
 }
 
 /**

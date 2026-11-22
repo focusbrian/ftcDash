@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AdminView } from './components/AdminView';
 import { ConfigView } from './components/ConfigView';
 import { EventChartsProvider } from './components/EventChartsContext';
 import { EventInfo } from './components/EventInfo';
@@ -17,7 +18,9 @@ import { useEventList } from './hooks/useEventList';
 import { useSeasonOprFallback } from './hooks/useSeasonOprFallback';
 import { useAutoScroll } from './hooks/useAutoScroll';
 import { useSettings } from './hooks/useSettings';
+import { useSharedAssets } from './hooks/useSharedAssets';
 import { useTeamAssets } from './hooks/useTeamAssets';
+import { overlayAssets } from './lib/assets';
 import { pickDefaultEvent } from './lib/events';
 import { backLinkFrom } from './lib/backLink';
 import { latestPlayedMatchId } from './api/normalize';
@@ -69,6 +72,12 @@ export default function App() {
     removeAsset,
     replaceAll: replaceAssets,
   } = useTeamAssets();
+  const sharedAssets = useSharedAssets();
+  // The site's own library is the baseline; anything saved in this browser overrides it.
+  const effectiveAssets = useMemo(
+    () => overlayAssets(sharedAssets.assets, assets),
+    [sharedAssets.assets, assets],
+  );
   const {
     settings,
     setRefreshSeconds,
@@ -404,7 +413,7 @@ export default function App() {
         ) : null}
 
         <div className="topbar__actions">
-          {view !== 'config' ? (
+          {view === 'dashboard' || view === 'home' ? (
             <SettingsMenu
               settings={settings}
               lastUpdated={lastUpdated}
@@ -432,6 +441,7 @@ export default function App() {
         <ConfigView
           teams={eventTeams}
           assets={assets}
+          sharedAssets={sharedAssets.assets}
           storageError={assetError}
           onSetAsset={setAsset}
           onRemoveAsset={removeAsset}
@@ -439,6 +449,8 @@ export default function App() {
           onBack={() => setView(code ? 'dashboard' : 'home')}
           backLabel={code ? 'Back to dashboard' : 'Back to events'}
         />
+      ) : view === 'admin' ? (
+        <AdminView published={sharedAssets} onBack={() => setView(code ? 'dashboard' : 'home')} />
       ) : view === 'home' ? (
         <HomePage
           season={season}
@@ -592,7 +604,7 @@ export default function App() {
                     teams={visibleTeams}
                     allTeams={rankedTeams}
                     highlightTeams={accentTeams}
-                    assets={assets}
+                    assets={effectiveAssets}
                     onOpenTeam={openTeam}
                     selectionMode={selectionMode}
                     onToggleSelectionMode={() => setSelectionMode((on) => !on)}
@@ -615,7 +627,7 @@ export default function App() {
                     views={views}
                     filterTo={hidingOthers ? highlightSet : null}
                     highlightTeams={accentTeams}
-                    assets={assets}
+                    assets={effectiveAssets}
                     onOpenTeam={openTeam}
                   />
                 )
@@ -627,7 +639,7 @@ export default function App() {
                   selectedId={matchId}
                   highlightTeams={accentTeams}
                   timezone={event.timezone}
-                  assets={assets}
+                  assets={effectiveAssets}
                   records={records}
                   onSelect={selectMatch}
                 />
@@ -647,7 +659,7 @@ export default function App() {
                 team={openTeamPage}
                 event={event}
                 views={views}
-                asset={assets[String(openTeamPage.teamNumber)]}
+                asset={effectiveAssets[String(openTeamPage.teamNumber)]}
                 highlighted={highlightSet.has(openTeamPage.teamNumber)}
                 onToggleHighlight={() => handleToggleTeam(openTeamPage.teamNumber)}
                 onSetAsset={setAsset}
@@ -676,7 +688,7 @@ export default function App() {
                 event={event}
                 loading={eventLoading}
                 error={eventError}
-                assets={assets}
+                assets={effectiveAssets}
                 highlightTeams={highlightTeams}
                 onToggleTeam={handleToggleTeam}
                 onJumpToNext={jumpToNext}

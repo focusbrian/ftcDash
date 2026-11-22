@@ -1,4 +1,4 @@
-export type RouteView = 'home' | 'dashboard' | 'config';
+export type RouteView = 'home' | 'dashboard' | 'config' | 'admin';
 
 export interface Route {
   view: RouteView;
@@ -29,6 +29,11 @@ export function parseRoute(hash: string): Route {
     return { view: 'config', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
   }
 
+  // Unlinked on purpose: the shared-asset editor is reached by typing the hash.
+  if (segments[0] === 'admin') {
+    return { view: 'admin', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
+  }
+
   const season = Number(segments[0]);
   const code = segments[1] ? segments[1].toUpperCase() : null;
   const matchIndex = segments.indexOf('m');
@@ -47,6 +52,7 @@ export function parseRoute(hash: string): Route {
 
 export function buildHash(route: Route): string {
   if (route.view === 'config') return '#/config';
+  if (route.view === 'admin') return '#/admin';
   if (route.view === 'home') return '#/';
 
   const parts = [`#/${route.season}`];

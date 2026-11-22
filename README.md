@@ -230,12 +230,47 @@ browser does not zoom when one takes focus, and the layout honours the notch and
   If the result is still too large the box is stepped down further, and images saved before these
   limits existed are shrunk in place the next time the app loads.
 - Everything is stored locally in this browser under `ftcdash.teamAssets.v1` — nothing is uploaded
-  anywhere. “Saved teams” lists what you have added and lets you re-open or remove entries.
+  anywhere. “Saved teams” lists what you have added and lets you re-open or remove entries; teams the
+  site ships with are listed too, tagged `shared` (and cannot be removed here — upload your own image
+  to override one, or edit the library itself).
 - **Backup:** “Download backup” writes every logo and robot photo to `ftcdash-assets-<date>.json`.
   “Merge backup…” adds only what is missing and keeps anything already saved here (it reports how
   many images were added or left untouched); “Replace from backup…” swaps the whole store for the
   file's contents. Files that aren't a valid backup are rejected with a message rather than clearing
   anything.
+
+## Shared asset library (`public/shared-assets.json`)
+
+Logos and robot photos can ship with the site, so every visitor sees them with nothing to upload.
+They live in `public/shared-assets.json`, in the same envelope as a backup:
+
+```json
+{ "app": "ftcdash", "version": 1, "exportedAt": "…", "teams": { "10136": { "logo": "data:image/png;base64,…" } } }
+```
+
+The app fetches that file once per page load and layers it under whatever is saved in the browser,
+asset by asset: a team's logo can come from the file while its robot photo comes from the visitor.
+Uploading or removing in the configuration page only ever writes the browser's own copy, so the
+shipped set is never lost.
+
+### The admin page (`#/admin`)
+
+The editor for that file is deliberately unlinked: open `/#/admin` and enter the admin key
+(`frost10136`, defined as `ADMIN_KEY` in `src/components/AdminView.tsx`). It is a curtain, not a lock —
+the key ships in the bundle, and the page can only produce a file for you to commit, so it never
+changes the live site by itself.
+
+- Type a team number, upload a logo and/or a robot photo (per season, exactly like the configuration
+  page), and the page shows how many teams and images the file would contain.
+- Edits are held in this browser as a draft (`ftcdash.sharedDraft.v1`) so a long session survives a
+  reload; **Discard draft** goes back to the published file.
+- **Download shared-assets.json** saves the draft. Replace `public/shared-assets.json` with it, commit
+  and deploy — the next visitor load picks it up (the fetch bypasses the HTTP cache).
+- **Load file…** seeds the draft from an existing library, which is also how you can merge two people's
+  work: load one file, then re-upload the images the other has.
+
+Images are scaled the same way as a browser upload (48 × 48 logos, 200 × 200 robots), so a photo costs
+roughly 5–20 KB of the JSON; a few hundred teams stay comfortably under a megabyte.
 
 ## Theme
 
@@ -261,18 +296,20 @@ src/
                normalize.ts (raw -> domain model)
   assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
                (favicon source), fonts/trinos-solid.ttf (display face)
-  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts,
-               useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts, useTeamAwards.ts
+  hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useSharedAssets.ts, useTeamLookup.ts,
+               useSettings.ts, useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts,
+               useTeamAwards.ts
   lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), oprSeries.ts (sparkline
                series and OPR colours), predict.ts (predicted ranking and schedule difficulty),
                selection.ts (alliance-selection board), awards.ts (team award labels and ordering),
                model.ts (match views), format.ts, events.ts, route.ts, teamSearch.ts (team matching),
                assets.ts (local asset store), image.ts (image handling), settings.ts, backup.ts
   components/  EventPicker, TeamSearch, MatchList, MatchDetail, AllianceCard, TeamList,
-               PredictRanking, TeamPage, ConfigView, SettingsMenu, Confetti
+               PredictRanking, TeamPage, HomePage, ConfigView, AdminView, SettingsMenu, Confetti
   types.ts     shared domain types
-public/        favicon.png, apple-touch-icon.png (served from the site root), .htaccess (Apache
-               caching and compression, copied into dist/ for cPanel hosts)
+public/        favicon.png, apple-touch-icon.png (served from the site root), shared-assets.json (the
+               shipped logo and robot library), .htaccess (Apache caching and compression, copied into
+               dist/ for cPanel hosts)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
 .github/
   workflows/   deploy.yml (typecheck + test + build + publish to GitHub Pages)
