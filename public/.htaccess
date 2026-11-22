@@ -14,6 +14,9 @@
   <FilesMatch "^(index\.html|shared-assets\.json)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
+  <FilesMatch "^(index\.html|shared-assets\.json)$">
+    Header set Cache-Control "no-store, max-age=0"
+  </FilesMatch>
 </IfModule>
 
 <IfModule mod_mime.c>

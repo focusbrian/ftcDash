@@ -18,6 +18,16 @@ export const SHARED_ASSETS_FILE = 'shared-assets.json';
 /** Unsaved edits on the admin page, so a long upload session survives a reload. */
 export const SHARED_DRAFT_KEY = 'ftcdash.sharedDraft.v1';
 
+/**
+ * The manifest URL, stamped so no cache can answer it. Every upload rewrites this file under the same
+ * name, and a host proxy in front of Apache (InMotion runs nginx) keeps serving the copy it stored
+ * even when the origin sends no-cache, so each page load asks for a URL that has never been cached.
+ */
+export function sharedAssetsUrl(baseUrl: string, stamp: number | string = Date.now()): string {
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return `${base}${SHARED_ASSETS_FILE}?v=${encodeURIComponent(String(stamp))}`;
+}
+
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const HTTP_URL = /^https?:\/\//i;
 const IMAGE_EXTENSION = /\.(png|jpe?g|webp|gif|svg|avif|bmp|ico)$/i;

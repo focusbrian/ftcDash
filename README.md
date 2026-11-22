@@ -364,6 +364,12 @@ How it behaves:
   browser caches each image forever — replacing an image writes a new file and deletes the old one.
 - The dashboard needs no special configuration: it already fetches `shared-assets.json` and layers it
   under the browser's own uploads. A visitor's own logo still wins over the server's.
+- **Uploads appear on the next page load.** The dashboard asks for the manifest as
+  `shared-assets.json?v=<timestamp>` because a host proxy in front of Apache (InMotion serves sites
+  through nginx) keeps handing back the copy it cached, ignoring the file's `no-cache` header — a
+  fresh URL is the only reliable way to see the current library. If a page still looks stale after a
+  redeploy, purge the host cache in cPanel or open the site with a throwaway query string
+  (`https://your-site/?v=2`), which bypasses the cached `index.html`.
 - **Redeploys are safe.** `package-site.cmd` leaves `shared-assets.json` out of the zip (the PHP page
   owns it on the server), and extracting a new build never deletes `media/` or `admin/data/`. Pass
   `--with-assets` if you do want the committed copy shipped.

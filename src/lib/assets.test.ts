@@ -4,6 +4,7 @@ import {
   parseAssetStore,
   robotForSeason,
   robotSeasons,
+  sharedAssetsUrl,
   teamsWithAssets,
   withAsset,
   withShrunkImages,
@@ -158,6 +159,18 @@ describe('overlayAssets', () => {
   it('adds teams that only one side knows about', () => {
     const merged = overlayAssets({ 1: { logo: LOGO } }, { 2: { logo: LOGO } });
     expect(teamsWithAssets(merged)).toEqual([1, 2]);
+  });
+});
+
+describe('sharedAssetsUrl', () => {
+  it('joins a root or sub-path base without doubling the slash', () => {
+    expect(sharedAssetsUrl('/', 1)).toBe('/shared-assets.json?v=1');
+    expect(sharedAssetsUrl('/ftcdash/', 2)).toBe('/ftcdash/shared-assets.json?v=2');
+    expect(sharedAssetsUrl('/ftcdash', 3)).toBe('/ftcdash/shared-assets.json?v=3');
+  });
+
+  it('stamps each call, so a cached copy can never answer it', () => {
+    expect(sharedAssetsUrl('/')).toMatch(/^\/shared-assets\.json\?v=\d+$/);
   });
 });
 

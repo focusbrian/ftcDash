@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SHARED_ASSETS_FILE, type AssetStore } from '../lib/assets';
+import { sharedAssetsUrl, type AssetStore } from '../lib/assets';
 import { parseBackup } from '../lib/backup';
 
 export interface SharedAssetsState {
@@ -15,8 +15,7 @@ const FAILED: SharedAssetsState = { assets: EMPTY, status: 'empty' };
 let pending: Promise<AssetStore> | null = null;
 
 async function fetchSharedAssets(): Promise<AssetStore> {
-  const url = `${import.meta.env.BASE_URL}${SHARED_ASSETS_FILE}`;
-  const response = await fetch(url, { cache: 'no-cache' });
+  const response = await fetch(sharedAssetsUrl(import.meta.env.BASE_URL), { cache: 'no-cache' });
   if (!response.ok) return EMPTY;
   // The file is written in the same envelope as a backup, so the reader accepts both shapes.
   return parseBackup(await response.text());
