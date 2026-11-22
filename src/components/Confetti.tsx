@@ -1,9 +1,9 @@
 const PIECE_COUNT = 26;
 
 const PALETTES: Record<string, string[]> = {
-  red: ['#ff5d6c', '#ff8a3d', '#ffd166', '#ffffff', '#ffb3b9'],
+  red: ['#ff5d6c', '#ff6200', '#ffd166', '#ffffff', '#ffb3b9'],
   blue: ['#4da3ff', '#7ee0ff', '#ffd166', '#ffffff', '#b9d4f2'],
-  solo: ['#ff8a3d', '#ffd166', '#ffffff', '#d7dde3'],
+  solo: ['#ff6200', '#ffd166', '#ffffff', '#d7dde3'],
 };
 
 /** Deterministic pseudo-random in [0, 1) so pieces keep their place across re-renders. */

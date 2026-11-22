@@ -223,8 +223,19 @@ browser does not zoom when one takes focus, and the layout honours the notch and
 
 ## Theme
 
-The UI is a neutral gray dark theme with orange (`#ff8a3d`) used for highlights, chips, and primary
-actions; alliance colors stay red/blue because they carry meaning, muted to fit the gray palette.
+The UI follows the FROST 10136 workspace: a near-black background with a green cast (`#101212`),
+`#191e1b` cards, 1px `#303934` rules, and one pure orange (`#ff6200`) for highlights, chips, and
+primary actions. Cards carry a soft radial wash falling from their top edge.
+
+Headings use the display face — the wordmark, match titles, alliance headers and page titles — while
+navigation, field labels, chips and body copy stay in Inter, because the display face is too wide to
+read at small sizes. Cards sit on 12px corners; chips and buttons stay sharp at 4–5px. Alliance
+colors stay red/blue because they carry meaning, muted to fit the palette.
+
+The display face is [Trinos Solid](https://arterfakproject.com/) by Arterfak Project, bundled from
+`src/assets/fonts/trinos-solid.ttf` (single weight, so display text never asks for a faux bold). It
+is a commercial typeface — hosting it here assumes the team's license covers this site. Delete the
+file and the `--display` stack falls back to Barlow Condensed from Google Fonts.
 
 ## Project layout
 
@@ -233,7 +244,7 @@ src/
   api/         client.ts (fetch wrapper), queries.ts (GraphQL documents), raw.ts (response types),
                normalize.ts (raw -> domain model)
   assets/      first-logo.webp (placeholder logo), kitbot.webp (placeholder robot), robofalcons-icon.jpg
-               (favicon source)
+               (favicon source), fonts/trinos-solid.ttf (display face)
   hooks/       useEventList.ts, useEventData.ts, useTeamAssets.ts, useTeamLookup.ts, useSettings.ts,
                useAutoScroll.ts, useSeasonOprFallback.ts, useTeamOprHistory.ts, useTeamAwards.ts
   lib/         projection.ts (OPR math), seasonOpr.ts (season OPR series), oprSeries.ts (sparkline

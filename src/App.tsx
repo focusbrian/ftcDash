@@ -348,30 +348,34 @@ export default function App() {
       <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__mark">
-            <span className="brand__ftc">FTC</span>
-            <span className="brand__dash">DASH</span>
+          <span className="brand__lockup">
+            <span className="brand__badge" aria-hidden="true">
+              F
+            </span>
+            <span className="brand__mark">FTC Dash</span>
           </span>
           <span className="brand__sub">Schedule · results · OPR projections</span>
-          <span className="brand__credit">
-            Created by Team 10136{' '}
+          <span className="brand__meta">
+            <span className="brand__credit">
+              Created by Team 10136{' '}
+              <a
+                className="brand__credit-link"
+                href="https://frostrobofalcons.org/"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                RoboFalcons
+              </a>
+            </span>
             <a
-              className="brand__credit-link"
-              href="https://frostrobofalcons.org/"
+              className="brand__source"
+              href="https://ftcscout.org"
               target="_blank"
               rel="noreferrer noopener"
             >
-              RoboFalcons
+              Data from FTC Scout
             </a>
           </span>
-          <a
-            className="brand__source"
-            href="https://ftcscout.org"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Data from FTC Scout
-          </a>
         </div>
 
         {view === 'dashboard' ? (
