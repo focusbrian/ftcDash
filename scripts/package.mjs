@@ -18,6 +18,7 @@ function arg(name) {
 
 const base = arg('base') ?? '/';
 const outArg = arg('out');
+const withAssets = process.argv.includes('--with-assets');
 
 if (!base.startsWith('/') || !base.endsWith('/')) {
   console.error(`--base must start and end with "/" (got "${base}"). Use "/" for a domain root.`);
@@ -52,6 +53,18 @@ if (referenced && !referenced.startsWith(base)) {
   process.exit(1);
 }
 
+// On a PHP host the admin page owns shared-assets.json, so shipping the committed copy would wipe
+// the library on every deploy. Keep it only when asked for.
+const manifest = join(dist, 'shared-assets.json');
+if (existsSync(manifest)) {
+  if (withAssets) {
+    console.log('Including shared-assets.json from the repo (--with-assets).');
+  } else {
+    rmSync(manifest);
+    console.log('Leaving shared-assets.json out — the PHP admin page keeps its own copy on the server.');
+  }
+}
+
 rmSync(out, { force: true });
 const win = process.platform === 'win32';
 if (win) {
@@ -74,6 +87,7 @@ if (!entries.some((entry) => entry.includes('.htaccess'))) {
 console.log(
   `\nUpload it to ${base === '/' ? 'public_html' : `the "${base}" folder`}, extract it there, then delete the archive.`,
 );
+console.log('Then open /admin/ on the site to add logos and robot photos (PHP hosts only).');
 
 function listZip(archive) {
   const command =

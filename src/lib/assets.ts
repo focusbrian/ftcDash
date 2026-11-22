@@ -18,8 +18,24 @@ export const SHARED_ASSETS_FILE = 'shared-assets.json';
 /** Unsaved edits on the admin page, so a long upload session survives a reload. */
 export const SHARED_DRAFT_KEY = 'ftcdash.sharedDraft.v1';
 
-function isDataUrl(value: unknown): value is string {
-  return typeof value === 'string' && value.startsWith('data:image/');
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+const HTTP_URL = /^https?:\/\//i;
+const IMAGE_EXTENSION = /\.(png|jpe?g|webp|gif|svg|avif|bmp|ico)$/i;
+
+/**
+ * An image the browser can load: an image data URL, an http(s) URL, or a path relative to the site
+ * (the PHP library stores files under `media/`). Anything else — `javascript:`, `data:text/html`, a
+ * stray word — is refused, because manifests and backups are data and must not become code.
+ */
+export function isImageSource(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (trimmed === '') return false;
+  if (/^data:/i.test(trimmed)) return /^data:image\//i.test(trimmed);
+  if (HTTP_URL.test(trimmed)) return true;
+  if (HAS_SCHEME.test(trimmed)) return false;
+  // A relative path needs either a folder or a recognised image extension to count as one.
+  return trimmed.includes('/') || IMAGE_EXTENSION.test(trimmed);
 }
 
 function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
@@ -43,13 +59,13 @@ export function parseAssetStore(raw: string | null): AssetStore {
     const entry = value as Record<string, unknown>;
     const asset: TeamAsset = {};
 
-    if (isDataUrl(entry.logo)) asset.logo = entry.logo;
-    if (isDataUrl(entry.robot)) asset.robot = entry.robot;
+    if (isImageSource(entry.logo)) asset.logo = entry.logo;
+    if (isImageSource(entry.robot)) asset.robot = entry.robot;
 
     if (isNonEmptyObject(entry.robots)) {
       const robots: Record<string, string> = {};
       for (const [season, image] of Object.entries(entry.robots)) {
-        if (/^\d{4}$/.test(season) && isDataUrl(image)) robots[season] = image;
+        if (/^\d{4}$/.test(season) && isImageSource(image)) robots[season] = image;
       }
       if (Object.keys(robots).length > 0) asset.robots = robots;
     }

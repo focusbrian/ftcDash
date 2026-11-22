@@ -1,0 +1,27 @@
+# Uploaded logos and robot photos, written by /admin/ (see admin/lib.php).
+# Filenames carry a random suffix and files are replaced rather than overwritten, so they can be
+# cached forever. Scripting is disabled here: an image upload should never be able to run.
+#
+# Every directive is guarded by an <IfModule>: an unknown directive is a 500 error on hosts where
+# that module is not loaded, which is the usual way a hand-written .htaccess breaks a shared plan.
+
+<IfModule mod_autoindex.c>
+  IndexIgnore *
+</IfModule>
+
+# Never execute anything here, whatever a file is named. Harmless where PHP runs as CGI/FPM rather
+# than as an Apache module, because there is nothing for RemoveHandler to hand off to.
+<IfModule mod_mime.c>
+  RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phps
+  RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phps
+  AddType image/webp .webp
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(png|jpe?g|webp|gif)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^assets\.json$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

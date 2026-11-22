@@ -49,6 +49,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The PHP asset library only exists for the cPanel/InMotion deployment; Pages would serve the
+      # .php sources as plain text, so keep them out of the published artifact.
+      - name: Drop the server-only files
+        run: rm -rf dist/admin dist/media
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

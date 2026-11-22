@@ -336,6 +336,42 @@ changes the live site by itself.
 Images are scaled the same way as a browser upload (48 × 48 logos, 200 × 200 robots), so a photo costs
 roughly 5–20 KB of the JSON; a few hundred teams stay comfortably under a megabyte.
 
+### On a PHP host (`/admin/`)
+
+A cPanel/InMotion deployment has a better option: **`https://your-site/admin/`** stores the images as
+real files in `media/` and records them in the same `shared-assets.json`, so nothing has to be
+downloaded, edited and re-uploaded. PHP runs on the server, not on your machine — building and
+deploying are unchanged.
+
+1. Upload the site (see [cPanel / InMotion shared hosting](#cpanel--inmotion-shared-hosting)).
+2. Open `/admin/` and choose a password — the page has none until then, and **the first visitor to set
+   one owns the library**, so do this right after deploying. If you would rather not race that, put
+   cPanel → Directory Privacy on `public_html/admin` until you have.
+3. Type a team number, pick *logo* or *robot photo* (plus a season for robots), choose a file, upload.
+
+How it behaves:
+
+- Uploads are decoded and re-encoded through GD (which strips anything hidden in the file), scaled to
+  fit 128 px for logos and 480 px for robots, then written as `media/<team>-<kind>[-<season>]-<random>.png`
+  or `.jpg`. PNG/JPEG/WebP/GIF are accepted; SVG is refused (it can carry script).
+- The JSON keeps only the path (`media/10136-logo-c13f864b.png`), so the manifest stays tiny and the
+  browser caches each image forever — replacing an image writes a new file and deletes the old one.
+- The dashboard needs no special configuration: it already fetches `shared-assets.json` and layers it
+  under the browser's own uploads. A visitor's own logo still wins over the server's.
+- **Redeploys are safe.** `package-site.cmd` leaves `shared-assets.json` out of the zip (the PHP page
+  owns it on the server), and extracting a new build never deletes `media/` or `admin/data/`. Pass
+  `--with-assets` if you do want the committed copy shipped.
+- **Security:** the password is stored as a `password_hash` in `admin/data/config.php`, which
+  `admin/data/.htaccess` denies to the web; sessions are `HttpOnly`/`SameSite=Strict`, every form carries
+  a CSRF token, five bad passwords lock sign-in for 30 seconds, and `media/.htaccess` turns off script
+  execution so an upload can never run. Delete `admin/data/config.php` to re-run the password setup.
+- **If uploads fail,** the page names the folders it cannot write. In cPanel → File Manager →
+  Permissions, set `public_html/media` (and `public_html/admin/data`) to 755, or 775 on locked-down
+  plans. Uploads are also capped at 8 MB by the page and by `upload_max_filesize`.
+
+GitHub Pages cannot run PHP, so the workflow deletes `dist/admin` and `dist/media` before publishing —
+use the `#/admin` JSON workflow above there.
+
 ## Theme
 
 The UI follows the FROST 10136 workspace: a near-black background with a green cast (`#101212`),
@@ -372,8 +408,11 @@ src/
                PredictRanking, TeamPage, HomePage, ConfigView, AdminView, SettingsMenu, Confetti
   types.ts     shared domain types
 public/        favicon.png, apple-touch-icon.png (served from the site root), shared-assets.json (the
-               shipped logo and robot library), .htaccess (Apache caching and compression, copied into
-               dist/ for cPanel hosts)
+               committed logo and robot library, used by static hosts), .htaccess (Apache caching and
+               compression, copied into dist/ for cPanel hosts)
+  admin/       index.php + lib.php — the PHP asset library (uploads, key gate); data/ holds the
+               password hash at runtime and is denied to the web
+  media/       uploaded logos and robot photos, written by admin/ at runtime (git-ignored)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
 package-site.cmd  Windows packager: builds for a base path and writes ftcdash-site.zip for cPanel
 scripts/       package.mjs (the packager; run it with `npm run package`)
@@ -399,7 +438,7 @@ rules: the host only ever serves `index.html`.
 | Vercel | framework preset “Vite”, output `dist` |
 | Cloudflare Pages | build `npm run build`, output `dist` |
 | GitHub Pages | see below |
-| cPanel / Apache shared hosting (InMotion, HostGator, …) | run `package-site.cmd`, upload the zip — see below |
+| cPanel / Apache shared hosting (InMotion, HostGator, …) | run `package-site.cmd`, upload the zip, then use `/admin/` — see below |
 | nginx / S3 + CloudFront | upload `dist`; `index.html` no-cache, `assets/*` immutable |
 
 Hosts that serve the app from a sub-path need `BASE_PATH`, e.g. `BASE_PATH=/FTCDash/ npm run build`
@@ -411,9 +450,9 @@ InMotion (and any cPanel host) serves `public_html` with Apache, which is all th
 build on your own machine — the server never runs Node.
 
 **One step.** Double-click **`package-site.cmd`** (or run `npm run package`). It typechecks, builds
-and writes `ftcdash-site.zip` containing the *contents* of `dist/` — `index.html`, `assets/`,
-`shared-assets.json`, the icons and `.htaccess` — and prints the file list so you can confirm nothing
-is missing.
+and writes `ftcdash-site.zip` containing the *contents* of `dist/` — `index.html`, `assets/`, the
+icons, `.htaccess`, and the `admin/` + `media/` folders the [server asset library](#on-a-php-host-admin)
+uses — and prints the file list so you can confirm nothing is missing.
 
 ```
 package-site.cmd                 # https://example.com/
@@ -423,6 +462,10 @@ npm run package -- --base=/ftcdash/ --out=../upload.zip   # same thing from a te
 
 The script builds for the address you name and fails loudly if `dist/index.html` ends up pointing
 somewhere other than that path, which is the usual cause of a page that loads without styles.
+
+`shared-assets.json` is deliberately **left out** of the zip: the `/admin/` page owns that file on the
+server, and shipping the committed copy would wipe your library on every deploy. Add `--with-assets`
+to include it anyway (e.g. for a static host with no PHP).
 
 **Then upload it:**
 
@@ -434,12 +477,18 @@ somewhere other than that path, which is the usual cause of a page that loads wi
    folder grows).
 
 FTP/SFTP works the same way — drag the contents of `dist/` into the target folder. On plans with SSH
-you can deploy a rebuild in one step (this mirrors `dist/` into the folder and deletes stale files):
+you can deploy a rebuild in one step. Exclude the two folders the server writes to, or `--delete` will
+remove the uploaded images and the admin password:
 
 ```bash
 npm run build
-rsync -avz --delete dist/ user@server.example.com:~/public_html/ftcdash/
+rsync -avz --delete \
+  --exclude media --exclude admin/data --exclude shared-assets.json \
+  dist/ user@server.example.com:~/public_html/ftcdash/
 ```
+
+After the first upload, open `/admin/` once and set the library password (see
+[On a PHP host](#on-a-php-host-admin)).
 
 `public/.htaccess` ships inside the archive and tells Apache to compress text, cache the fingerprinted
 `assets/*` for a year and never cache `index.html` or `shared-assets.json` — so a redeploy (or a new

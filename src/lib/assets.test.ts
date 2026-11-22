@@ -30,7 +30,34 @@ describe('parseAssetStore', () => {
       7: {},
     });
 
-    expect(parseAssetStore(raw)).toEqual({ 23502: { logo: LOGO, robot: ROBOT } });
+    expect(parseAssetStore(raw)).toEqual({
+      23502: { logo: LOGO, robot: ROBOT },
+      12: { logo: 'https://example.com/logo.png' },
+    });
+  });
+
+  it('accepts the relative paths the PHP library writes', () => {
+    const raw = JSON.stringify({
+      10136: { logo: 'media/10136-logo-ab12cd34.png', robots: { 2026: 'media/10136-robot-2026-ef56.png' } },
+    });
+
+    expect(parseAssetStore(raw)).toEqual({
+      10136: {
+        logo: 'media/10136-logo-ab12cd34.png',
+        robots: { 2026: 'media/10136-robot-2026-ef56.png' },
+      },
+    });
+  });
+
+  it('still refuses a source that is not an image', () => {
+    const raw = JSON.stringify({
+      1: { logo: 'javascript:alert(1)' },
+      2: { logo: 'data:text/html;base64,PHNjcmlwdD4=' },
+      3: { logo: 'mailto:team@example.com' },
+      4: { logo: 'media/ok.png' },
+    });
+
+    expect(parseAssetStore(raw)).toEqual({ 4: { logo: 'media/ok.png' } });
   });
 
   it('keeps per-season robot images and ignores malformed keys', () => {

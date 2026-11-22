@@ -1,0 +1,10 @@
+# Private state for the server asset library: the password hash and any in-flight files.
+# Nothing here is ever requested by a browser, so deny it outright (Apache 2.2 and 2.4 syntax).
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
