@@ -184,6 +184,15 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, `#/2026/USMIWMM4/t/10136`
   opens a team page, and `#/config` opens the asset configuration. The season and event pickers stay in
   sync with the URL.
+- **Back link:** a host page can pass `?back=<url>` (before the `#`) and a back button appears at the
+  left of the header pointing there, so the dashboard reads as part of the larger site. Add
+  `&backLabel=<text>` to change its caption (default “Back”); only `http`/`https` targets are accepted.
+  The link survives match navigation because it lives in the query, not the hash. For example, the
+  FROST robot lab can send visitors to a specific match with:
+
+  ```
+  https://focusbrian.github.io/ftcDash/?back=https%3A%2F%2Ffrost-10136-robot-lab.celestialshark5.chatgpt.site%2F&backLabel=Robot%20Lab#/2026/USMISOQ/m/4
+  ```
 
 ### On a phone
 
