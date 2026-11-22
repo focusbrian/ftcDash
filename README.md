@@ -347,7 +347,13 @@ deploying are unchanged.
 2. Open `/admin/` and choose a password — the page has none until then, and **the first visitor to set
    one owns the library**, so do this right after deploying. If you would rather not race that, put
    cPanel → Directory Privacy on `public_html/admin` until you have.
-3. Type a team number, pick *logo* or *robot photo* (plus a season for robots), choose a file, upload.
+3. Find the team: type `10136` **or start typing its name** (`Frost Robo…`). Suggestions come from FTC
+   Scout and show the school too; picking one fills in the number. A bare number is looked up and shown
+   underneath, so you can see you have the right team before uploading.
+4. Use one of the two buttons — **Upload logo** or **Upload robot photo** — each with its own file
+   field. The robot card carries a **season** picker labelled with the game (`2026–27`, `2025–26 ·
+   Decode`, …); *Every season* writes the older season-less entry, used only when a team has no photo
+   for the match's season.
 
 How it behaves:
 

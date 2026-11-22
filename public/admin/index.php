@@ -129,20 +129,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'upload') {
             if (!preg_match(FTC_TEAM_PATTERN, $team)) {
-                throw new RuntimeException('Enter a team number (digits only).');
+                throw new RuntimeException('Pick a team first — type its number or search it by name.');
             }
             if (!in_array($kind, FTC_KINDS, true)) {
-                throw new RuntimeException('Choose a logo or a robot photo.');
+                throw new RuntimeException('Use the logo or the robot photo button.');
             }
+
+            $file = $_FILES[$kind] ?? [];
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                throw new RuntimeException($kind === 'logo' ? 'Choose a logo file first.' : 'Choose a robot photo first.');
+            }
+
             $season = null;
             if ($kind === 'robot' && $seasonRaw !== '') {
                 if (!preg_match('/^\d{4}$/', $seasonRaw)) {
-                    throw new RuntimeException('A season is a four-digit year, e.g. 2026.');
+                    throw new RuntimeException('Pick a season from the list.');
                 }
                 $season = (int) $seasonRaw;
             }
 
-            $path = ftc_store_image($_FILES['image'] ?? [], $team, $kind, $season);
+            $path = ftc_store_image($file, $team, $kind, $season);
 
             $teams = ftc_teams();
             $entry = is_array($teams[$team] ?? null) ? $teams[$team] : [];
@@ -227,6 +233,20 @@ $writable = [
 $problems = array_keys(array_filter($writable, static fn (bool $ok): bool => !$ok));
 $hasGd = function_exists('imagecreatefromstring');
 $manifestUrl = '../' . FTC_MANIFEST;
+
+// The robot-season picker: the current season first, plus any season already in the library.
+$seasonChoices = [];
+for ($season = ftc_season_now(); $season >= 2019; $season--) {
+    $seasonChoices[] = $season;
+}
+foreach ($teams as $entry) {
+    $robots = is_array($entry) && is_array($entry['robots'] ?? null) ? $entry['robots'] : [];
+    foreach (array_keys($robots) as $season) {
+        $seasonChoices[] = (int) $season;
+    }
+}
+$seasonChoices = array_values(array_unique($seasonChoices));
+rsort($seasonChoices);
 ?>
 <!doctype html>
 <html lang="en">
@@ -287,6 +307,33 @@ $manifestUrl = '../' . FTC_MANIFEST;
   .empty { font-size:13px; color:var(--faint); }
   code { font-family:'Cascadia Mono',Consolas,monospace; font-size:11px; color:var(--dim);
     word-break:break-all; }
+
+  /* Upload: one form, a team search, then a card per image kind. */
+  .upload { display:flex; flex-direction:column; gap:14px; }
+  .search { position:relative; max-width:420px; }
+  .search input { width:100%; }
+  .suggest { position:absolute; z-index:5; top:calc(100% - 4px); left:0; right:0; margin:0; padding:4px;
+    list-style:none; border-radius:6px; border:1px solid #48544c; background:var(--panel);
+    box-shadow:0 16px 34px rgba(0,0,0,.6); max-height:250px; overflow-y:auto; }
+  .suggest li { margin:0; }
+  .suggest button { display:flex; gap:8px; align-items:baseline; width:100%; height:auto; padding:6px 8px;
+    border:none; border-radius:4px; background:none; color:var(--text); font-weight:400; text-align:left; }
+  .suggest button:hover, .suggest button[aria-selected=true] { background:var(--raised); }
+  .suggest .num { font-family:'Cascadia Mono',Consolas,monospace; font-weight:700; font-size:12px;
+    color:var(--accent-dim); }
+  .suggest .who { display:flex; flex-direction:column; min-width:0; }
+  .suggest .who small { color:var(--faint); font-size:10px; }
+  .resolved { margin:6px 0 0; min-height:16px; font-size:12px; color:var(--dim); }
+  .resolved strong { color:var(--text); }
+  .uploads { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .upload-card { display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:12px 14px;
+    border:1px solid var(--line); border-radius:10px; background:var(--raised); }
+  .upload-card h3 { margin:0; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--dim); }
+  .upload-card .hint { margin:0; }
+  .upload-card select { width:100%; }
+  .upload-card input[type=file] { width:100%; }
+  .upload-card button { margin-top:auto; }
 </style>
 </head>
 <body>
@@ -367,30 +414,48 @@ $manifestUrl = '../' . FTC_MANIFEST;
     <section class="panel">
       <h2>Upload</h2>
       <p class="hint">
-        The image is re-encoded and scaled on the server (logos to fit 128 px, robot photos to fit
-        480 px) and stored in <code>media/</code>. Replacing an image deletes the file it replaces.
+        Search a team by name or number, then use whichever button matches what you are uploading.
+        Images are re-encoded and scaled on the server (logos to fit 128 px, robot photos to fit
+        480 px) and stored in <code>media/</code>; replacing one deletes the file it replaced.
       </p>
-      <form method="post" enctype="multipart/form-data" class="row">
+      <form method="post" enctype="multipart/form-data" class="upload">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
         <input type="hidden" name="action" value="upload">
-        <label>Team
-          <input type="text" name="team" inputmode="numeric" placeholder="10136" required
-                 pattern="\d{1,6}" value="<?= h((string) ($_POST['team'] ?? '')) ?>">
-        </label>
-        <label>Image
-          <select name="kind">
-            <option value="logo">Team logo</option>
-            <option value="robot">Robot photo</option>
-          </select>
-        </label>
-        <label>Season (robot only)
-          <input type="text" name="season" inputmode="numeric" placeholder="<?= h((string) ftc_season_now()) ?>"
-                 pattern="\d{4}" title="Four digits, or blank for every season">
-        </label>
-        <label>File
-          <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif" required>
-        </label>
-        <button type="submit">Upload</button>
+
+        <div class="search">
+          <label for="team-input">Team — number or name</label>
+          <input type="text" id="team-input" name="team" autocomplete="off" spellcheck="false"
+                 placeholder="10136, or start typing Frost Robo…" required pattern="\d{1,6}"
+                 title="Pick a team from the suggestions — the field has to hold its number."
+                 value="<?= h((string) ($_POST['team'] ?? '')) ?>">
+          <ul class="suggest" id="suggest" hidden></ul>
+          <p class="resolved" id="resolved" aria-live="polite"></p>
+        </div>
+
+        <div class="uploads">
+          <div class="upload-card">
+            <h3>Team logo</h3>
+            <p class="hint">Square and transparent works best. One logo per team.</p>
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
+            <button type="submit" name="kind" value="logo">Upload logo</button>
+          </div>
+
+          <div class="upload-card">
+            <h3>Robot photo</h3>
+            <p class="hint">Cut-out PNGs work best. One photo per team per season.</p>
+            <label for="season-select">Season</label>
+            <select id="season-select" name="season">
+              <?php foreach ($seasonChoices as $season): ?>
+                <option value="<?= h((string) $season) ?>"<?= $season === ftc_season_now() ? ' selected' : '' ?>>
+                  <?= h(ftc_season_label($season)) ?>
+                </option>
+              <?php endforeach; ?>
+              <option value="">Every season (older behaviour)</option>
+            </select>
+            <input type="file" name="robot" accept="image/png,image/jpeg,image/webp,image/gif">
+            <button type="submit" name="kind" value="robot">Upload robot photo</button>
+          </div>
+        </div>
       </form>
     </section>
 
@@ -403,7 +468,7 @@ $manifestUrl = '../' . FTC_MANIFEST;
           <?php foreach ($teams as $number => $entry): ?>
             <?php if (!is_array($entry)) { continue; } ?>
             <div class="team">
-              <h3>Team <?= h((string) $number) ?></h3>
+              <h3 data-team="<?= h((string) $number) ?>">Team <?= h((string) $number) ?></h3>
               <div class="images">
                 <?php foreach (ftc_team_images($entry) as $image): ?>
                   <div class="image">
@@ -439,5 +504,151 @@ $manifestUrl = '../' . FTC_MANIFEST;
     <code>shared-assets.json</code> and falls back to whatever users upload in their own browser.
   </p>
 </main>
+
+<?php if ($loggedIn): ?>
+<script>
+// Team lookup against FTC Scout. Numbers are authoritative for the upload; names are only a way to
+// find the number, so the field always ends up holding digits.
+(() => {
+  const ENDPOINT = 'https://api.ftcscout.org/graphql';
+  const input = document.getElementById('team-input');
+  const list = document.getElementById('suggest');
+  const resolved = document.getElementById('resolved');
+  if (!input || !list || !resolved) return;
+
+  const SEARCH = 'query S($text: String!) { teamsSearch(searchText: $text) { number name schoolName } }';
+  const LOOKUP = 'query L($number: Int!) { teamByNumber(number: $number) { number name schoolName } }';
+
+  const ask = async (query, variables) => {
+    const response = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const payload = await response.json();
+    if (payload.errors) throw new Error(payload.errors[0].message);
+    return payload.data;
+  };
+
+  const describe = (team) => {
+    const parts = [`${team.number} · ${team.name}`];
+    if (team.schoolName) parts.push(team.schoolName);
+    return parts.join(' — ');
+  };
+
+  const close = () => {
+    list.hidden = true;
+    list.innerHTML = '';
+  };
+
+  const show = (teams) => {
+    if (teams.length === 0) {
+      resolved.textContent = 'No team matches that. Type the number instead.';
+      close();
+      return;
+    }
+    list.innerHTML = '';
+    for (const team of teams) {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.innerHTML = '<span class="num"></span><span class="who"></span>';
+      button.querySelector('.num').textContent = String(team.number);
+      const who = button.querySelector('.who');
+      const name = document.createElement('span');
+      name.textContent = team.name;
+      who.append(name);
+      if (team.schoolName) {
+        const school = document.createElement('small');
+        school.textContent = team.schoolName;
+        who.append(school);
+      }
+      button.addEventListener('click', () => {
+        input.value = String(team.number);
+        resolved.textContent = describe(team);
+        close();
+        input.focus();
+      });
+      item.append(button);
+      list.append(item);
+    }
+    list.hidden = false;
+  };
+
+  let timer = 0;
+  let seq = 0;
+  const schedule = () => {
+    clearTimeout(timer);
+    const text = input.value.trim();
+    const mine = ++seq;
+
+    if (text === '') {
+      resolved.textContent = '';
+      close();
+      return;
+    }
+    if (/^\d+$/.test(text)) {
+      // Already a number: confirm the team rather than offering a list of one.
+      resolved.textContent = 'Looking up team ' + text + '…';
+      close();
+    }
+
+    timer = setTimeout(async () => {
+      try {
+        if (/^\d+$/.test(text)) {
+          const data = await ask(LOOKUP, { number: Number(text) });
+          if (mine !== seq) return;
+          resolved.textContent = data.teamByNumber ? describe(data.teamByNumber) : 'No team with that number.';
+          return;
+        }
+        const data = await ask(SEARCH, { text });
+        if (mine !== seq) return;
+        resolved.textContent = '';
+        show(data.teamsSearch.slice(0, 8));
+      } catch {
+        if (mine !== seq) return;
+        resolved.textContent = 'Could not reach FTC Scout — type the team number directly.';
+        close();
+      }
+    }, 250);
+  };
+
+  input.addEventListener('input', schedule);
+  input.addEventListener('focus', () => {
+    if (!/^\d+$/.test(input.value.trim())) schedule();
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') close();
+    if (event.key === 'Enter' && !list.hidden) {
+      // Enter belongs to the suggestion list while it is open, not to the first upload button.
+      event.preventDefault();
+      list.querySelector('button')?.click();
+    }
+  });
+  document.addEventListener('click', (event) => {
+    if (!list.contains(event.target) && event.target !== input) close();
+  });
+
+  if (input.value.trim() !== '') schedule();
+
+  // Name the teams already in the library, one aliased request for all of them.
+  const headings = [...document.querySelectorAll('h3[data-team]')];
+  if (headings.length > 0) {
+    const fields = headings
+      .slice(0, 40)
+      .map((h, at) => `t${at}: teamByNumber(number: ${Number(h.dataset.team)}) { number name }`)
+      .join('\n');
+    ask(`query Names { ${fields} }`, {})
+      .then((data) => {
+        headings.slice(0, 40).forEach((h, at) => {
+          const team = data[`t${at}`];
+          if (team && team.name) h.textContent = `${team.number} · ${team.name}`;
+        });
+      })
+      .catch(() => { /* numbers alone are fine */ });
+  }
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

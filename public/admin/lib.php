@@ -142,6 +142,27 @@ function ftc_season_now(): int
 }
 
 /**
+ * Game names by launch year, so the season picker reads "2025–26 · Decode" instead of a bare year.
+ * FTC Scout has no season-name field, and a season it does not list yet still gets its year range.
+ */
+const FTC_GAMES = [
+    2019 => 'Skystone',
+    2020 => 'Ultimate Goal',
+    2021 => 'Freight Frenzy',
+    2022 => 'Power Play',
+    2023 => 'CenterStage',
+    2024 => 'Into the Deep',
+    2025 => 'Decode',
+];
+
+function ftc_season_label(int $season): string
+{
+    $range = $season . '–' . str_pad((string) (($season + 1) % 100), 2, '0', STR_PAD_LEFT);
+    $game = FTC_GAMES[$season] ?? null;
+    return $game === null ? $range : $range . ' · ' . $game;
+}
+
+/**
  * Re-encodes an upload through GD (which also strips anything hidden in the file) and stores it
  * under media/. Returns the path to record in the manifest, relative to the site root.
  *
