@@ -4,3 +4,5 @@ dist
 *.local
 .DS_Store
 .node
+ftcdash-site.zip
+ftcdash-*.zip

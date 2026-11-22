@@ -21,6 +21,7 @@ Or by hand:
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # typecheck + production build into dist/
+npm run package  # build for a host and zip dist/ as ftcdash-site.zip
 npm test         # unit tests (Vitest)
 ```
 
@@ -311,6 +312,8 @@ public/        favicon.png, apple-touch-icon.png (served from the site root), sh
                shipped logo and robot library), .htaccess (Apache caching and compression, copied into
                dist/ for cPanel hosts)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
+package-site.cmd  Windows packager: builds for a base path and writes ftcdash-site.zip for cPanel
+scripts/       package.mjs (the packager; run it with `npm run package`)
 .github/
   workflows/   deploy.yml (typecheck + test + build + publish to GitHub Pages)
 ```
@@ -333,7 +336,7 @@ rules: the host only ever serves `index.html`.
 | Vercel | framework preset “Vite”, output `dist` |
 | Cloudflare Pages | build `npm run build`, output `dist` |
 | GitHub Pages | see below |
-| cPanel / Apache shared hosting (InMotion, HostGator, …) | upload the contents of `dist` — see below |
+| cPanel / Apache shared hosting (InMotion, HostGator, …) | run `package-site.cmd`, upload the zip — see below |
 | nginx / S3 + CloudFront | upload `dist`; `index.html` no-cache, `assets/*` immutable |
 
 Hosts that serve the app from a sub-path need `BASE_PATH`, e.g. `BASE_PATH=/FTCDash/ npm run build`
@@ -344,17 +347,28 @@ Hosts that serve the app from a sub-path need `BASE_PATH`, e.g. `BASE_PATH=/FTCD
 InMotion (and any cPanel host) serves `public_html` with Apache, which is all this build needs. Do the
 build on your own machine — the server never runs Node.
 
-1. Build for the address you will serve it from:
-   - domain root, e.g. `https://example.com/` → `npm run build`
-   - a folder, e.g. `https://example.com/ftcdash/` → PowerShell
-     `$env:BASE_PATH='/ftcdash/'; npm run build` (bash: `BASE_PATH=/ftcdash/ npm run build`)
-   The trailing slash matters. `dist/index.html` should reference `/ftcdash/assets/…` when you are
-   done — open it to check.
-2. Zip the **contents** of `dist/` (not the folder itself): `index.html`, `assets/`, the two PNGs and
-   `.htaccess`.
-3. In cPanel → **File Manager**, open `public_html` (or create `public_html/ftcdash` for the sub-folder
-   build), **Upload** the zip, then **Extract** it there and delete the zip.
-4. Visit the URL. If the page loads without styles, the base path in step 1 did not match the folder.
+**One step.** Double-click **`package-site.cmd`** (or run `npm run package`). It typechecks, builds
+and writes `ftcdash-site.zip` containing the *contents* of `dist/` — `index.html`, `assets/`,
+`shared-assets.json`, the icons and `.htaccess` — and prints the file list so you can confirm nothing
+is missing.
+
+```
+package-site.cmd                 # https://example.com/
+package-site.cmd /ftcdash/       # https://example.com/ftcdash/  (trailing slash required)
+npm run package -- --base=/ftcdash/ --out=../upload.zip   # same thing from a terminal
+```
+
+The script builds for the address you name and fails loudly if `dist/index.html` ends up pointing
+somewhere other than that path, which is the usual cause of a page that loads without styles.
+
+**Then upload it:**
+
+1. cPanel → **File Manager**, open `public_html` (or create `public_html/ftcdash` for a sub-folder
+   build).
+2. **Upload** `ftcdash-site.zip`, then **Extract** it in that folder, then delete the zip.
+3. Visit the URL. A redeploy is the same three steps — the new files replace the old ones, and because
+   Vite fingerprints `assets/*`, the old ones are simply ignored (delete them occasionally if the
+   folder grows).
 
 FTP/SFTP works the same way — drag the contents of `dist/` into the target folder. On plans with SSH
 you can deploy a rebuild in one step (this mirrors `dist/` into the folder and deletes stale files):
@@ -364,10 +378,11 @@ npm run build
 rsync -avz --delete dist/ user@server.example.com:~/public_html/ftcdash/
 ```
 
-`public/.htaccess` ships inside `dist/` and tells Apache to compress text, cache the fingerprinted
-`assets/*` for a year and never cache `index.html` — so a redeploy shows up immediately while repeat
-visitors still avoid re-downloading the bundle. Routing is hash-based, so no rewrite rules are needed
-and no `.htaccess` changes are required for deep links.
+`public/.htaccess` ships inside the archive and tells Apache to compress text, cache the fingerprinted
+`assets/*` for a year and never cache `index.html` or `shared-assets.json` — so a redeploy (or a new
+shared asset library) shows up immediately while repeat visitors still avoid re-downloading the
+bundle. Routing is hash-based, so no rewrite rules are needed and no `.htaccess` changes are required
+for deep links.
 
 Because everything is static, the same steps work on an InMotion VPS: point the Apache (or nginx) site
 root at the uploaded folder. For nginx use `try_files $uri /index.html;` only if you ever add real
