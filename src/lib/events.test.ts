@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { filterEvents, pickDefaultEvent, sortEventsForPicker, teamNumberQuery } from './events';
+import {
+  filterEvents,
+  groupEvents,
+  pickDefaultEvent,
+  sortEventsForPicker,
+  teamNumberQuery,
+} from './events';
 import { buildHash, parseRoute } from './route';
 import type { EventSummary } from '../types';
 
@@ -53,6 +59,36 @@ describe('sortEventsForPicker', () => {
       'PAST_RECENT',
       'PAST_OLD',
     ]);
+  });
+});
+
+describe('groupEvents', () => {
+  it('splits a season into live, upcoming and finished, each in reading order', () => {
+    const events = [
+      event('PAST_OLD', '2025-11-01', '2025-11-02'),
+      event('NOW_LATE', '2026-01-15', '2026-01-17'),
+      event('UPCOMING_SOON', '2026-01-18'),
+      event('NOW_EARLY', '2026-01-14', '2026-01-16'),
+      event('PAST_RECENT', '2026-01-10'),
+      event('UPCOMING_LATE', '2026-03-01'),
+    ];
+
+    const groups = groupEvents(events, TODAY);
+
+    expect(groups.live.map((item) => item.code)).toEqual(['NOW_EARLY', 'NOW_LATE']);
+    expect(groups.upcoming.map((item) => item.code)).toEqual(['UPCOMING_SOON', 'UPCOMING_LATE']);
+    expect(groups.recent.map((item) => item.code)).toEqual(['PAST_RECENT', 'PAST_OLD']);
+  });
+
+  it('places an event that ends today in the live list, not the finished one', () => {
+    const groups = groupEvents([event('TODAY', '2026-01-13', TODAY)], TODAY);
+
+    expect(groups.live).toHaveLength(1);
+    expect(groups.recent).toHaveLength(0);
+  });
+
+  it('returns three empty lists when there are no events', () => {
+    expect(groupEvents([], TODAY)).toEqual({ live: [], upcoming: [], recent: [] });
   });
 });
 
@@ -110,6 +146,17 @@ describe('route', () => {
     });
     expect(parseRoute('').code).toBeNull();
     expect(parseRoute('').season).toBeGreaterThan(2000);
+  });
+
+  it('routes an empty hash to the landing page', () => {
+    expect(parseRoute('').view).toBe('home');
+    expect(parseRoute('#/').view).toBe('home');
+    expect(buildHash({ view: 'home', season: 2026, code: null, matchId: null, teamNumber: null })).toBe('#/');
+  });
+
+  it('keeps a season-only hash on the dashboard so season switching still auto-picks', () => {
+    expect(parseRoute('#/2025').view).toBe('dashboard');
+    expect(parseRoute('#/2025').code).toBeNull();
   });
 
   it('routes to the config page', () => {

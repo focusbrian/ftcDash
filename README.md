@@ -74,6 +74,12 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 
 ## Reading the UI
 
+- **Landing page (`#/`):** the bare site URL opens a picker rather than auto-selecting an event: a
+  season switch, a search box that takes an event code, part of an event name or a bare team number,
+  and three lists — **Happening now**, **Upcoming** and **Recently finished**, six rows each with a
+  "Show all" switch for the whole season. The button under the intro jumps straight to the live event,
+  or to the latest one with results. Every row is a real link (`#/2026/USCITEQ`), so it can be opened
+  in a new tab. The wordmark in the header returns here from anywhere.
 - **Schedule (left):** one card per match, grouped into Qualification / Playoff / Semifinal / Final.
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.
@@ -181,9 +187,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 - **Celebration:** when a played match has a winner, that alliance's card gets a light confetti
   animation — clipped to the card, behind its text, and clear of the robot line-up. It is skipped
   entirely when the visitor prefers reduced motion.
-- **URLs** are shareable: `#/2026/USMIWMM4/m/9` is season, event code, and match id, `#/2026/USMIWMM4/t/10136`
-  opens a team page, and `#/config` opens the asset configuration. The season and event pickers stay in
-  sync with the URL.
+- **URLs** are shareable: `#/` is the landing page, `#/2026/USMIWMM4/m/9` is season, event code and
+  match id, `#/2026/USMIWMM4/t/10136` opens a team page, and `#/config` opens the asset configuration.
+  The season and event pickers stay in sync with the URL.
 - **Back link:** a host page can pass `?back=<url>` (before the `#`) and a back button appears at the
   right of the header, beside the settings gear, pointing there — so the dashboard reads as part of the
   larger site. Add `&backLabel=<text>` to change its caption (default “Back”); only `http`/`https`

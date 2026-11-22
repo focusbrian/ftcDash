@@ -1,4 +1,4 @@
-export type RouteView = 'dashboard' | 'config';
+export type RouteView = 'home' | 'dashboard' | 'config';
 
 export interface Route {
   view: RouteView;
@@ -19,6 +19,11 @@ export const EARLIEST_SEASON = 2019;
 
 export function parseRoute(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+
+  // No season and no event: the landing page, not an auto-picked event.
+  if (segments.length === 0) {
+    return { view: 'home', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
+  }
 
   if (segments[0] === 'config') {
     return { view: 'config', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
@@ -42,6 +47,7 @@ export function parseRoute(hash: string): Route {
 
 export function buildHash(route: Route): string {
   if (route.view === 'config') return '#/config';
+  if (route.view === 'home') return '#/';
 
   const parts = [`#/${route.season}`];
   if (route.code) parts.push(route.code);

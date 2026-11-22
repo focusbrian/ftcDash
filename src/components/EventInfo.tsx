@@ -1,24 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { InfoIcon } from './InfoIcon';
-import { fmtDateRange } from '../lib/format';
+import { eventTypeLabel, fmtDateRange } from '../lib/format';
 import type { EventData } from '../types';
 
 interface Props {
   event: EventData | null;
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  Qualifier: 'Qualifier',
-  LeagueMeet: 'League meet',
-  LeagueTournament: 'League tournament',
-  Championship: 'Championship',
-  SuperQualifier: 'Super qualifier',
-  Scrimmage: 'Scrimmage',
-  Other: 'Event',
-};
-
-function typeLabel(type: string): string {
-  return TYPE_LABELS[type] ?? (type ? type.replace(/([a-z])([A-Z])/g, '$1 $2') : 'Event');
 }
 
 function directionsUrl(event: EventData, address: string | null): string | null {
@@ -89,7 +75,7 @@ export function EventInfo({ event }: Props) {
       {open && event ? (
         <div className="eventinfo__panel" id={panelId} role="dialog" aria-label="Event information">
           <p className="eventinfo__kicker">
-            {event.code} · {typeLabel(event.type)}
+            {event.code} · {eventTypeLabel(event.type)}
             {event.fieldCount
               ? ` · ${event.fieldCount} field${event.fieldCount === 1 ? '' : 's'}`
               : ''}

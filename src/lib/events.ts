@@ -44,6 +44,35 @@ export function pickDefaultEvent(events: EventSummary[], today = todayKey()): Ev
   return sortEventsForPicker(events, today)[0] ?? null;
 }
 
+export interface EventGroups {
+  /** Running today. */
+  live: EventSummary[];
+  /** Starting later, soonest first. */
+  upcoming: EventSummary[];
+  /** Already finished, most recent first. */
+  recent: EventSummary[];
+}
+
+/** Splits a season's events into the three lists the landing page shows. */
+export function groupEvents(events: EventSummary[], today = todayKey()): EventGroups {
+  const live: EventSummary[] = [];
+  const upcoming: EventSummary[] = [];
+  const recent: EventSummary[] = [];
+
+  for (const event of events) {
+    if (isOngoing(event, today)) live.push(event);
+    else if (event.start > today) upcoming.push(event);
+    else recent.push(event);
+  }
+
+  const byName = (a: EventSummary, b: EventSummary) => a.name.localeCompare(b.name);
+  live.sort((a, b) => a.start.localeCompare(b.start) || byName(a, b));
+  upcoming.sort((a, b) => a.start.localeCompare(b.start) || byName(a, b));
+  recent.sort((a, b) => b.start.localeCompare(a.start) || byName(a, b));
+
+  return { live, upcoming, recent };
+}
+
 export function filterEvents(events: EventSummary[], query: string): EventSummary[] {
   const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return events;

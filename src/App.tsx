@@ -3,6 +3,7 @@ import { ConfigView } from './components/ConfigView';
 import { EventChartsProvider } from './components/EventChartsContext';
 import { EventInfo } from './components/EventInfo';
 import { EventPicker } from './components/EventPicker';
+import { HomePage } from './components/HomePage';
 import { MatchDetail } from './components/MatchDetail';
 import { MatchList } from './components/MatchList';
 import { PredictRanking } from './components/PredictRanking';
@@ -98,12 +99,13 @@ export default function App() {
     [event, seasonOpr],
   );
 
-  // First visit: land on today's event, or the most recent one with results.
+  // First visit to an event URL: land on today's event, or the most recent one with results.
+  // The landing page (#/) deliberately leaves the viewer there to choose.
   useEffect(() => {
-    if (code || events.length === 0) return;
+    if (view !== 'dashboard' || code || events.length === 0) return;
     const picked = pickDefaultEvent(events);
     if (picked) setCode(picked.code);
-  }, [code, events]);
+  }, [view, code, events]);
 
   useEffect(() => {
     // The URL shows whichever panel is open, so a team page does not carry the last match in it.
@@ -141,7 +143,8 @@ export default function App() {
     const onHashChange = () => {
       const route = parseRoute(window.location.hash);
       setView(route.view);
-      setSeason(route.season);
+      // Landing on the home page keeps whatever season was being browsed.
+      setSeason((current) => (route.view === 'home' ? current : route.season));
       setCode(route.code);
       setMatchId(route.matchId);
       setTeamNumber(route.teamNumber);
@@ -354,12 +357,14 @@ export default function App() {
       <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__lockup">
-            <span className="brand__badge" aria-hidden="true">
-              F
+          <a className="brand__home" href="#/" aria-label="FTCDash home">
+            <span className="brand__lockup">
+              <span className="brand__badge" aria-hidden="true">
+                F
+              </span>
+              <span className="brand__mark">FTC Dash</span>
             </span>
-            <span className="brand__mark">FTC Dash</span>
-          </span>
+          </a>
           <span className="brand__sub">Schedule · results · OPR projections</span>
           <span className="brand__meta">
             <span className="brand__credit">
@@ -399,7 +404,7 @@ export default function App() {
         ) : null}
 
         <div className="topbar__actions">
-          {view === 'dashboard' ? (
+          {view !== 'config' ? (
             <SettingsMenu
               settings={settings}
               lastUpdated={lastUpdated}
@@ -431,7 +436,17 @@ export default function App() {
           onSetAsset={setAsset}
           onRemoveAsset={removeAsset}
           onReplaceAssets={replaceAssets}
-          onBack={() => setView('dashboard')}
+          onBack={() => setView(code ? 'dashboard' : 'home')}
+          backLabel={code ? 'Back to dashboard' : 'Back to events'}
+        />
+      ) : view === 'home' ? (
+        <HomePage
+          season={season}
+          seasons={seasons}
+          onSeasonChange={handleSeasonChange}
+          events={events}
+          loading={eventsLoading}
+          error={eventsError}
         />
       ) : (
         <main className={`workspace workspace--${pane}`}>

@@ -27,6 +27,8 @@ interface Props {
   onRemoveAsset: (teamNumber: number, kind: AssetKind, season?: number) => void;
   onReplaceAssets: (store: AssetStore) => void;
   onBack: () => void;
+  /** Where "back" leads, so the caption matches (the landing page has no dashboard behind it). */
+  backLabel?: string;
 }
 
 function plural(count: number, noun: string): string {
@@ -47,6 +49,7 @@ export function ConfigView({
   onRemoveAsset,
   onReplaceAssets,
   onBack,
+  backLabel = 'Back to dashboard',
 }: Props) {
   const [teamInput, setTeamInput] = useState('');
   const [busy, setBusy] = useState<AssetKind | null>(null);
@@ -213,7 +216,7 @@ export function ConfigView({
             </p>
           </div>
           <button type="button" className="button button--ghost" onClick={onBack}>
-            ← Back to dashboard
+            ← {backLabel}
           </button>
         </header>
 

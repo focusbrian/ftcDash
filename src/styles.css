@@ -141,6 +141,23 @@ select {
   gap: 10px;
 }
 
+/* The wordmark doubles as the way back to the landing page. */
+.brand__home {
+  display: inline-flex;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand__home:hover .brand__mark {
+  color: var(--accent);
+}
+
+.brand__home:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
 /* The skewed orange block from the FROST workspace, with the wordmark beside it. */
 .brand__badge {
   display: inline-flex;
@@ -2500,6 +2517,240 @@ select {
   color: var(--red);
 }
 
+/* ---------- landing page ---------- */
+
+.home {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 40px 36px 56px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.home__hero {
+  max-width: 760px;
+  margin: 0 0 34px;
+}
+
+.home__eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.home__title {
+  margin: 10px 0 14px;
+  font-family: var(--display);
+  font-size: clamp(34px, 5vw, 58px);
+  font-weight: 400;
+  font-synthesis: none;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.home__title span {
+  color: var(--accent);
+}
+
+.home__intro {
+  max-width: 560px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
+.home__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.home__cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  text-decoration: none;
+  max-width: 100%;
+}
+
+.home__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 760px;
+  margin-bottom: 8px;
+}
+
+.home__search {
+  flex: 1 1 320px;
+}
+
+.home__hint,
+.home__status {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.home__hint--error {
+  color: var(--red);
+}
+
+.home__section {
+  max-width: 980px;
+  margin-top: 28px;
+}
+
+.home__section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.home__count {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--bg-raised-2);
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.home__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--wash), var(--bg-panel);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.eventrow:hover {
+  border-color: var(--accent-line);
+  background: var(--wash-strong), var(--bg-raised);
+  transform: translateY(-2px);
+}
+
+.eventrow__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.eventrow__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.eventrow__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.eventrow__go {
+  margin-left: auto;
+  flex: none;
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 120ms ease;
+}
+
+.eventrow:hover .eventrow__go {
+  transform: translateX(3px);
+}
+
+.home__more {
+  margin-top: 22px;
+}
+
+@media (max-width: 720px) {
+  .home {
+    padding: 22px 12px calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .home__hero {
+    margin-bottom: 24px;
+  }
+
+  .home__title {
+    font-size: 34px;
+  }
+
+  .home__intro {
+    font-size: 14px;
+  }
+
+  .home__cta-button {
+    width: 100%;
+    justify-content: center;
+    height: 44px;
+    font-size: 13px;
+  }
+
+  .home__search {
+    flex-basis: 100%;
+  }
+
+  .home__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eventrow {
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eventrow,
+  .eventrow__go {
+    transition: none;
+  }
+
+  .eventrow:hover {
+    transform: none;
+  }
+}
+
 /* ---------- display type ---------- */
 
 /* Trinos Solid carries a single weight, so display text asks for 400 and never synthesises bold.
@@ -2599,8 +2850,9 @@ select {
     gap: 12px;
   }
 
+  /* The actions stay pinned right whether or not the event picker is in the row. */
   .topbar__actions {
-    margin-left: 0;
+    margin-left: auto;
   }
 
   .config {

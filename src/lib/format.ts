@@ -105,6 +105,21 @@ export function singleAllianceLabel(match: Match): string {
   return numbers.length > 0 ? ` · ${numbers.join(' / ')}` : '';
 }
 
+/** FTC Scout's event type enum, in the wording the dashboard shows. */
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  Qualifier: 'Qualifier',
+  LeagueMeet: 'League meet',
+  LeagueTournament: 'League tournament',
+  Championship: 'Championship',
+  SuperQualifier: 'Super qualifier',
+  Scrimmage: 'Scrimmage',
+  Other: 'Event',
+};
+
+export function eventTypeLabel(type: string): string {
+  return EVENT_TYPE_LABELS[type] ?? (type ? type.replace(/([a-z])([A-Z])/g, '$1 $2') : 'Event');
+}
+
 export interface LevelGroup<T> {
   level: TournamentLevel;
   label: string;
