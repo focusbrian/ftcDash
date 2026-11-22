@@ -353,14 +353,6 @@ export default function App() {
     <EventChartsProvider value={charts}>
       <div className="app">
       <header className="topbar">
-        {backLink ? (
-          <a className="backlink" href={backLink.href} title={backLink.href}>
-            <span className="backlink__arrow" aria-hidden="true">
-              ←
-            </span>
-            <span className="backlink__label">{backLink.label}</span>
-          </a>
-        ) : null}
         <div className="brand">
           <span className="brand__lockup">
             <span className="brand__badge" aria-hidden="true">
@@ -419,6 +411,14 @@ export default function App() {
               onScrollSpeedChange={setScrollSpeed}
               onOpenAssets={() => setView('config')}
             />
+          ) : null}
+          {backLink ? (
+            <a className="backlink" href={backLink.href} title={backLink.href}>
+              <span className="backlink__arrow" aria-hidden="true">
+                ←
+              </span>
+              <span className="backlink__label">{backLink.label}</span>
+            </a>
           ) : null}
         </div>
       </header>

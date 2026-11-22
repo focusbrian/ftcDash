@@ -27,10 +27,20 @@ interface Props {
 function GearIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm9 3.5c0 .5-.04.98-.11 1.44l2 1.55-1.9 3.3-2.36-.95c-.72.62-1.55 1.11-2.46 1.44L15.9 22h-3.8l-.27-2.72a7.4 7.4 0 0 1-2.46-1.44l-2.36.95-1.9-3.3 2-1.55a8.2 8.2 0 0 1 0-2.88l-2-1.55 1.9-3.3 2.36.95c.72-.62 1.55-1.11 2.46-1.44L12.1 2h3.8l.27 2.72c.91.33 1.74.82 2.46 1.44l2.36-.95 1.9 3.3-2 1.55c.07.46.11.94.11 1.44Z"
-      />
+      <defs>
+        {/* The hub is masked out rather than filled, so the button's own background shows through. */}
+        <mask id="gear-hub">
+          <rect width="24" height="24" fill="#fff" />
+          <circle cx="12" cy="12" r="3.1" fill="#000" />
+        </mask>
+      </defs>
+      <g fill="currentColor" mask="url(#gear-hub)">
+        <rect x="10.35" y="1.6" width="3.3" height="20.8" rx="1.2" />
+        <rect x="10.35" y="1.6" width="3.3" height="20.8" rx="1.2" transform="rotate(45 12 12)" />
+        <rect x="10.35" y="1.6" width="3.3" height="20.8" rx="1.2" transform="rotate(90 12 12)" />
+        <rect x="10.35" y="1.6" width="3.3" height="20.8" rx="1.2" transform="rotate(135 12 12)" />
+        <circle cx="12" cy="12" r="7.5" />
+      </g>
     </svg>
   );
 }

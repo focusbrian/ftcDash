@@ -97,8 +97,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 30px;
-  max-width: 240px;
+  height: 34px;
+  max-width: 220px;
   padding: 0 11px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
@@ -126,14 +126,6 @@ select {
 .backlink__label {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-@media (min-width: 721px) {
-  /* Sits level with the event controls rather than the bottom of the wrapped header. */
-  .backlink {
-    align-self: flex-start;
-    margin-top: var(--field-label-offset);
-  }
 }
 
 .brand {
@@ -2644,17 +2636,16 @@ select {
     padding-right: 0;
   }
 
-  /* Shares the picker row on phones so the header keeps its two lines. */
+  /* Sits beside the gear, so its label trims instead of pushing the header wider. */
   .backlink {
-    order: 2;
     height: 40px;
-    max-width: 40vw;
+    max-width: 38vw;
     padding: 0 9px;
     font-size: 11px;
   }
 
   .backlink__label {
-    max-width: 26vw;
+    max-width: 24vw;
   }
 
   .brand__lockup {
