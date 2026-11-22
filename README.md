@@ -367,9 +367,15 @@ How it behaves:
 - **Uploads appear on the next page load.** The dashboard asks for the manifest as
   `shared-assets.json?v=<timestamp>` because a host proxy in front of Apache (InMotion serves sites
   through nginx) keeps handing back the copy it cached, ignoring the file's `no-cache` header — a
-  fresh URL is the only reliable way to see the current library. If a page still looks stale after a
-  redeploy, purge the host cache in cPanel or open the site with a throwaway query string
-  (`https://your-site/?v=2`), which bypasses the cached `index.html`.
+  fresh URL is the only reliable way to see the current library.
+- **If a change does not appear after a deploy,** the host is serving a cached `index.html`, so the
+  browser runs the previous build (and that build asks for the old manifest). Test it by opening
+  `https://your-site/?v=2` — a query string bypasses the cached entry. Then either purge the cache in
+  cPanel or ask InMotion support to purge the nginx cache for the domain; `.htaccess` already sends
+  `no-store` and `X-Accel-Expires: 0` so new responses should not be stored. As a safety net,
+  `scripts/package.mjs` ships the current bundle under the previous bundle names listed in
+  `LEGACY_BUNDLES`, so a visitor on a stale page still runs the current code — remove those entries
+  once the cache has been purged.
 - **Redeploys are safe.** `package-site.cmd` leaves `shared-assets.json` out of the zip (the PHP page
   owns it on the server), and extracting a new build never deletes `media/` or `admin/data/`. Pass
   `--with-assets` if you do want the committed copy shipped.

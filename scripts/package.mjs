@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,15 @@ import { fileURLToPath } from 'node:url';
  *   node scripts/package.mjs --base=/ftcdash/     → served from a folder
  *   node scripts/package.mjs --out=../upload.zip  → different archive name/location
  */
+
+/**
+ * Bundle names that a host cache may still be serving an index.html for. InMotion puts an nginx
+ * proxy in front of Apache and keeps answering `/` from its cache, so a visitor can load a page built
+ * before the last deploy — and that page only ever asks for the bundle name it was built with.
+ * Shipping the current bundle under those names means those visitors still run the current code.
+ * Interim workaround: drop an entry once the host cache has been purged or has expired.
+ */
+const LEGACY_BUNDLES = ['index-B8b5_PfR.js', 'index-6IMxy0BL.js'];
 
 function arg(name) {
   const hit = process.argv.find((value) => value.startsWith(`--${name}=`));
@@ -62,6 +71,15 @@ if (existsSync(manifest)) {
   } else {
     rmSync(manifest);
     console.log('Leaving shared-assets.json out — the PHP admin page keeps its own copy on the server.');
+  }
+}
+
+const entryScript = readdirSync(join(dist, 'assets')).find((name) => /^index-.+\.js$/.test(name));
+if (entryScript && LEGACY_BUNDLES.length > 0) {
+  for (const legacy of LEGACY_BUNDLES) {
+    if (legacy === entryScript) continue;
+    copyFileSync(join(dist, 'assets', entryScript), join(dist, 'assets', legacy));
+    console.log(`Also shipped ${entryScript} as ${legacy}, for pages a host cache still serves.`);
   }
 }
 

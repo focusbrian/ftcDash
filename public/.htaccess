@@ -16,6 +16,9 @@
   </FilesMatch>
   <FilesMatch "^(index\.html|shared-assets\.json)$">
     Header set Cache-Control "no-store, max-age=0"
+    # Hosts that put nginx in front of Apache answer from their own cache and ignore Cache-Control;
+    # this is the header nginx itself honours when deciding whether a response may be stored.
+    Header set X-Accel-Expires "0"
   </FilesMatch>
 </IfModule>
 
