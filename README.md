@@ -193,14 +193,8 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   The season and event pickers stay in sync with the URL.
 - **Back link:** a host page can pass `?back=<url>` (before the `#`) and a back button appears at the
   right of the header, beside the settings gear, pointing there — so the dashboard reads as part of the
-  larger site. Add `&backLabel=<text>` to change its caption (default “Back”); only `http`/`https`
-  targets are accepted.
-  The link survives match navigation because it lives in the query, not the hash. For example, the
-  FROST robot lab can send visitors to a specific match with:
-
-  ```
-  https://focusbrian.github.io/ftcDash/?back=https%3A%2F%2Ffrost-10136-robot-lab.celestialshark5.chatgpt.site%2F&backLabel=Robot%20Lab#/2026/USMISOQ/m/4
-  ```
+  larger site. See [Adding a link back to your own site](#adding-a-link-back-to-your-own-site-back) for
+  the exact URL to build.
 
 ### On a phone
 
@@ -214,6 +208,65 @@ tapping it opens a menu with the season, event filter, and event list, which clo
 an outside tap, or `Esc`. The gear sits on that same row, so the header stays two lines tall and the
 configuration page is reachable from a phone too. Fields grow to 40px tall and 16px text so the
 browser does not zoom when one takes focus, and the layout honours the notch and home-bar safe areas.
+
+## Adding a link back to your own site (`?back=`)
+
+When another site links here — a team homepage, the robot lab, an event page — add a `back` parameter
+and the header grows a button at the right that returns to that page, so the dashboard reads as part of
+the larger site. Nothing changes when the parameter is absent.
+
+The whole URL has two halves: **the query** (`?…`, read by the app) and **the hash** (`#/…`, the route
+inside the dashboard). The `back` parameter must live in the query, before the `#`:
+
+```html
+<a href="https://focusbrian.github.io/ftcDash/?back=https%3A%2F%2Fexample.com%2Frobot-lab.html&amp;backLabel=Robot%20Lab#/2026/USMISOQ/m/4">
+  Open in FTC Dash
+</a>
+```
+
+| Part | Meaning |
+| --- | --- |
+| `back=` | Absolute URL of the page to return to, URL-encoded (see below). Required. |
+| `backLabel=` | Optional caption on the button (“Robot Lab” above). Defaults to `Back`, capped at 40 characters; longer text is cut, and the button ellipsises if the header runs out of room. |
+| `#/2026/USMISOQ/m/4` | Optional destination: `#/` landing page, `#/2026/USMISOQ` an event, `#/2026/USMISOQ/m/4` a match, `#/2026/USMISOQ/t/10136` a team page, `#/config` team assets, `#/admin` the shared asset editor. |
+
+### Encoding it correctly
+
+Encode the `back` value as a single component — `encodeURIComponent` in JavaScript, or any URL encoder.
+Anything left unencoded that has meaning in a URL will break the link:
+
+- `&` inside the target starts a new parameter (`?back=https://x.com/?a=1&b=2` loses `b=2`).
+- `#` inside the target ends the query, so the dashboard route disappears. This matters if the page you
+  return to has its own fragment: use `%23`.
+
+```js
+// Build the link in the host page rather than hand-encoding it.
+const back = new URL('https://example.com/robot-lab.html#specs').href; // keeps its own # as %23
+const params = new URLSearchParams({ back, backLabel: 'Robot Lab' });
+const link = `https://focusbrian.github.io/ftcDash/?${params}#/2026/USMISOQ/m/4`;
+// → https://focusbrian.github.io/ftcDash/?back=https%3A%2F%2Fexample.com%2Frobot-lab.html%23specs&backLabel=Robot+Lab#/2026/USMISOQ/m/4
+```
+
+`URLSearchParams` encodes the value for you (`+` and `%20` both decode as a space), which is why the
+label above reads `Robot+Lab` instead of `Robot%20Lab` — both are fine.
+
+### Rules worth knowing
+
+- **Only `http`/`https` targets are accepted.** A `javascript:`, `data:` or `mailto:` value is ignored
+  and no button is drawn — a query string must never be able to smuggle a script into the page.
+- **Relative targets are resolved against the dashboard's own URL**, so `?back=../index.html` works when
+  both pages sit on the same host. Absolute URLs are clearer, and are the only option when the two sites
+  are on different domains (GitHub Pages here, InMotion there, for example).
+- **The button survives navigation inside the dashboard.** It is read once at load from the query, and
+  changing match, event or team only rewrites the hash, so `?back=…` stays in the address bar. Sharing
+  that URL afterwards keeps the return path with it.
+- **Serving from a sub-folder changes only the path**, not this scheme:
+  `https://example.com/ftcdash/?back=https%3A%2F%2Fexample.com%2F&backLabel=Home#/2026/USMISOQ`.
+- **A visitor's own setting can override the landing match.** If they turned on “Follow latest result”,
+  the dashboard opens the newest played match instead of the one in the link — respect their choice, or
+  link to the event (`#/2026/USMISOQ`) and let them pick.
+- **Quick check:** open your link, confirm the button appears top-right next to the gear, and hover it —
+  the tooltip shows the decoded URL it will go to.
 
 ## Configuration page (`#/config`, “Team assets” in the settings menu)
 
