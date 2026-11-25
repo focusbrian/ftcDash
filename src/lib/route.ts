@@ -1,4 +1,4 @@
-export type RouteView = 'home' | 'dashboard' | 'config' | 'admin';
+export type RouteView = 'home' | 'dashboard' | 'config' | 'admin' | 'auto';
 
 export interface Route {
   view: RouteView;
@@ -34,12 +34,31 @@ export function parseRoute(hash: string): Route {
     return { view: 'admin', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
   }
 
+  // Unlinked too: the autonomous planner for the current season's field.
+  if (segments[0] === 'auto') {
+    return { view: 'auto', season: defaultSeason(), code: null, matchId: null, teamNumber: null };
+  }
+
   const season = Number(segments[0]);
   const code = segments[1] ? segments[1].toUpperCase() : null;
   const matchIndex = segments.indexOf('m');
   const matchId = matchIndex >= 0 ? Number(segments[matchIndex + 1]) : NaN;
   const teamIndex = segments.indexOf('t');
   const teamNumber = teamIndex >= 0 ? Number(segments[teamIndex + 1]) : NaN;
+
+  // The planner opened from an event keeps that event in the route, so Back returns to it:
+  // `#/2026/USMISCO/auto` (and `#/2026/auto` when no event was open).
+  const autoSegment = segments[segments.length - 1]?.toLowerCase();
+  if (autoSegment === 'auto' && segments.length <= 3) {
+    const autoCode = segments.length === 3 ? code : null;
+    return {
+      view: 'auto',
+      season: Number.isInteger(season) && season > 2000 ? season : defaultSeason(),
+      code: autoCode,
+      matchId: null,
+      teamNumber: null,
+    };
+  }
 
   return {
     view: 'dashboard',
@@ -53,6 +72,10 @@ export function parseRoute(hash: string): Route {
 export function buildHash(route: Route): string {
   if (route.view === 'config') return '#/config';
   if (route.view === 'admin') return '#/admin';
+  // The planner remembers which event it was opened from; with none, the plain form still works.
+  if (route.view === 'auto') {
+    return route.code ? `#/${route.season}/${route.code}/auto` : '#/auto';
+  }
   if (route.view === 'home') return '#/';
 
   const parts = [`#/${route.season}`];

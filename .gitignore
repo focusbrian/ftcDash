@@ -9,6 +9,7 @@ ftcdash-*.zip
 
 # Written on the server by /admin/: the password hash and uploaded images stay out of git.
 public/admin/data/config.php
+public/admin/data/library.json
 public/admin/data/*.tmp
 public/media/*.png
 public/media/*.jpg

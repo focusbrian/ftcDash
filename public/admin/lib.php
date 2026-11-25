@@ -94,6 +94,12 @@ function ftc_teams(): array
 
 function ftc_save_teams(array $teams): void
 {
+    ftc_put(ftc_manifest_path(), ftc_encode_library($teams));
+}
+
+/** The manifest as the dashboard reads it, so the published file and the private copy never drift. */
+function ftc_encode_library(array $teams): string
+{
     ksort($teams, SORT_NUMERIC);
     $payload = [
         'app' => 'ftcdash',
@@ -105,7 +111,162 @@ function ftc_save_teams(array $teams): void
     if ($json === false) {
         throw new RuntimeException('Could not encode the manifest.');
     }
-    ftc_put(ftc_manifest_path(), $json . "\n");
+    return $json . "\n";
+}
+
+/**
+ * The library as this page last saved it. It lives in admin/data/, which deploys never ship, so a
+ * build that replaces shared-assets.json with the repo's empty seed cannot take the library with it.
+ */
+function ftc_library_path(): string
+{
+    return ftc_data_dir() . '/library.json';
+}
+
+function ftc_remember_library(array $teams): void
+{
+    ftc_put(ftc_library_path(), ftc_encode_library($teams));
+}
+
+/** The remembered library, or [] before this page has ever saved anything. */
+function ftc_saved_library(): array
+{
+    $path = ftc_library_path();
+    if (!is_file($path)) {
+        return [];
+    }
+    $decoded = json_decode((string) @file_get_contents($path), true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+    $teams = $decoded['teams'] ?? $decoded;
+    return is_array($teams) ? $teams : [];
+}
+
+/**
+ * Fills gaps in $base from $extra: an image the manifest lost comes back, while whatever it already
+ * lists is left alone. Used to republish the remembered library over a replaced manifest.
+ */
+function ftc_merge_libraries(array $base, array $extra): array
+{
+    foreach ($extra as $team => $entry) {
+        if (!is_array($entry)) {
+            continue;
+        }
+        $key = (string) $team;
+        $current = is_array($base[$key] ?? null) ? $base[$key] : [];
+        $merged = $current;
+
+        if (!is_string($current['logo'] ?? null) && is_string($entry['logo'] ?? null)) {
+            $merged['logo'] = $entry['logo'];
+        }
+        if (!is_string($current['robot'] ?? null) && is_string($entry['robot'] ?? null)) {
+            $merged['robot'] = $entry['robot'];
+        }
+        foreach (is_array($entry['robots'] ?? null) ? $entry['robots'] : [] as $season => $path) {
+            if (is_string($path) && !is_string($current['robots'][$season] ?? null)) {
+                $merged['robots'] = is_array($merged['robots'] ?? null) ? $merged['robots'] : [];
+                $merged['robots'][$season] = $path;
+            }
+        }
+
+        if ($merged !== []) {
+            $base[$key] = $merged;
+        }
+    }
+    ksort($base, SORT_NUMERIC);
+    return $base;
+}
+
+/**
+ * Images in media/ that no library entry points at — what a deploy that replaced the manifest
+ * leaves behind. The newest file wins when a slot has more than one.
+ *
+ * @return array<string, array{team: string, kind: string, season: ?int, path: string, at: int}>
+ */
+function ftc_unlisted_images(array $teams): array
+{
+    $listed = [];
+    foreach ($teams as $entry) {
+        if (!is_array($entry)) {
+            continue;
+        }
+        foreach (ftc_team_images($entry) as $image) {
+            $listed[$image['path']] = true;
+        }
+    }
+
+    $found = [];
+    foreach (glob(ftc_media_dir() . '/*') ?: [] as $file) {
+        // Names written by ftc_store_image(): <team>-<kind>[-<season>]-<random>.<png|jpg>
+        if (!preg_match('/^(\d{1,6})-(logo|robot)(?:-(\d{4}))?-[0-9a-f]{8}\.(?:png|jpg)$/i', basename($file), $parts)) {
+            continue;
+        }
+        $path = 'media/' . basename($file);
+        if (isset($listed[$path])) {
+            continue;
+        }
+
+        $season = ($parts[3] ?? '') === '' ? null : (int) $parts[3];
+        $key = $parts[1] . '|' . $parts[2] . '|' . ($season ?? '');
+        $at = (int) @filemtime($file);
+        if (!isset($found[$key]) || $found[$key]['at'] < $at) {
+            $found[$key] = ['team' => $parts[1], 'kind' => strtolower($parts[2]), 'season' => $season, 'path' => $path, 'at' => $at];
+        }
+    }
+
+    return $found;
+}
+
+/**
+ * The unlisted images that would actually fill an empty slot, so offering a restore always changes
+ * something. A second file for a filled slot is a leftover, not something to adopt.
+ */
+function ftc_restorable_images(array $teams, array $images): array
+{
+    return array_filter($images, static function (array $image) use ($teams): bool {
+        $entry = $teams[$image['team']] ?? null;
+        if (!is_array($entry)) {
+            return true;
+        }
+        if ($image['kind'] === 'logo') {
+            return !is_string($entry['logo'] ?? null);
+        }
+        if ($image['season'] === null) {
+            return !is_string($entry['robot'] ?? null);
+        }
+        return !is_string($entry['robots'][(string) $image['season']] ?? null);
+    });
+}
+
+/** Adds unlisted media images back into the library, leaving every slot that is already filled. */
+function ftc_adopt_images(array $teams, array $images): array
+{
+    foreach ($images as $image) {
+        $team = $image['team'];
+        $entry = is_array($teams[$team] ?? null) ? $teams[$team] : [];
+
+        if ($image['kind'] === 'logo') {
+            if (!is_string($entry['logo'] ?? null)) {
+                $entry['logo'] = $image['path'];
+            }
+        } elseif ($image['season'] === null) {
+            if (!is_string($entry['robot'] ?? null)) {
+                $entry['robot'] = $image['path'];
+            }
+        } else {
+            $season = (string) $image['season'];
+            $robots = is_array($entry['robots'] ?? null) ? $entry['robots'] : [];
+            if (!is_string($robots[$season] ?? null)) {
+                $robots[$season] = $image['path'];
+            }
+            $entry['robots'] = $robots;
+        }
+
+        $teams[$team] = $entry;
+    }
+    ksort($teams, SORT_NUMERIC);
+    return $teams;
 }
 
 /**

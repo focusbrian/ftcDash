@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AdminView } from './components/AdminView';
+import { AutoPlanView } from './components/AutoPlanView';
 import { ConfigView } from './components/ConfigView';
 import { EventChartsProvider } from './components/EventChartsContext';
 import { EventInfo } from './components/EventInfo';
@@ -426,6 +427,15 @@ export default function App() {
               onOpenAssets={() => setView('config')}
             />
           ) : null}
+          {view === 'dashboard' ? (
+            <a
+              className="topbar__link"
+              href={buildHash({ view: 'auto', season, code, matchId: null, teamNumber: null })}
+              title="Plan a 30-second autonomous for four robots"
+            >
+              Auto planner
+            </a>
+          ) : null}
           {backLink ? (
             <a className="backlink" href={backLink.href} title={backLink.href}>
               <span className="backlink__arrow" aria-hidden="true">
@@ -451,6 +461,12 @@ export default function App() {
         />
       ) : view === 'admin' ? (
         <AdminView published={sharedAssets} onBack={() => setView(code ? 'dashboard' : 'home')} />
+      ) : view === 'auto' ? (
+        <AutoPlanView
+          assets={effectiveAssets}
+          onBack={() => setView(code ? 'dashboard' : 'home')}
+          backLabel={code ? 'Back to dashboard' : 'Back to events'}
+        />
       ) : view === 'home' ? (
         <HomePage
           season={season}

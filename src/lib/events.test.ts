@@ -172,6 +172,42 @@ describe('route', () => {
     ).toBe('#/admin');
     expect(parseRoute('#/admin').view).toBe('admin');
   });
+
+  it('routes to the planner, and keeps the event it was opened from', () => {
+    expect(
+      buildHash({ view: 'auto', season: 2026, code: null, matchId: null, teamNumber: null }),
+    ).toBe('#/auto');
+    expect(parseRoute('#/auto')).toEqual({
+      view: 'auto',
+      season: expect.any(Number),
+      code: null,
+      matchId: null,
+      teamNumber: null,
+    });
+
+    const hash = buildHash({
+      view: 'auto',
+      season: 2026,
+      code: 'USMISCO',
+      matchId: 4,
+      teamNumber: 10136,
+    });
+    expect(hash).toBe('#/2026/USMISCO/auto');
+    expect(parseRoute(hash)).toEqual({
+      view: 'auto',
+      season: 2026,
+      code: 'USMISCO',
+      matchId: null,
+      teamNumber: null,
+    });
+  });
+
+  it('reads a season-only planner hash', () => {
+    const route = parseRoute('#/2025/auto');
+    expect(route.view).toBe('auto');
+    expect(route.season).toBe(2025);
+    expect(route.code).toBeNull();
+  });
 });
 
 describe('teamNumberQuery', () => {

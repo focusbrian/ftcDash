@@ -135,8 +135,23 @@ export function HomePage({ season, seasons, onSeasonChange, events, loading, err
             <a className="button home__cta-button" href={eventHref(season, featured.code)}>
               {featuredIsLive ? 'Open the live event' : 'Latest results'} — {featured.name}
             </a>
+            <a
+              className="button button--ghost home__cta-button"
+              href={buildHash({ view: 'auto', season, code: null, matchId: null, teamNumber: null })}
+            >
+              Autonomous planner
+            </a>
           </div>
-        ) : null}
+        ) : (
+          <div className="home__cta">
+            <a
+              className="button button--ghost home__cta-button"
+              href={buildHash({ view: 'auto', season, code: null, matchId: null, teamNumber: null })}
+            >
+              Autonomous planner
+            </a>
+          </div>
+        )}
       </header>
 
       <div className="home__controls">

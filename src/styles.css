@@ -3569,3 +3569,1252 @@ select {
   font-size: 11px;
   color: var(--red);
 }
+
+/* ---------- autonomous planner (#/auto) ---------- */
+
+.autoplan__grid {
+  display: grid;
+  grid-template-columns: 304px minmax(0, 1fr) 304px;
+  gap: 18px;
+  align-items: start;
+}
+
+/* The planner is the one page that wants the whole window: four robot cards plus a field map. */
+.autoplan .config__inner {
+  max-width: 1800px;
+}
+
+/* The field has to clear a 1080-high screen with the nav on top, so the page trims its own padding:
+   everything above the map pays for itself twice over otherwise. */
+.autoplan .config {
+  padding-top: 14px;
+}
+
+.autoplan .config__head {
+  margin-bottom: 10px;
+}
+
+.autoplan__centre {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.autoplan__field-panel {
+  min-width: 0;
+}
+
+.autoplan__playback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.autoplan__play {
+  min-width: 88px;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__scrub {
+  flex: 1 1 160px;
+  min-width: 120px;
+  accent-color: var(--accent);
+  height: 20px;
+}
+
+.autoplan__clock {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.autoplan__clock strong {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.autoplan__rate {
+  width: auto;
+  min-width: 68px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.autoplan__map {
+  display: block;
+  width: 100%;
+  /* Square, and sized so the whole field clears a 1080-high window: the waypoint table below it
+     scrolls, the field itself does not. */
+  max-width: min(100%, max(300px, calc(100vh - 410px)));
+  margin: 0 auto;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #0b0d0c;
+  touch-action: none;
+  user-select: none;
+}
+
+.autoplan__mat {
+  fill: var(--bg-raised);
+  cursor: crosshair;
+}
+
+/* Everything drawn on the field is scenery: clicks must reach the mat, and handles stay grabbable. */
+.autoplan__gridlines,
+.autoplan__scenery,
+.autoplan__edge,
+.autoplan__path,
+.autoplan__driven,
+.autoplan__aim,
+.autoplan__ball,
+.autoplan__hive,
+.autoplan__flowers,
+.autoplan__zone,
+.autoplan__starts {
+  pointer-events: none;
+}
+
+.autoplan__gridlines line {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.3;
+}
+
+/* HIVE: one frame, two CELLs, each CELL on the side its alliance tilts up. */
+.autoplan__hive-frame {
+  fill: rgba(0, 0, 0, 0.35);
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 0.55;
+}
+
+.autoplan__cell rect {
+  stroke-width: 0.6;
+}
+
+.autoplan__cell--red rect {
+  fill: rgba(223, 95, 107, 0.2);
+  stroke: var(--red);
+}
+
+.autoplan__cell--blue rect {
+  fill: rgba(93, 147, 212, 0.2);
+  stroke: var(--blue);
+}
+
+.autoplan__cell text,
+.autoplan__hive-label {
+  font-size: 3.1px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: var(--text-dim);
+  dominant-baseline: middle;
+}
+
+.autoplan__flowers rect {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: rgba(255, 255, 255, 0.34);
+  stroke-width: 0.5;
+}
+
+.autoplan__loading {
+  fill: rgba(255, 200, 97, 0.05);
+  stroke: rgba(255, 200, 97, 0.4);
+  stroke-width: 0.45;
+  stroke-dasharray: 1.6 1.4;
+}
+
+.autoplan__garden {
+  fill: rgba(120, 200, 140, 0.08);
+  stroke: rgba(120, 200, 140, 0.34);
+  stroke-width: 0.4;
+}
+
+.autoplan__start rect {
+  fill: none;
+  stroke-width: 0.45;
+  stroke-dasharray: 1.2 1.2;
+}
+
+.autoplan__start line {
+  stroke-width: 0.5;
+}
+
+.autoplan__start--red rect,
+.autoplan__start--red line {
+  stroke: rgba(223, 95, 107, 0.5);
+}
+
+.autoplan__start--blue rect,
+.autoplan__start--blue line {
+  stroke: rgba(93, 147, 212, 0.5);
+}
+
+.autoplan__aim {
+  stroke-width: 0.35;
+  stroke-dasharray: 1.2 1.6;
+  opacity: 0.55;
+}
+
+.autoplan__aim--red {
+  stroke: var(--red);
+}
+
+.autoplan__aim--blue {
+  stroke: var(--blue);
+}
+
+.autoplan__path {
+  fill: none;
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+
+.autoplan__path--red {
+  stroke: var(--red);
+}
+
+.autoplan__path--blue {
+  stroke: var(--blue);
+}
+
+.autoplan__path--muted {
+  stroke-dasharray: 2.5 2;
+  opacity: 0.42;
+}
+
+.autoplan__driven {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.autoplan__driven--red {
+  stroke: #ffb6bd;
+}
+
+.autoplan__driven--blue {
+  stroke: #b9d5f5;
+}
+
+.autoplan__handle {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  cursor: grab;
+}
+
+.autoplan__handle:active {
+  cursor: grabbing;
+}
+
+.autoplan__handle--foul {
+  stroke: var(--warn);
+}
+
+.autoplan__wp-num {
+  font-size: 2.6px;
+  font-weight: 700;
+  fill: var(--text);
+  pointer-events: none;
+}
+
+.autoplan__footprint {
+  fill: rgba(16, 18, 18, 0.82);
+  stroke-width: 1.4;
+}
+
+.autoplan__robot--red .autoplan__footprint {
+  stroke: var(--red);
+}
+
+.autoplan__robot--blue .autoplan__footprint {
+  stroke: var(--blue);
+}
+
+.autoplan__footprint--active {
+  fill: rgba(255, 98, 0, 0.16);
+}
+
+/* The logo lives in a disc inside the footprint, so nothing spills over the robot's outline. */
+.autoplan__robot-badge-bg {
+  fill: rgba(10, 12, 11, 0.92);
+  stroke-width: 1.1;
+  pointer-events: none;
+}
+
+.autoplan__robot--red .autoplan__robot-badge-bg {
+  stroke: var(--red);
+}
+
+.autoplan__robot--blue .autoplan__robot-badge-bg {
+  stroke: var(--blue);
+}
+
+.autoplan__initial-text {
+  font-size: 9px;
+  font-weight: 800;
+  fill: var(--text);
+  pointer-events: none;
+}
+
+/* Rotation grip for the selected robot's pose. */
+.autoplan__rotate {
+  pointer-events: none;
+}
+
+.autoplan__rotate line {
+  stroke-width: 1.1;
+  stroke-dasharray: 2 1.4;
+  opacity: 0.9;
+}
+
+.autoplan__rotate--red line {
+  stroke: var(--red);
+}
+
+.autoplan__rotate--blue line {
+  stroke: var(--blue);
+}
+
+.autoplan__rotate-grip {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 1.3;
+  pointer-events: all;
+  cursor: grab;
+}
+
+.autoplan__rotate-grip:active {
+  cursor: grabbing;
+}
+
+.autoplan__nose {
+  stroke: var(--text);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+}
+
+.autoplan__robot-num {
+  font-size: 6px;
+  font-weight: 800;
+  fill: var(--text);
+  pointer-events: none;
+}
+
+.autoplan__ball circle {
+  stroke: none;
+}
+
+.autoplan__ball--red circle:first-of-type {
+  fill: #ffb6bd;
+}
+
+.autoplan__ball--blue circle:first-of-type {
+  fill: #b9d5f5;
+}
+
+.autoplan__ball-trail {
+  stroke-width: 0.5;
+  stroke-dasharray: 1 1;
+  opacity: 0.6;
+}
+
+.autoplan__ball--red .autoplan__ball-trail {
+  stroke: var(--red);
+}
+
+.autoplan__ball--blue .autoplan__ball-trail {
+  stroke: var(--blue);
+}
+
+.autoplan__impact {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 0.7;
+  opacity: 0.8;
+}
+
+.autoplan__edge {
+  font-size: 3.4px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--text-faint);
+}
+
+.autoplan__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.autoplan__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.autoplan__swatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.autoplan__swatch--cell {
+  background: rgba(223, 95, 107, 0.75);
+}
+
+.autoplan__swatch--flower {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.autoplan__swatch--loading {
+  background: rgba(255, 200, 97, 0.6);
+}
+
+.autoplan__swatch--garden {
+  background: rgba(120, 200, 140, 0.6);
+}
+
+.autoplan__swatch--start {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  height: 6px;
+}
+
+.autoplan__conflict {
+  margin-top: 10px;
+}
+
+.autoplan__side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.autoplan__side-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.autoplan__side--red .autoplan__side-title {
+  color: var(--red);
+}
+
+.autoplan__side--blue .autoplan__side-title {
+  color: var(--blue);
+}
+
+.autoplan__side .config__panel {
+  margin-bottom: 0;
+}
+
+.autoplan__robot-panel {
+  border-left: 3px solid var(--line-strong);
+}
+
+.autoplan__robot-panel--red {
+  border-left-color: var(--red);
+}
+
+.autoplan__robot-panel--blue {
+  border-left-color: var(--blue);
+}
+
+.autoplan__robot-panel--active {
+  background: var(--wash-strong), var(--bg-panel);
+}
+
+.autoplan__robot-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.autoplan__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.autoplan__select[aria-pressed='true'] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.autoplan__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.autoplan__dot--red {
+  background: var(--red);
+}
+
+.autoplan__dot--blue {
+  background: var(--blue);
+}
+
+.autoplan__alliance {
+  width: auto;
+  height: 30px;
+  font-size: 12px;
+}
+
+.autoplan__speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.autoplan__speed span {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.autoplan__speed input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.autoplan__speed strong {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.autoplan__meta {
+  margin: 6px 0 10px;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Per-robot scoreline: two ticked flags and the points they are worth. */
+.autoplan__scoreline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.autoplan__tick {
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.autoplan__tick--on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.autoplan__tick--points {
+  margin-left: auto;
+  border-style: dashed;
+  color: var(--text);
+}
+
+/* Alliance scoreboard under the playback bar. */
+.autoplan__scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.autoplan__score {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'title total'
+    'breakdown final';
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong);
+  background: var(--bg-raised);
+}
+
+.autoplan__score--red {
+  border-left-color: var(--red);
+}
+
+.autoplan__score--blue {
+  border-left-color: var(--blue);
+}
+
+.autoplan__score-title {
+  grid-area: title;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.autoplan__score-total {
+  grid-area: total;
+  justify-self: end;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__score-breakdown {
+  grid-area: breakdown;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Where the plan ends up, kept small beside the running total. */
+.autoplan__score-final {
+  grid-area: final;
+  justify-self: end;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.autoplan__score-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.autoplan__shots {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.autoplan__shot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.autoplan__shot-time {
+  min-width: 62px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.autoplan__shot-time:hover {
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+.autoplan__shot-edit {
+  width: 78px;
+  height: 26px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.autoplan__shot--foul .autoplan__shot-time {
+  border-color: rgba(255, 200, 97, 0.5);
+  color: var(--warn);
+}
+
+.autoplan__shot-remove {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.autoplan__shot-remove:hover {
+  border-color: rgba(223, 95, 107, 0.5);
+  color: #ffb6bd;
+}
+
+.autoplan__issues {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--warn);
+}
+
+.autoplan__ok {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #4ade80;
+}
+
+.autoplan__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.autoplan__setting label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.autoplan__setting select {
+  width: auto;
+  min-width: 96px;
+  height: 30px;
+  font-size: 12px;
+}
+
+.autoplan__save-hint {
+  margin: 12px 0 0;
+}
+
+@media (max-width: 1180px) {
+  .autoplan__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'centre centre'
+      'red blue';
+  }
+
+  .autoplan__centre {
+    grid-area: centre;
+  }
+
+  .autoplan__side--red {
+    grid-area: red;
+  }
+
+  .autoplan__side--blue {
+    grid-area: blue;
+  }
+}
+
+@media (max-width: 900px) {
+  .autoplan__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'centre' 'red' 'blue';
+  }
+
+  .autoplan__field-panel {
+    position: static;
+  }
+
+  .autoplan__scoreboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- planner: 3D playback ---------- */
+
+.autoplan__three {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  background: radial-gradient(120% 100% at 50% 0%, #16201a 0%, #0a0d0b 70%);
+}
+
+.autoplan__three-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.autoplan__three-bar > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.autoplan__three-title {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.autoplan__three-views {
+  display: flex;
+  gap: 6px;
+}
+
+.autoplan__three-views .button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+
+.autoplan__three-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: #0d1210;
+  overflow: hidden;
+}
+
+.autoplan__three-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.autoplan__three-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.autoplan__three-loading {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.autoplan__three-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.autoplan__three-transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.autoplan__three-transport .autoplan__scrub {
+  flex: 1 1 240px;
+}
+
+@media (max-width: 640px) {
+  .autoplan__three {
+    padding: 10px;
+  }
+
+  .autoplan__three-title {
+    font-size: 18px;
+  }
+}
+
+
+.autoplan__waypoints {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.autoplan__waypoints-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.autoplan__waypoints-head h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.autoplan__waypoints-total {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__table th,
+.autoplan__table td {
+  padding: 3px 6px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.autoplan__table thead th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom-color: var(--line);
+}
+
+.autoplan__row--now {
+  background: var(--accent-soft);
+}
+
+.autoplan__row-index {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.autoplan__row-index:hover {
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+.autoplan__cell-input {
+  width: 68px;
+  height: 26px;
+  padding: 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.autoplan__fixed {
+  display: inline-block;
+  padding: 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.autoplan__departs {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.autoplan__row-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.autoplan__row-remove:hover {
+  border-color: rgba(223, 95, 107, 0.5);
+  color: #ffb6bd;
+}
+
+.autoplan__table-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.autoplan__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.autoplan__team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.autoplan__team-logo {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.autoplan__team-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.autoplan__team-logo--empty {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.autoplan__team-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: none;
+  width: 92px;
+}
+
+.autoplan__team-field span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.autoplan__team-field input {
+  height: 28px;
+  padding: 0 7px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.autoplan__team-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.autoplan__handle--shot {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+
+.autoplan__wp-balls {
+  font-size: 2.6px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.autoplan__wp-balls--red {
+  fill: var(--red);
+}
+
+.autoplan__wp-balls--blue {
+  fill: var(--blue);
+}
+
+.autoplan__robot-logo {
+  pointer-events: none;
+}
+
+/* The HIVE cell that is up is the one to shoot at; the other is dimmed until the next tip. */
+.autoplan__cell--raised rect {
+  stroke-width: 1.1;
+}
+
+.autoplan__cell--down rect {
+  fill: rgba(255, 255, 255, 0.03);
+  stroke-opacity: 0.35;
+}
+
+.autoplan__cell--down text {
+  fill: var(--text-faint);
+  opacity: 0.5;
+}
+
+.autoplan__cell--tipped rect {
+  animation: autoplan-tip 0.8s ease-out 1;
+}
+
+@keyframes autoplan-tip {
+  0% {
+    fill: rgba(255, 200, 97, 0.75);
+    stroke: var(--warn);
+  }
+  100% {
+    fill: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.autoplan__tips {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.autoplan__tips h3 {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.autoplan__tips-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__tips-row .autoplan__dot {
+  margin-top: 4px;
+}
+
+.autoplan__tips-hint {
+  margin: 6px 0 0;
+}
+
+/* A plain navigation link in the topbar, matching the return-to-site link beside it. */
+.topbar__link {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.topbar__link:hover {
+  border-color: var(--accent-line);
+  background: var(--bg-raised-2);
+  color: var(--text);
+}
+
+/* The team's initial stands in for a missing logo, in the badge disc. */
+.autoplan__team-logo--empty {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Standing on a waypoint, the robot is a grab handle for that waypoint. */
+.autoplan__robot--grabbable {
+  cursor: grab;
+}
+
+.autoplan__robot--grabbable:active {
+  cursor: grabbing;
+}
+
+.autoplan__cell-input--angle {
+  width: 58px;
+}

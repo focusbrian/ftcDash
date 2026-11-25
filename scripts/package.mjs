@@ -96,6 +96,14 @@ if (win) {
 const entries = win ? listZip(out) : listFiles(dist);
 const bytes = statSync(out).size;
 
+// Belt and braces: a manifest in the archive replaces the live library on the host, so refuse to
+// hand over a zip that carries one unless it was explicitly asked for.
+if (!withAssets && entries.some((entry) => entry.replace(/\\/g, '/').endsWith('shared-assets.json'))) {
+  rmSync(out, { force: true });
+  console.error('\nshared-assets.json ended up in the archive. Uploading it would replace the live library.');
+  process.exit(1);
+}
+
 console.log(`\nPackaged ${entries.length} files into ${out}`);
 console.log(`  ${(bytes / 1024).toFixed(1)} KB`);
 for (const entry of entries) console.log(`  ${entry}`);

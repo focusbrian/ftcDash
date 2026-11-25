@@ -131,46 +131,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!preg_match(FTC_TEAM_PATTERN, $team)) {
                 throw new RuntimeException('Pick a team first — type its number or search it by name.');
             }
-            if (!in_array($kind, FTC_KINDS, true)) {
-                throw new RuntimeException('Use the logo or the robot photo button.');
-            }
 
-            $file = $_FILES[$kind] ?? [];
-            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-                throw new RuntimeException($kind === 'logo' ? 'Choose a logo file first.' : 'Choose a robot photo first.');
+            // One submit carries whichever files were dropped or chosen, so a logo and a robot
+            // photo can go up together. A file input left empty simply is not in this list.
+            $incoming = [];
+            foreach (FTC_KINDS as $candidate) {
+                $file = $_FILES[$candidate] ?? [];
+                if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                    continue;
+                }
+                $incoming[$candidate] = $file;
+            }
+            if ($incoming === []) {
+                throw new RuntimeException('Drop or choose a logo, a robot photo, or both.');
             }
 
             $season = null;
-            if ($kind === 'robot' && $seasonRaw !== '') {
+            if (isset($incoming['robot']) && $seasonRaw !== '') {
                 if (!preg_match('/^\d{4}$/', $seasonRaw)) {
                     throw new RuntimeException('Pick a season from the list.');
                 }
                 $season = (int) $seasonRaw;
             }
 
-            $path = ftc_store_image($file, $team, $kind, $season);
-
             $teams = ftc_teams();
             $entry = is_array($teams[$team] ?? null) ? $teams[$team] : [];
-            // Drop the image this one replaces, so media/ never accumulates dead files.
-            $previous = $kind === 'logo'
-                ? ($entry['logo'] ?? null)
-                : ($season === null ? ($entry['robot'] ?? null) : ($entry['robots'][(string) $season] ?? null));
-            if (is_string($previous)) {
-                ftc_delete_image($previous);
+            $stored = [];
+            $replaced = [];
+            $saved = [];
+
+            try {
+                foreach ($incoming as $kind => $file) {
+                    $path = ftc_store_image($file, $team, $kind, $kind === 'robot' ? $season : null);
+                    $stored[] = $path;
+
+                    // Remember the image this one replaces. It is deleted only after the manifest
+                    // stops pointing at it, so a failure halfway cannot leave the team with none.
+                    $previous = $kind === 'logo'
+                        ? ($entry['logo'] ?? null)
+                        : ($season === null ? ($entry['robot'] ?? null) : ($entry['robots'][(string) $season] ?? null));
+                    if (is_string($previous)) {
+                        $replaced[] = $previous;
+                    }
+
+                    if ($kind === 'logo') {
+                        $entry['logo'] = $path;
+                    } elseif ($season === null) {
+                        $entry['robot'] = $path;
+                    } else {
+                        $entry['robots'] = is_array($entry['robots'] ?? null) ? $entry['robots'] : [];
+                        $entry['robots'][(string) $season] = $path;
+                    }
+                    $saved[] = $kind === 'logo' ? 'logo' : 'robot photo';
+                }
+            } catch (Throwable $failure) {
+                // Nothing is recorded unless every file is in, so clear the ones already written.
+                foreach ($stored as $path) {
+                    ftc_delete_image($path);
+                }
+                throw $failure;
             }
 
-            if ($kind === 'logo') {
-                $entry['logo'] = $path;
-            } elseif ($season === null) {
-                $entry['robot'] = $path;
-            } else {
-                $entry['robots'] = is_array($entry['robots'] ?? null) ? $entry['robots'] : [];
-                $entry['robots'][(string) $season] = $path;
-            }
             $teams[$team] = $entry;
+            try {
+                // admin/data/ is the copy a deploy cannot replace, so it is written first.
+                ftc_remember_library($teams);
+            } catch (Throwable $failure) {
+                foreach ($stored as $path) {
+                    ftc_delete_image($path);
+                }
+                throw $failure;
+            }
+            // If this fails the next /admin/ load republishes the manifest from the copy above.
             ftc_save_teams($teams);
-            flash('Saved ' . ($kind === 'logo' ? 'logo' : 'robot photo') . ' for team ' . $team . '.');
+
+            // The manifest no longer references these, so media/ never accumulates dead files.
+            foreach ($replaced as $path) {
+                ftc_delete_image($path);
+            }
+
+            flash('Saved ' . implode(' and ', $saved) . ' for team ' . $team . '.');
+            redirect_self();
+        }
+
+        if ($action === 'rebuild') {
+            $teams = ftc_teams();
+            $restorable = ftc_restorable_images($teams, ftc_unlisted_images($teams));
+            if ($restorable === []) {
+                throw new RuntimeException('Every image in media/ already belongs to a slot — nothing to restore.');
+            }
+
+            $teams = ftc_adopt_images($teams, $restorable);
+            ftc_remember_library($teams);
+            ftc_save_teams($teams);
+            flash(
+                'Put ' . count($restorable) . ' image' . (count($restorable) === 1 ? '' : 's')
+                . ' from media/ back in the library.',
+            );
             redirect_self();
         }
 
@@ -206,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $teams[$team] = $entry;
             }
+            ftc_remember_library($teams);
             ftc_save_teams($teams);
             flash('Deleted for team ' . $team . '.');
             redirect_self();
@@ -223,7 +281,31 @@ $loggedIn = is_logged_in();
 $notice = flash(null);
 $teams = ftc_teams();
 ksort($teams, SORT_NUMERIC);
+
+// A deploy can replace shared-assets.json with the repo's empty seed. admin/data/ holds the copy
+// this page last saved, so put those images back before anyone is shown a blank library.
+$restored = 0;
+$restoreProblem = null;
+if ($loggedIn && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $remembered = ftc_saved_library();
+    if ($remembered !== []) {
+        $repaired = ftc_merge_libraries($teams, $remembered);
+        $restored = ftc_count_images($repaired)[0] - ftc_count_images($teams)[0];
+        if ($restored > 0) {
+            $teams = $repaired;
+            try {
+                ftc_save_teams($teams);
+            } catch (Throwable $error) {
+                $restoreProblem = $error->getMessage();
+            }
+        }
+    }
+}
+
 [$imageCount, $imageBytes] = ftc_count_images($teams);
+$unlisted = $loggedIn ? ftc_unlisted_images($teams) : [];
+$restorable = $loggedIn ? ftc_restorable_images($teams, $unlisted) : [];
+$duplicates = count($unlisted) - count($restorable);
 
 $writable = [
     'the manifest' => is_writable(dirname(ftc_manifest_path())),
@@ -327,13 +409,18 @@ rsort($seasonChoices);
   .resolved strong { color:var(--text); }
   .uploads { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
   .upload-card { display:flex; flex-direction:column; gap:8px; align-items:flex-start; padding:12px 14px;
-    border:1px solid var(--line); border-radius:10px; background:var(--raised); }
+    border:1px solid var(--line); border-radius:10px; background:var(--raised);
+    transition:border-color .12s ease, background .12s ease; }
+  .upload-card.drop-target { border-color:var(--accent); background:rgba(255,98,0,.09); }
   .upload-card h3 { margin:0; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     color:var(--dim); }
   .upload-card .hint { margin:0; }
   .upload-card select { width:100%; }
   .upload-card input[type=file] { width:100%; }
-  .upload-card button { margin-top:auto; }
+  .picked { margin:0; font-size:11px; color:var(--faint); }
+  .picked--set { color:var(--accent-dim); font-weight:600; }
+  .upload-submit { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .upload-submit .hint { margin:0; }
 </style>
 </head>
 <body>
@@ -389,6 +476,16 @@ rsort($seasonChoices);
       </form>
     </section>
   <?php else: ?>
+    <?php if ($restored > 0): ?>
+      <p class="msg">
+        Restored <?= $restored === 1 ? '1 image' : $restored . ' images' ?> that a deploy had replaced
+        — <code><?= h(FTC_MANIFEST) ?></code> lists them again.
+      </p>
+    <?php endif; ?>
+    <?php if ($restoreProblem !== null): ?>
+      <p class="msg error">Could not republish <?= h(FTC_MANIFEST) ?>: <?= h($restoreProblem) ?></p>
+    <?php endif; ?>
+
     <section class="panel">
       <h2>Library</h2>
       <p class="stats">
@@ -411,14 +508,44 @@ rsort($seasonChoices);
       <?php endif; ?>
     </section>
 
+    <?php if ($unlisted !== []): ?>
+      <section class="panel">
+        <h2>Unlisted images</h2>
+        <?php if ($restorable !== []): ?>
+          <p class="hint">
+            <code>media/</code> holds <?= count($restorable) ?>
+            image<?= count($restorable) === 1 ? '' : 's' ?> the manifest does not list — usually what a
+            deploy that replaced <code><?= h(FTC_MANIFEST) ?></code> leaves behind. Restoring re-adds
+            them and leaves every slot that is already filled alone.
+          </p>
+          <form method="post" class="row">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="rebuild">
+            <button type="submit">
+              Restore <?= count($restorable) === 1 ? 'image' : count($restorable) . ' images' ?>
+            </button>
+          </form>
+        <?php endif; ?>
+        <?php if ($duplicates > 0): ?>
+          <p class="hint<?= $restorable === [] ? '' : ' warn' ?>">
+            Already filled: <?= $duplicates ?> file<?= $duplicates === 1 ? '' : 's' ?> in
+            <code>media/</code> that a restore will not touch. Delete
+            <?= $duplicates === 1 ? 'it' : 'them' ?> in cPanel if
+            <?= $duplicates === 1 ? 'it is' : 'they are' ?> dead.
+          </p>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
     <section class="panel">
       <h2>Upload</h2>
       <p class="hint">
-        Search a team by name or number, then use whichever button matches what you are uploading.
-        Images are re-encoded and scaled on the server (logos to fit 128 px, robot photos to fit
-        480 px) and stored in <code>media/</code>; replacing one deletes the file it replaced.
+        Search a team by name or number, then drop the logo, the robot photo, or both onto the cards
+        below and press Upload once. Images are re-encoded and scaled on the server (logos to fit
+        128 px, robot photos to fit 480 px) and stored in <code>media/</code>; replacing one deletes
+        the file it replaced.
       </p>
-      <form method="post" enctype="multipart/form-data" class="upload">
+      <form method="post" enctype="multipart/form-data" class="upload" id="upload-form">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
         <input type="hidden" name="action" value="upload">
 
@@ -432,15 +559,16 @@ rsort($seasonChoices);
           <p class="resolved" id="resolved" aria-live="polite"></p>
         </div>
 
-        <div class="uploads">
-          <div class="upload-card">
+        <div class="uploads" id="dropzone">
+          <div class="upload-card" data-kind="logo">
             <h3>Team logo</h3>
             <p class="hint">Square and transparent works best. One logo per team.</p>
-            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
-            <button type="submit" name="kind" value="logo">Upload logo</button>
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif"
+                   aria-label="Team logo image">
+            <p class="picked" data-picked>Drop a logo image on this card, or choose a file.</p>
           </div>
 
-          <div class="upload-card">
+          <div class="upload-card" data-kind="robot">
             <h3>Robot photo</h3>
             <p class="hint">Cut-out PNGs work best. One photo per team per season.</p>
             <label for="season-select">Season</label>
@@ -452,9 +580,17 @@ rsort($seasonChoices);
               <?php endforeach; ?>
               <option value="">Every season (older behaviour)</option>
             </select>
-            <input type="file" name="robot" accept="image/png,image/jpeg,image/webp,image/gif">
-            <button type="submit" name="kind" value="robot">Upload robot photo</button>
+            <input type="file" name="robot" accept="image/png,image/jpeg,image/webp,image/gif"
+                   aria-label="Robot photo">
+            <p class="picked" data-picked>Drop a robot photo on this card, or choose a file.</p>
           </div>
+        </div>
+
+        <div class="upload-submit">
+          <button type="submit">Upload</button>
+          <p class="hint" id="upload-status" aria-live="polite">
+            Drop a file on a card, or click a card's picker, then upload — both together if you like.
+          </p>
         </div>
       </form>
     </section>
@@ -502,6 +638,8 @@ rsort($seasonChoices);
   <p class="hint">
     This page only exists on a PHP host (InMotion/cPanel). The dashboard reads
     <code>shared-assets.json</code> and falls back to whatever users upload in their own browser.
+    The library is also kept in <code>admin/data/library.json</code>, which a deploy never ships, so
+    opening this page republishes a manifest that a deploy replaced.
   </p>
 </main>
 
@@ -646,6 +784,149 @@ rsort($seasonChoices);
         });
       })
       .catch(() => { /* numbers alone are fine */ });
+  }
+})();
+
+// Drag and drop: a file dropped on a card fills that card's input, a two-file drop is split
+// between the cards, and the single Upload button sends whatever is filled.
+(() => {
+  const form = document.getElementById('upload-form');
+  if (!form || typeof DataTransfer !== 'function') return;
+
+  const status = document.getElementById('upload-status');
+  const grid = document.getElementById('dropzone');
+  const cards = [...form.querySelectorAll('.upload-card')];
+  const inputs = {
+    logo: form.querySelector('input[name=logo]'),
+    robot: form.querySelector('input[name=robot]'),
+  };
+  if (!inputs.logo || !inputs.robot) return;
+
+  const say = (message, warn) => {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle('warn', Boolean(warn));
+  };
+
+  // The server renders the "nothing chosen yet" wording, so reuse it instead of repeating it.
+  const idle = status ? status.textContent.trim().replace(/\s+/g, ' ') : '';
+
+  const isImage = (file) =>
+    file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+
+  const note = (kind) => cards.find((card) => card.dataset.kind === kind)?.querySelector('[data-picked]');
+
+  const refresh = (kind) => {
+    const line = note(kind);
+    if (!line) return;
+    // The server renders the "nothing chosen" wording, so keep it rather than repeating it here.
+    if (!line.dataset.empty) line.dataset.empty = line.textContent.trim();
+    const chosen = inputs[kind].files && inputs[kind].files[0];
+    line.textContent = chosen ? chosen.name : line.dataset.empty;
+    line.classList.toggle('picked--set', Boolean(chosen));
+  };
+
+  const setFile = (kind, file) => {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    inputs[kind].files = transfer.files;
+    refresh(kind);
+  };
+
+  const others = (kind) => (kind === 'logo' ? 'robot' : 'logo');
+
+  const ready = () => {
+    const filled = ['logo', 'robot'].filter((kind) => inputs[kind].files.length > 0).length;
+    if (filled === 0) say(idle);
+    else if (filled === 2) say('Logo and robot photo ready — press Upload.');
+    else say('Ready — press Upload.');
+  };
+
+  // Two files on one card: the one named after this card stays, the other goes to the other card.
+  const routeToCard = (files, kind) => {
+    const images = [...files].filter(isImage);
+    if (images.length === 0) {
+      say('Images only, please: PNG, JPEG, WebP or GIF.', true);
+      return;
+    }
+    if (images.length === 1) {
+      setFile(kind, images[0]);
+      ready();
+      return;
+    }
+
+    const mine = images.find((file) => file.name.toLowerCase().includes(kind)) || images[0];
+    const rest = images.filter((file) => file !== mine);
+    setFile(kind, mine);
+    setFile(others(kind), rest[0]);
+    if (rest.length > 1) say('Only a logo and one robot photo go up at once.', true);
+    else ready();
+  };
+
+  // Dropping between the cards: names that say "logo" or "robot" win, then the empty slots fill.
+  const routeToForm = (files) => {
+    const pending = [...files].filter(isImage);
+    if (pending.length === 0) {
+      say('Images only, please: PNG, JPEG, WebP or GIF.', true);
+      return;
+    }
+
+    for (const kind of ['logo', 'robot']) {
+      const at = pending.findIndex((file) => file.name.toLowerCase().includes(kind));
+      if (at !== -1) setFile(kind, pending.splice(at, 1)[0]);
+    }
+
+    const order = ['logo', 'robot'].filter((kind) => inputs[kind].files.length === 0).concat(['logo', 'robot']);
+    for (const kind of order) {
+      if (pending.length === 0) break;
+      setFile(kind, pending.shift());
+    }
+
+    if (pending.length > 0) say('Only a logo and one robot photo go up at once.', true);
+    else ready();
+  };
+
+  const highlight = (card, on) => card.classList.toggle('drop-target', on);
+
+  for (const card of cards) {
+    const kind = card.dataset.kind;
+    if (kind !== 'logo' && kind !== 'robot') continue;
+
+    card.addEventListener('dragover', (event) => {
+      if (!event.dataTransfer || ![...event.dataTransfer.types].includes('Files')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      highlight(card, true);
+    });
+    card.addEventListener('dragleave', (event) => {
+      if (card.contains(event.relatedTarget)) return;
+      highlight(card, false);
+    });
+    card.addEventListener('drop', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      highlight(card, false);
+      routeToCard(event.dataTransfer.files, kind);
+    });
+    inputs[kind].addEventListener('change', () => {
+      refresh(kind);
+      ready();
+    });
+    refresh(kind);
+  }
+
+  if (grid) {
+    // A file has to land somewhere, so accept it anywhere in the upload area rather than letting
+    // the browser navigate away to the dropped image.
+    grid.addEventListener('dragover', (event) => {
+      if (!event.dataTransfer || ![...event.dataTransfer.types].includes('Files')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    });
+    grid.addEventListener('drop', (event) => {
+      event.preventDefault();
+      routeToForm(event.dataTransfer.files);
+    });
   }
 })();
 </script>

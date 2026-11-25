@@ -6,6 +6,10 @@ export default defineConfig({
   // Root-domain hosts (Netlify, Vercel, custom domains) keep the default "/".
   base: process.env.BASE_PATH || '/',
   plugins: [react()],
+  build: {
+    // three.js plus the GLB loader live in their own lazily imported chunk (the 3D playback).
+    chunkSizeWarningLimit: 700,
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

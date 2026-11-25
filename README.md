@@ -228,7 +228,7 @@ inside the dashboard). The `back` parameter must live in the query, before the `
 | --- | --- |
 | `back=` | Absolute URL of the page to return to, URL-encoded (see below). Required. |
 | `backLabel=` | Optional caption on the button (“Robot Lab” above). Defaults to `Back`, capped at 40 characters; longer text is cut, and the button ellipsises if the header runs out of room. |
-| `#/2026/USMISOQ/m/4` | Optional destination: `#/` landing page, `#/2026/USMISOQ` an event, `#/2026/USMISOQ/m/4` a match, `#/2026/USMISOQ/t/10136` a team page, `#/config` team assets, `#/admin` the shared asset editor. |
+| `#/2026/USMISOQ/m/4` | Optional destination: `#/` landing page, `#/2026/USMISOQ` an event, `#/2026/USMISOQ/m/4` a match, `#/2026/USMISOQ/t/10136` a team page, `#/config` team assets, `#/admin` the shared asset editor, `#/auto` the autonomous planner (or `#/2026/USMISOQ/auto` for the planner opened from that event, whose Back button then returns there). |
 
 ### Encoding it correctly
 
@@ -336,6 +336,100 @@ changes the live site by itself.
 Images are scaled the same way as a browser upload (48 × 48 logos, 200 × 200 robots), so a photo costs
 roughly 5–20 KB of the JSON; a few hundred teams stay comfortably under a megabyte.
 
+### The autonomous planner (`#/auto`)
+
+Reach it from **Auto planner** in the dashboard toolbar, or the button on the home page (the route is
+`#/auto`, or `#/<season>/<event>/auto` when it was opened from an event, so **Back** returns to that
+event; either form can be bookmarked or linked). It lays out a 30-second auto on the current season's
+field — BIOBUZZ (2026–27) — and is a planning aid, not a simulator: it moves each robot along straight
+segments at a constant speed and reports only what that model can prove. The page sizes the field off
+the window height, so on a 1080-high screen the whole map, playback bar and scoreboard clear the fold
+with the nav on top; the waypoint timetable and the Plan card sit below and scroll.
+
+- **Four robots**, two per alliance: the red cards sit to the left of the map and the blue cards to
+  the right, so the page reads like the field. Each slot has its own team number, speed, shot cycle
+  and program; the alliance comes from the slot, so a hand-edited file cannot put a blue robot in a
+  red column. Click the field to drop a waypoint on the selected robot, drag a handle to move one,
+  right-click (or double-click) to delete it, and use **Undo** to step back a whole gesture. **Start
+  pose** snaps the first waypoint to one of the two legal starting positions for that alliance, and
+  the dashed squares on the map show all four.
+- **Team number.** Type it on the robot card and the page looks the name up in FTC Scout and puts the
+  team's logo — from the shipped library or your own uploads — in a disc inside the robot's footprint
+  on the map. The disc keeps a square or wide logo from spilling over the robot outline, and a team
+  with no logo gets the first letter of its name instead, so no two robots look alike.
+- **The waypoint list** under the map is the program, one row per stop: when it **arrives**, which way
+  it **faces**, how long it **waits**, how many **balls** it launches from there, and when it therefore
+  **leaves**. Shoot cycles are per robot (`Cycle`), so a slow launcher takes proportionally longer per
+  artifact.
+- **Facing is per waypoint.** Each stop has its own heading in degrees (0 faces across the field
+  towards blue, 90 faces the rear wall); the robot turns to it while driving the leg in, so a plan can
+  pull in sideways and still aim the launcher. New waypoints default to facing the direction they were
+  driven from.
+- **Tap a waypoint to stand the robot on it.** A press that does not travel is a tap, not a drag: it
+  selects that robot and puts the clock at the moment the robot arrives there, paused, so the pose,
+  the raised CELL and the timetable row all show that instant. A press only becomes a move once the
+  pointer travels a few pixels, so a tap never nudges the waypoint and never adds an undo step.
+- **Drag the robot itself.** Wherever the clock has the robot standing on a waypoint, its footprint is
+  a grab handle: drag it to move that waypoint, which is quicker than hunting for the small dot
+  underneath. Mid-leg the robot is not a handle, so a stray drag cannot rewrite the path.
+- **Turn the pose with the grip.** The selected robot carries a grip out along its heading, past the
+  footprint. Drag it around the robot to set that waypoint's facing (snapped to the **Snap poses**
+  step in the Plan card — 1°, 5°, 15°, 45° or off), which is the same number the **Facing** column
+  shows. One undo step covers the whole turn. Typing in the Facing column is never rounded, so an
+  exact angle is always available.
+- **Timing.** Arrival times are worked out from the distance and the robot's speed. Editing one adds
+  the difference to the wait *before* that row, so the timetable always stays consistent and a
+  waypoint can never be timed sooner than driving there allows; the first row always starts at 0.00 s.
+  Clicking a row's number jumps playback to that moment, as does tapping the waypoint on the map, and
+  the row the robot is at or driving towards is highlighted.
+- **The HIVE tips.** Every artifact goes into whichever CELL of the alliance's HIVE is raised. Four
+  artifacts tip the first CELL, eight tip each fresh one after that, so a TIP swaps which side is up
+  and later artifacts have to be aimed at the other CELL. The map marks the raised CELL with its load
+  (`2/8`) and dims the other one, flashes on a tip, and the Plan card lists each alliance's tip times.
+  A burst that keeps firing through a tip is flagged: those artifacts would reach a CELL that is still
+  swinging.
+- **Playback** runs the timetable with a scrub bar, ¼× to 2× speed, and Space to play or pause. Balls
+  in flight, the part of the path already driven, and robot headings all follow the clock.
+- **Warnings** cover the arithmetic the model can settle: no waypoints, a lone waypoint that does
+  nothing, a program that runs past the end of AUTO, and the first moment any two robots' 18 in.
+  footprints overlap (it names the pair).
+- **The score.** A scoreboard under the playback bar totals AUTO points for each alliance: LEAVE (3)
+  per robot that finishes at least a robot's width from its first waypoint, PARK (5) per robot that
+  finishes with any part of its 18 in. footprint inside its own LOADING ZONE — the taped strip against
+  its side wall, marked `loading zone (park)` in the legend, and "any part" is checked on a grid of
+  points across the chassis so an angled robot that catches the zone with a corner still counts — and
+  TIP (20) each. Each robot card carries its own leave/park tick and total. The big number is the
+  running score: points bank as the clock reaches them (a TIP when the CELL tips, LEAVE when a robot
+  gets clear of its first waypoint, PARK when it comes to rest in the zone), so scrubbing or playing
+  the auto counts the board up, and the small `final` figure beside it is where the plan ends.
+  LEAVE is a planning proxy; PARK follows the LOADING ZONE rule the field setup uses (manual 10.5.4,
+  as modelled by the BIOBUZZ simulator). Neither is a rules engine — treat them as a planning check,
+  not an official score.
+- **3D playback.** **3D view** in the playback bar opens the plan on the field in three.js — the same
+  timetable, the same clock — with the four robots standing in for real: a boxy 18 in. mecanum robot
+  tinted red or blue for its alliance, carrying a circular badge overhead with its team's logo, or the
+  team's initial when it has none. The field is the team's BIOBUZZ CAD (`public/models/auton-field.glb`,
+  a 7 MB meshopt GLB exported from Robot Lab), so the HIVE, its CELLs, the FLOWERS and the walls are the
+  real geometry; the plan's LOADING ZONEs, GARDENs and starting squares are drawn over it, and anything
+  the export carries outside the walls is clipped away. A hand-built stand-in field shows immediately
+  and stays if the model cannot load. Drag to orbit, scroll to zoom, **Field**/**Top** reset the camera,
+  and the overlay's own Play, scrub and rate drive the same clock as the map, so closing it leaves the
+  plan where you stopped. The scene module is imported lazily, so three.js is only downloaded when the
+  button is first pressed.
+- **Snap** rounds new waypoints to 1, 6 or 12 in., and **Snap poses** rounds the facing the turn grip
+  sets to 1°, 5°, 15° or 45° (or leaves it alone). Both settings travel with the plan. The plan saves
+  in this browser as you edit
+  (`ftcdash.autoPlan.v3`); **Export JSON** / **Import…** move the whole four-robot plan between
+  machines, and each robot card has its own **Export auton** / **Import auton…** so one team's
+  program can be traded on its own. A single-robot file records the slot it was written for; importing
+  it into a different slot keeps the program but takes that column's alliance.
+
+Field geometry (141.2 in. inside the perimeter, the shared HIVE frame with one tilting CELL per
+alliance, four FLOWERS, the LOADING ZONEs and GARDENs, and the starting poses) lives in
+`src/lib/autoplan.ts`, next to the tip thresholds and the `POINTS` / `LEAVE_DISTANCE` / `PARK_RADIUS`
+values the scoreboard uses; the key is versioned so a plan laid out for last season's field never
+loads onto this one.
+
 ### On a PHP host (`/admin/`)
 
 A cPanel/InMotion deployment has a better option: **`https://your-site/admin/`** stores the images as
@@ -350,10 +444,14 @@ deploying are unchanged.
 3. Find the team: type `10136` **or start typing its name** (`Frost Robo…`). Suggestions come from FTC
    Scout and show the school too; picking one fills in the number. A bare number is looked up and shown
    underneath, so you can see you have the right team before uploading.
-4. Use one of the two buttons — **Upload logo** or **Upload robot photo** — each with its own file
-   field. The robot card carries a **season** picker labelled with the game (`2026–27`, `2025–26 ·
-   Decode`, …); *Every season* writes the older season-less entry, used only when a team has no photo
-   for the match's season.
+4. Drag a logo onto the **Team logo** card, a robot photo onto the **Robot photo** card, or drop both
+   anywhere in the upload area. Two files arriving together are split by name (`…logo…`, `…robot…`)
+   and otherwise fill the empty cards in order; a single file lands on the card it was dropped on.
+   Each card keeps its own file picker for a click-only workflow. The robot card carries a **season**
+   picker labelled with the game (`2026–27`, `2025–26 · Decode`, …); *Every season* writes the older
+   season-less entry, used only when a team has no photo for the match's season.
+5. Press **Upload** once: it sends whichever cards are filled, so a logo and a robot photo go up
+   together in one request.
 
 How it behaves:
 
@@ -379,6 +477,15 @@ How it behaves:
 - **Redeploys are safe.** `package-site.cmd` leaves `shared-assets.json` out of the zip (the PHP page
   owns it on the server), and extracting a new build never deletes `media/` or `admin/data/`. Pass
   `--with-assets` if you do want the committed copy shipped.
+- **The library survives a deploy that replaces the manifest.** The page also keeps its own copy in
+  `admin/data/library.json` — a file no build ships — and republishes `shared-assets.json` from it
+  whenever the manifest has lost images, saying how many it put back. That covers the usual accident:
+  copying `dist/` to the host by hand, where `shared-assets.json` is the repo's empty seed (the zip
+  never carries it, and `package.mjs` refuses to hand over an archive that does). Static hosts still
+  need that file in `dist/`, so the guard lives on the server side.
+- **Orphaned images can be re-adopted.** Anything in `media/` the manifest no longer lists appears
+  under *Unlisted images* with a **Restore** button; it re-adds those files (newest wins per slot) and
+  leaves filled slots alone. That also rebuilds a library lost before this bookkeeping existed.
 - **Security:** the password is stored as a `password_hash` in `admin/data/config.php`, which
   `admin/data/.htaccess` denies to the web; sessions are `HttpOnly`/`SameSite=Strict`, every form carries
   a CSRF token, five bad passwords lock sign-in for 30 seconds, and `media/.htaccess` turns off script
@@ -429,7 +536,7 @@ public/        favicon.png, apple-touch-icon.png (served from the site root), sh
                committed logo and robot library, used by static hosts), .htaccess (Apache caching and
                compression, copied into dist/ for cPanel hosts)
   admin/       index.php + lib.php — the PHP asset library (uploads, key gate); data/ holds the
-               password hash at runtime and is denied to the web
+               password hash and the library's own copy of the manifest at runtime, denied to the web
   media/       uploaded logos and robot photos, written by admin/ at runtime (git-ignored)
 start.cmd      Windows launcher: finds Node, installs dependencies, opens the app
 package-site.cmd  Windows packager: builds for a base path and writes ftcdash-site.zip for cPanel
@@ -494,9 +601,10 @@ to include it anyway (e.g. for a static host with no PHP).
    Vite fingerprints `assets/*`, the old ones are simply ignored (delete them occasionally if the
    folder grows).
 
-FTP/SFTP works the same way — drag the contents of `dist/` into the target folder. On plans with SSH
-you can deploy a rebuild in one step. Exclude the two folders the server writes to, or `--delete` will
-remove the uploaded images and the admin password:
+FTP/SFTP works the same way — drag the contents of `dist/` into the target folder, but delete
+`dist/shared-assets.json` first: that empty seed would replace the live library on a PHP host (the zip
+already leaves it out). On plans with SSH you can deploy a rebuild in one step. Exclude the two folders
+the server writes to, or `--delete` will remove the uploaded images and the admin password:
 
 ```bash
 npm run build
