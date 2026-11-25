@@ -4472,6 +4472,28 @@ select {
   pointer-events: none;
 }
 
+/* The running score, floating over the field so playback keeps the whole stage. */
+.autoplan__three-score {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: min(540px, calc(100% - 24px));
+  pointer-events: none;
+}
+
+.autoplan__three-score .autoplan__score {
+  background: rgba(10, 16, 13, 0.78);
+  border-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.autoplan__three-score .autoplan__score-total {
+  font-size: 24px;
+}
+
 .autoplan__three-transport {
   display: flex;
   align-items: center;
@@ -4490,6 +4512,10 @@ select {
 
   .autoplan__three-title {
     font-size: 18px;
+  }
+
+  .autoplan__three-score {
+    grid-template-columns: 1fr;
   }
 }
 

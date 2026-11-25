@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import type { AssetStore } from './assets';
 import {
+  BALL_FLIGHT_SECONDS,
   FLOWERS,
   FIELD_SIZE,
   GARDEN,
@@ -13,14 +14,19 @@ import {
   ROBOT_SIZE,
   TILE,
   buildSchedule,
+  cellAim,
+  cellsAt,
   drivenPath,
   flowerBox,
   hiveCellOnSide,
   initialRaisedSide,
+  launches,
   scheduleAt,
+  simulateCells,
   startPose,
   type Alliance,
   type AutoPlan,
+  type CellSide,
   type Rect,
   type RobotPlan,
 } from './autoplan';
@@ -37,6 +43,10 @@ const WALL_THICKNESS = 2;
 const WALL_CLEARANCE = 4;
 /** The HIVE pivot sits at 44 in., which is where the two CELLs hang. */
 const HIVE_PIVOT = 44;
+/** A tipped CELL swings 60° about the pivot bar, the way the CAD's own rig does. */
+const HIVE_TILT = -Math.PI / 3;
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+const ALLIANCES: Alliance[] = ['red', 'blue'];
 const FLOWER_HEIGHT = 21.5;
 
 const ALLIANCE_COLOR: Record<Alliance, number> = { red: 0xdf5f6b, blue: 0x5d93d4 };
@@ -371,6 +381,11 @@ interface RobotView {
   badge: THREE.Sprite;
   trail: THREE.Line;
   plan: RobotPlan;
+  /** The robot's timetable, and every artifact it launches, kept so playback can fly the balls. */
+  schedule: ReturnType<typeof buildSchedule>;
+  launches: ReturnType<typeof launches>;
+  /** Which CELL each of its artifacts lands in, keyed `${step}-${ball}`. */
+  sides: Map<string, CellSide>;
 }
 
 /** Where the field CAD lives. Vite copies `public/` as-is, so this works under any base path. */
@@ -392,11 +407,17 @@ function disposeObject(root: THREE.Object3D): void {
   });
 }
 
+/** The CAD field, with the two hive pivots the tipping animation turns. */
+interface CadField {
+  root: THREE.Object3D;
+  pivots: Partial<Record<Alliance, THREE.Object3D>>;
+}
+
 /**
  * The BIOBUZZ field CAD, exported from the team's Robot Lab as a meshopt-compressed GLB. It is built
  * in metres with the field centred on the origin, so the only change needed is the unit: inches.
  */
-async function loadCadField(): Promise<THREE.Object3D> {
+async function loadCadField(): Promise<CadField> {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf = await loader.loadAsync(FIELD_MODEL_URL);
@@ -446,7 +467,60 @@ async function loadCadField(): Promise<THREE.Object3D> {
     }
   });
 
-  return model;
+  // The export rigs only the blue hive: the red cell is baked into the static meshes. Rebuild it as a
+  // half-turn copy of the blue assembly (which is how the two hives are laid out) and hide the baked
+  // red cell parts it stands in for.
+  const pivots: Partial<Record<Alliance, THREE.Object3D>> = {};
+  const bluePivot = model.getObjectByName('BlueHivePivot');
+  if (bluePivot?.parent) {
+    pivots.blue = bluePivot;
+
+    // Parts of the static field that only draw the red CELL: it swings with the pivot instead.
+    model.updateMatrixWorld(true);
+    const hive = new THREE.Box3(new THREE.Vector3(-26, 26, -32), new THREE.Vector3(-1, 70, 32));
+    const baked = new THREE.Box3();
+    model.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      if (child.name === 'StaticField_ff0000') {
+        child.visible = false;
+        return;
+      }
+      child.geometry.computeBoundingBox();
+      baked.copy(child.geometry.boundingBox!).applyMatrix4(child.matrixWorld);
+      if (hive.containsBox(baked)) child.visible = false;
+    });
+
+    const reused = new Map<THREE.Material, THREE.Material>();
+    const redPivot = bluePivot.clone(true);
+    redPivot.name = 'RedHivePivot';
+    redPivot.position.set(-bluePivot.position.x, bluePivot.position.y, -bluePivot.position.z);
+    redPivot.rotation.set(0, Math.PI, 0);
+    redPivot.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const swap = (material: THREE.Material) => {
+        let copy = reused.get(material);
+        if (!copy) {
+          copy = material.clone();
+          const hsl = { h: 0, s: 0, l: 0 };
+          const colour = (copy as { color?: THREE.Color }).color;
+          // Everything blue in the moving assembly is the CELL: give it the red alliance's paint.
+          if (colour && 'getHSL' in colour) {
+            colour.getHSL(hsl);
+            if (hsl.s > 0.3 && hsl.h > 0.5 && hsl.h < 0.78) colour.setHSL(0.985, hsl.s, hsl.l);
+          }
+          reused.set(material, copy);
+        }
+        return copy;
+      };
+      child.material = Array.isArray(child.material)
+        ? child.material.map(swap)
+        : swap(child.material);
+    });
+    redPivot.visible = true;
+    bluePivot.parent.add(redPivot);    pivots.red = redPivot;
+  }
+
+  return { root: model, pivots };
 }
 
 export interface AutoplanScene {
@@ -517,10 +591,46 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
   const overlayGroup = buildPlanOverlays();
   scene.add(overlayGroup);
 
+  // Hive pivots, once the CAD arrives: the tipping animation turns them about the frame's top bar.
+  const pivots: Partial<Record<Alliance, THREE.Object3D>> = {};
+  const pivotBase: Partial<Record<Alliance, THREE.Quaternion>> = {};
+  const hiveBlend: Record<Alliance, number> = { red: 0, blue: 0 };
+  const hiveTarget: Record<Alliance, number> = { red: 0, blue: 0 };
+  // Artifacts in flight: one small pollen-coloured sphere per shot, reused from a pool.
+  const BALL_RADIUS = 1.4;
+  /** The shooter sits above the chassis, and artifacts land in the mouth of the raised CELL. */
+  const LAUNCH_HEIGHT = 18;
+  const CELL_MOUTH = HIVE_PIVOT + 8;
+  const ARC_HEIGHT = 24;
+  const ballGeometry = new THREE.SphereGeometry(BALL_RADIUS, 14, 10);
+  const ballMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffd75e,
+    roughness: 0.55,
+    metalness: 0.05,
+  });
+  const ballPool: THREE.Mesh[] = [];
+  const ballFrom = new THREE.Vector3();
+  const ballTo = new THREE.Vector3();
+  const ballFor = (index: number) => {
+    let mesh = ballPool[index];
+    if (!mesh) {
+      mesh = new THREE.Mesh(ballGeometry, ballMaterial);
+      mesh.castShadow = true;
+      scene.add(mesh);
+      ballPool[index] = mesh;
+    }
+    return mesh;
+  };
+
+  let cells = simulateCells(options.plan);
+
   let robots: RobotView[] = [];
   let pathLines: THREE.Line[] = [];
   let frame = 0;
   let disposed = false;
+  let lastFrame = 0;
+  let currentTime = 0;
+  const tilt = new THREE.Quaternion();
 
   const viewTo = (view: 'field' | 'top') => {
     if (view === 'top') {
@@ -563,6 +673,7 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
     teamNames: (string | null | undefined)[],
   ) => {
     clearRobots();
+    cells = simulateCells(plan);
 
     plan.robots.forEach((robot, slot) => {
       const group = new THREE.Group();
@@ -588,14 +699,28 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
       const trail = trailLine(robot.path.length + 2, 0xff8d47);
       alignments.add(trail);
 
-      robots.push({ group, body, badge, trail, plan: robot });
+      const sides = new Map<string, CellSide>();
+      for (const tick of cells[robot.alliance].ticks) {
+        if (tick.robot === slot) sides.set(`${tick.step}-${tick.ball}`, tick.side);
+      }
+      const schedule = buildSchedule(robot);
+      robots.push({
+        group,
+        body,
+        badge,
+        trail,
+        plan: robot,
+        schedule,
+        launches: launches(schedule, robot.shotCycle),
+        sides,
+      });
     });
   };
 
   const setTime = (seconds: number) => {
+    currentTime = seconds;
     for (const view of robots) {
-      const schedule = buildSchedule(view.plan);
-      const sample = scheduleAt(schedule, seconds);
+      const sample = scheduleAt(view.schedule, seconds);
       if (!sample) {
         view.group.visible = false;
         continue;
@@ -605,7 +730,7 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
       // A planner heading turns +x towards +y, which is -z here: the same sign as three's Y rotation.
       view.group.rotation.y = sample.heading;
 
-      const trail = drivenPath(schedule, seconds);
+      const trail = drivenPath(view.schedule, seconds);
       const attribute = view.trail.geometry.getAttribute('position') as THREE.BufferAttribute;
       const usable = Math.min(trail.length, attribute.count);
       for (let i = 0; i < usable; i += 1) {
@@ -616,6 +741,30 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
       view.trail.geometry.setDrawRange(0, usable);
       view.trail.visible = usable > 1;
     }
+
+    for (const alliance of ALLIANCES) {
+      const at = cellsAt(cells[alliance], seconds);
+      hiveTarget[alliance] = at.raised === initialRaisedSide(alliance) ? 0 : 1;
+    }
+
+    let used = 0;
+    for (const view of robots) {
+      const alliance = view.plan.alliance;
+      for (const launch of view.launches) {
+        const progress = (seconds - launch.time) / BALL_FLIGHT_SECONDS;
+        if (progress < 0 || progress > 1) continue;
+        const side = view.sides.get(`${launch.step}-${launch.ball}`) ?? initialRaisedSide(alliance);
+        const aim = cellAim(alliance, side);
+        const ball = ballFor(used);
+        ballFrom.set(launch.from.x, LAUNCH_HEIGHT, -launch.from.y);
+        ballTo.set(aim.x, CELL_MOUTH, -aim.y);
+        ball.position.lerpVectors(ballFrom, ballTo, progress);
+        ball.position.y += ARC_HEIGHT * Math.sin(Math.PI * progress);
+        ball.visible = true;
+        used += 1;
+      }
+    }
+    for (let i = used; i < ballPool.length; i += 1) ballPool[i]!.visible = false;
   };
 
   const resize = () => {
@@ -635,6 +784,21 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
 
   const loop = () => {
     if (disposed) return;
+    const now = performance.now();
+    // A first frame has no previous timestamp, and a backgrounded tab jumps: clamp the step.
+    const delta = lastFrame === 0 ? 0 : Math.min((now - lastFrame) / 1000, 0.1);
+    lastFrame = now;
+
+    for (const alliance of ALLIANCES) {
+      const pivot = pivots[alliance];
+      const base = pivotBase[alliance];
+      if (!pivot || !base) continue;
+      // The CELL swings down in about a third of a second rather than snapping.
+      hiveBlend[alliance] += (hiveTarget[alliance] - hiveBlend[alliance]) * Math.min(1, delta * 8);
+      tilt.setFromAxisAngle(X_AXIS, HIVE_TILT * hiveBlend[alliance]);
+      pivot.quaternion.copy(base).multiply(tilt);
+    }
+
     controls.update();
     renderer.render(scene, camera);
     frame = requestAnimationFrame(loop);
@@ -646,8 +810,15 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
   if (cad && !disposed) {
     scene.remove(field);
     disposeObject(field);
-    field = cad;
+    field = cad.root;
     scene.add(field);
+    for (const alliance of ALLIANCES) {
+      const pivot = cad.pivots[alliance];
+      if (!pivot) continue;
+      pivots[alliance] = pivot;
+      pivotBase[alliance] = pivot.quaternion.clone();
+    }
+    setTime(currentTime);
   }
 
   return {
@@ -660,6 +831,9 @@ export async function createAutoplanScene(options: AutoplanSceneOptions): Promis
       observer.disconnect();
       controls.dispose();
       clearRobots();
+      for (const ball of ballPool) ball.removeFromParent();
+      ballGeometry.dispose();
+      ballMaterial.dispose();
       disposeObject(field);
       renderer.dispose();
       renderer.domElement.remove();

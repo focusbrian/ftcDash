@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AUTO_SECONDS, type AutoPlan } from '../lib/autoplan';
+import { AUTO_SECONDS, POINTS, scoreAt, scoreAuto, scoreEvents, type AutoPlan } from '../lib/autoplan';
 import type { AssetStore } from '../lib/assets';
 import type { AutoplanScene } from '../lib/autoplanScene';
 
@@ -52,6 +52,11 @@ export function AutoPlan3DView({
 
   // Names arrive as a fresh array each render, so the effect watches their contents instead.
   const nameKey = useMemo(() => teamNames.map((name) => name ?? '').join('|'), [teamNames]);
+
+  // The same running score the map shows: points bank as the clock passes them.
+  const scoreTimeline = useMemo(() => scoreEvents(plan), [plan]);
+  const finalScores = useMemo(() => scoreAuto(plan), [plan]);
+  const liveScores = useMemo(() => scoreAt(scoreTimeline, time), [scoreTimeline, time]);
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +151,32 @@ export function AutoPlan3DView({
 
       <div className="autoplan__three-stage">
         <div ref={hostRef} className="autoplan__three-canvas" />
+        <div className="autoplan__three-score" aria-label="Live score">
+          {(['red', 'blue'] as const).map((alliance) => {
+            const now = liveScores[alliance];
+            const end = finalScores[alliance];
+            return (
+              <div key={alliance} className={`autoplan__score autoplan__score--${alliance}`}>
+                <span className="autoplan__score-title">
+                  <span className={`autoplan__dot autoplan__dot--${alliance}`} />{' '}
+                  {alliance === 'red' ? 'Red' : 'Blue'}
+                </span>
+                <strong className="autoplan__score-total" title="Points scored so far in the playback">
+                  {now.total}
+                </strong>
+                <span className="autoplan__score-breakdown">
+                  leave {now.leave} · park {now.park} · tips {now.tips} ({now.tipCount}×{POINTS.tip})
+                </span>
+                <span
+                  className="autoplan__score-final"
+                  title="Score when AUTO ends, with every point in the plan banked"
+                >
+                  final {end.total}
+                </span>
+              </div>
+            );
+          })}
+        </div>
         {ready ? null : <p className="autoplan__three-loading">{error ?? 'Building the field…'}</p>}
         <p className="autoplan__three-hint">Drag to orbit · scroll to zoom</p>
       </div>

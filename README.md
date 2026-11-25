@@ -414,8 +414,14 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   the export carries outside the walls is clipped away. A hand-built stand-in field shows immediately
   and stays if the model cannot load. Drag to orbit, scroll to zoom, **Field**/**Top** reset the camera,
   and the overlay's own Play, scrub and rate drive the same clock as the map, so closing it leaves the
-  plan where you stopped. The scene module is imported lazily, so three.js is only downloaded when the
-  button is first pressed.
+  plan where you stopped. A running scoreboard floats over the field — the same live score as the map,
+  counting red and blue up as the clock reaches each point, with the plan's final figure beside it.
+  Artifacts are animated: each launch lobs a pollen sphere out of the robot's shooter in a high arc
+  into the mouth of the raised CELL of its alliance's HIVE, and a HIVE swings its CELLs 60° about the
+  pivot bar whenever `simulateCells` says one tips, so the playback shows the TIP as well as the score.
+  The CAD rigs only the blue HIVE, so the red one is rebuilt as a half-turn copy of it (recoloured,
+  with the baked red CELL meshes hidden) — which is exactly how the two hives sit on the real field.
+  The scene module is imported lazily, so three.js is only downloaded when the button is first pressed.
 - **Snap** rounds new waypoints to 1, 6 or 12 in., and **Snap poses** rounds the facing the turn grip
   sets to 1°, 5°, 15° or 45° (or leaves it alone). Both settings travel with the plan. The plan saves
   in this browser as you edit
