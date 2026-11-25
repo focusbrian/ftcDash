@@ -357,14 +357,16 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   team's logo — from the shipped library or your own uploads — in a disc inside the robot's footprint
   on the map. The disc keeps a square or wide logo from spilling over the robot outline, and a team
   with no logo gets the first letter of its name instead, so no two robots look alike.
-- **The waypoint list** under the map is the program, one row per stop: when it **arrives**, which way
-  it **faces**, how long it **waits**, how many **balls** it launches from there, and when it therefore
-  **leaves**. Shoot cycles are per robot (`Cycle`), so a slow launcher takes proportionally longer per
-  artifact.
+- **The waypoint list** under the map is the program, one row per stop: when it **arrives**, how long
+  it **waits** before the first artifact, how many **balls** it launches from there, how long it
+  **holds after** the last one, and when it therefore **leaves**. Shoot cycles are per robot
+  (`Cycle`), so a slow launcher takes proportionally longer per artifact. A waypoint can hold at most
+  four artifacts — one CELL's worth — so **max** on the balls cell loads all four, and the − / + pairs
+  move the waits in 0.25 s and the balls by one.
 - **Facing is per waypoint.** Each stop has its own heading in degrees (0 faces across the field
   towards blue, 90 faces the rear wall); the robot turns to it while driving the leg in, so a plan can
   pull in sideways and still aim the launcher. New waypoints default to facing the direction they were
-  driven from.
+  driven from, and it is set on the map rather than in the table.
 - **Tap a waypoint to stand the robot on it.** A press that does not travel is a tap, not a drag: it
   selects that robot and puts the clock at the moment the robot arrives there, paused, so the pose,
   the raised CELL and the timetable row all show that instant. A press only becomes a move once the
@@ -374,12 +376,13 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   underneath. Mid-leg the robot is not a handle, so a stray drag cannot rewrite the path.
 - **Turn the pose with the grip.** The selected robot carries a grip out along its heading, past the
   footprint. Drag it around the robot to set that waypoint's facing (snapped to the **Snap poses**
-  step in the Plan card — 1°, 5°, 15°, 45° or off), which is the same number the **Facing** column
-  shows. One undo step covers the whole turn. Typing in the Facing column is never rounded, so an
-  exact angle is always available.
+  step in the Plan card — 1°, 5°, 15°, 45° or off). One undo step covers the whole turn, and the grip
+  is where the angle is set: the table shows the timings, the map shows the pose.
 - **Timing.** Arrival times are worked out from the distance and the robot's speed. Editing one adds
   the difference to the wait *before* that row, so the timetable always stays consistent and a
   waypoint can never be timed sooner than driving there allows; the first row always starts at 0.00 s.
+  A stop's clock is arrival → wait → one shot cycle per ball → wait after shooting → drive on, so the
+  hold after the shots is real time the robot cannot spend driving.
   Clicking a row's number jumps playback to that moment, as does tapping the waypoint on the map, and
   the row the robot is at or driving towards is highlighted.
 - **The HIVE tips.** Every artifact goes into whichever CELL of the alliance's HIVE is raised. Four
@@ -424,11 +427,17 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   The scene module is imported lazily, so three.js is only downloaded when the button is first pressed.
 - **Snap** rounds new waypoints to 1, 6 or 12 in., and **Snap poses** rounds the facing the turn grip
   sets to 1°, 5°, 15° or 45° (or leaves it alone). Both settings travel with the plan. The plan saves
-  in this browser as you edit
-  (`ftcdash.autoPlan.v3`); **Export JSON** / **Import…** move the whole four-robot plan between
-  machines, and each robot card has its own **Export auton** / **Import auton…** so one team's
-  program can be traded on its own. A single-robot file records the slot it was written for; importing
-  it into a different slot keeps the program but takes that column's alliance.
+  in this browser as you edit (`ftcdash.autoPlan.v3`), and **Export JSON** moves the whole four-robot
+  plan between machines — it opens a picker first, so any saved autons can ride along in the same
+  file. **Import…** reads such a file and puts its bundled autons back on the shelf, keeping whichever
+  copy of a name was saved later.
+- **A shelf of single-robot autons.** Each robot card has **Save auton…**, which asks for a name and
+  keeps that one program in this browser (`ftcdash.autons.v1`), and **Load auton…**, which lists what
+  is saved — name, the column it came from, stops, balls and when it was saved — so any of them can be
+  dropped onto any robot. Saving under a name that already exists replaces it; the × beside an entry
+  deletes it. A saved auton remembers the slot it was written for, but loading it into another column
+  keeps the program and takes that column's alliance. No files are downloaded or picked for a single
+  robot; the shelf holds the last 24.
 
 Field geometry (141.2 in. inside the perimeter, the shared HIVE frame with one tilting CELL per
 alliance, four FLOWERS, the LOADING ZONEs and GARDENs, and the starting poses) lives in

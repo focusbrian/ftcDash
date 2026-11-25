@@ -35,7 +35,8 @@ export const DEFAULT_SPEED = 36;
 export const MIN_SHOT_CYCLE = 0.1;
 export const MAX_SHOT_CYCLE = 3;
 export const DEFAULT_SHOT_CYCLE = 0.3;
-export const MAX_BALLS = 12;
+/** A waypoint is capped at one CELL's worth of artifacts. */
+export const MAX_BALLS = 4;
 export const MAX_WAIT = 20;
 
 export interface Rect {
@@ -191,6 +192,8 @@ export interface Waypoint {
   wait: number;
   /** Artifacts launched from here, one shot cycle apart. Zero means drive through without stopping. */
   shots: number;
+  /** Seconds to sit still after the last artifact leaves, before driving on. */
+  after: number;
 }
 
 export interface RobotPlan {
@@ -225,6 +228,8 @@ export interface Step {
   travel: number;
   wait: number;
   shots: number;
+  /** Seconds to sit still after the last artifact leaves, before driving on. */
+  after: number;
   /** When the first artifact leaves, and when the robot is free to drive on. */
   firstShot: number;
   depart: number;
@@ -238,8 +243,8 @@ export interface Schedule {
 
 /**
  * Turns the waypoint list into a timetable: drive time from the distance and the speed, then the
- * wait, then one shot cycle per artifact. Nothing here reads the clock, so the same list always
- * produces the same timetable.
+ * wait, then one shot cycle per artifact, then the wait after shooting. Nothing here reads the clock,
+ * so the same list always produces the same timetable.
  */
 export function buildSchedule(robot: RobotPlan): Schedule {
   const steps: Step[] = [];
@@ -251,8 +256,9 @@ export function buildSchedule(robot: RobotPlan): Schedule {
     const arrive = clock + travel;
     const wait = Math.max(0, waypoint.wait);
     const shots = Math.max(0, Math.round(waypoint.shots));
+    const after = Math.max(0, waypoint.after);
     const firstShot = arrive + wait;
-    const depart = firstShot + shots * Math.max(robot.shotCycle, 0.001);
+    const depart = firstShot + shots * Math.max(robot.shotCycle, 0.001) + after;
 
     steps.push({
       index,
@@ -262,6 +268,7 @@ export function buildSchedule(robot: RobotPlan): Schedule {
       travel,
       wait,
       shots,
+      after,
       firstShot,
       depart,
     });
@@ -563,18 +570,27 @@ interface RawWaypoint {
   heading: number | null;
   wait: number;
   shots: number;
+  after: number;
 }
 
 function readWaypoint(raw: unknown): RawWaypoint | null {
   if (!raw || typeof raw !== 'object') return null;
-  const source = raw as { x?: unknown; y?: unknown; heading?: unknown; wait?: unknown; shots?: unknown };
+  const source = raw as {
+    x?: unknown;
+    y?: unknown;
+    heading?: unknown;
+    wait?: unknown;
+    shots?: unknown;
+    after?: unknown;
+  };
   if (typeof source.x !== 'number' || typeof source.y !== 'number') return null;
   if (!Number.isFinite(source.x) || !Number.isFinite(source.y)) return null;
 
-  const wait =
-    typeof source.wait === 'number' && Number.isFinite(source.wait)
-      ? round1(clamp(source.wait, 0, MAX_WAIT))
-      : 0;
+  const timing = (value: unknown): number =>
+    typeof value === 'number' && Number.isFinite(value) ? round1(clamp(value, 0, MAX_WAIT)) : 0;
+  const wait = timing(source.wait);
+  // Programs saved before the wait after shooting existed simply have none.
+  const after = timing(source.after);
   const shots =
     typeof source.shots === 'number' && Number.isFinite(source.shots)
       ? Math.round(clamp(source.shots, 0, MAX_BALLS))
@@ -585,7 +601,7 @@ function readWaypoint(raw: unknown): RawWaypoint | null {
       : null;
 
   const point = clampToField({ x: source.x, y: source.y });
-  return { x: point.x, y: point.y, heading, wait, shots };
+  return { x: point.x, y: point.y, heading, wait, shots, after };
 }
 
 /**
@@ -597,7 +613,7 @@ function withHeadings(points: RawWaypoint[]): Waypoint[] {
     const previous = points[index - 1];
     const heading =
       point.heading ?? (previous ? headingBetween(previous, point) : normalizeHeading(0));
-    return { x: point.x, y: point.y, heading, wait: point.wait, shots: point.shots };
+    return { x: point.x, y: point.y, heading, wait: point.wait, shots: point.shots, after: point.after };
   });
 }
 

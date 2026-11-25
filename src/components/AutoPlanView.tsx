@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoPlan3DView } from './AutoPlan3DView';
+import { AutonLibraryDialog } from './AutonLibraryDialog';
+import { ExportPlanDialog } from './ExportPlanDialog';
 import { useTeamLookup } from '../hooks/useTeamLookup';
+import {
+  AUTON_LIBRARY_KEY,
+  autonName,
+  loadAuton,
+  mergeAutons,
+  parseAutonBundle,
+  parseAutonLibrary,
+  removeAuton,
+  saveAuton,
+  serializeAutonLibrary,
+  withAutons,
+  type SavedAuton,
+} from '../lib/autonLibrary';
 import {
   AUTO_PLAN_KEY,
   AUTO_SECONDS,
@@ -36,7 +51,6 @@ import {
   launches,
   normalizeHeading,
   parseAutoPlan,
-  parseRobotPlan,
   planIssues,
   POINTS,
   retimeArrival,
@@ -48,7 +62,6 @@ import {
   scoreAuto,
   scoreEvents,
   serializeAutoPlan,
-  serializeRobotPlan,
   simulateCells,
   slotLabel,
   snapHeading,
@@ -144,10 +157,6 @@ function downloadJson(text: string, filename: string): void {
   anchor.remove();
   // Revoking at once would cancel the download in some browsers; the blob is small and short-lived.
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
-function downloadPlan(plan: AutoPlan): void {
-  downloadJson(serializeAutoPlan(plan), 'auto-plan.json');
 }
 
 /** The HIVE frame and both CELLs per alliance, with the raised one carrying its load. */
@@ -272,6 +281,79 @@ function Starts() {
         }),
       )}
     </g>
+  );
+}
+
+/** A number with a − / + pair either side, and optionally a chip that jumps to the maximum. */
+function Stepper({
+  name,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  title,
+  maxLabel,
+}: {
+  name: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  title?: string;
+  /** Text for the "go to the maximum" chip; omitted when there is none. */
+  maxLabel?: string;
+}) {
+  const nudge = (delta: number) => onChange(round2(clamp(round2(value + delta), min, max)));
+  return (
+    <div className="autoplan__stepper">
+      <button
+        type="button"
+        className="autoplan__step"
+        aria-label={`Decrease ${name}`}
+        disabled={value <= min}
+        onClick={() => nudge(-step)}
+      >
+        −
+      </button>
+      <input
+        type="number"
+        className="field__control autoplan__cell-input"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        title={title}
+        aria-label={name}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (!Number.isFinite(next)) return;
+          onChange(round2(clamp(next, min, max)));
+        }}
+      />
+      <button
+        type="button"
+        className="autoplan__step"
+        aria-label={`Increase ${name}`}
+        disabled={value >= max}
+        onClick={() => nudge(step)}
+      >
+        +
+      </button>
+      {maxLabel ? (
+        <button
+          type="button"
+          className="autoplan__step autoplan__step--max"
+          aria-label={`Load the maximum ${max} into ${name}`}
+          title={`Shoot the maximum, ${max}`}
+          disabled={value >= max}
+          onClick={() => onChange(max)}
+        >
+          {maxLabel}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -412,7 +494,7 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
       const previous = robot.path[robot.path.length - 1];
       // A new waypoint faces the way the robot drives into it, unless that is the start.
       const heading = previous ? headingBetween(previous, point) : normalizeHeading(0);
-      return { ...robot, path: [...robot.path, { ...point, heading, wait: 0, shots: 0 }] };
+      return { ...robot, path: [...robot.path, { ...point, heading, wait: 0, shots: 0, after: 0 }] };
     });
     setError(null);
   };
@@ -439,7 +521,7 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
   const patchWaypoint = (
     robotIndex: number,
     waypointIndex: number,
-    patch: Partial<{ wait: number; shots: number; heading: number }>,
+    patch: Partial<{ wait: number; shots: number; after: number; heading: number }>,
   ) => {
     changeRobot(robotIndex, (robot) => ({
       ...robot,
@@ -502,6 +584,7 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
             heading: normalizeHeading(pose.heading),
             wait: first?.wait ?? 0,
             shots: first?.shots ?? 0,
+            after: first?.after ?? 0,
           },
           ...rest,
         ],
@@ -518,12 +601,36 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
     setError(null);
     setNote(null);
     try {
-      const loaded = parseAutoPlan(await file.text());
+      const text = await file.text();
+      const loaded = parseAutoPlan(text);
       commit(loaded);
-      setNote(`Loaded a plan from ${file.name}.`);
+      // An exported file may carry a shelf of autons; they belong back in this browser.
+      const bundled = parseAutonBundle(text);
+      if (bundled.length > 0) {
+        writeLibrary(mergeAutons(library, bundled));
+        setNote(
+          `Loaded a plan from ${file.name}, with ${bundled.length} saved auton${
+            bundled.length === 1 ? '' : 's'
+          }.`,
+        );
+      } else {
+        setNote(`Loaded a plan from ${file.name}.`);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not read that plan.');
     }
+  };
+
+  /** Writes the plan, plus whichever saved autons were ticked, as one file. */
+  const exportPlan = (autons: SavedAuton[]) => {
+    downloadJson(withAutons(serializeAutoPlan(planRef.current), autons), 'auto-plan.json');
+    setExportOpen(false);
+    setError(null);
+    setNote(
+      autons.length === 0
+        ? 'Exported the plan.'
+        : `Exported the plan with ${autons.length} saved auton${autons.length === 1 ? '' : 's'}.`,
+    );
   };
 
   // Everything drawn at the current moment: where each robot is and how much of its path is done.
@@ -599,33 +706,64 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
   const scoreTimeline = useMemo(() => scoreEvents(plan), [plan]);
   const scores = useMemo(() => scoreAuto(plan), [plan]);
   const liveScores = useMemo(() => scoreAt(scoreTimeline, time), [scoreTimeline, time]);
-  const autonInputs = useRef<Array<HTMLInputElement | null>>([]);
-
-  const exportRobot = (slot: number) => {
-    const robot = planRef.current.robots[slot];
-    if (!robot) return;
-    const name =
-      robot.teamNumber === null
-        ? `auton-${slotLabel(slot).toLowerCase().replace(' ', '-')}.json`
-        : `auton-${robot.teamNumber}.json`;
-    downloadJson(serializeRobotPlan(robot, slot), name);
-    setNote(`Exported ${slotLabel(slot)} as ${name}.`);
-  };
-
-  const importRobotFile = async (slot: number, file: File | undefined) => {
-    if (!file) return;
-    setError(null);
-    setNote(null);
+  // The browser's shelf of single-robot autons, kept across reloads like the plan itself.
+  const [library, setLibrary] = useState<SavedAuton[]>(() => {
     try {
-      const loaded = parseRobotPlan(await file.text(), slot);
-      if (!loaded) throw new Error('That file does not hold a robot auton.');
-      changeRobot(slot, () => loaded);
-      setNote(`${slotLabel(slot)} loaded from ${file.name}.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not read that auton.');
+      return parseAutonLibrary(window.localStorage.getItem(AUTON_LIBRARY_KEY));
+    } catch {
+      return [];
+    }
+  });
+  const [autonDialog, setAutonDialog] = useState<{ mode: 'save' | 'load'; slot: number } | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const writeLibrary = (entries: SavedAuton[]) => {
+    setLibrary(entries);
+    try {
+      window.localStorage.setItem(AUTON_LIBRARY_KEY, serializeAutonLibrary(entries));
+    } catch {
+      setError('Browser storage is full — delete a saved auton, then try again.');
     }
   };
 
+  /** Names a robot's program and puts it on the shelf, replacing one of the same name. */
+  const keepRobotAuton = (slot: number, name: string) => {
+    const robot = planRef.current.robots[slot];
+    if (!robot) return;
+    writeLibrary(saveAuton(library, robot, slot, name, new Date().toISOString()));
+    setAutonDialog(null);
+    setError(null);
+    setNote(`Saved “${autonName(name)}” for ${slotLabel(slot)}.`);
+  };
+
+  /** Drops a saved auton into a column; the column, not the file, decides the alliance. */
+  const useSavedAuton = (slot: number, entry: SavedAuton) => {
+    const loaded = loadAuton(entry, slot);
+    if (!loaded) {
+      setError(`“${entry.name}” could not be read back.`);
+      return;
+    }
+    changeRobot(slot, () => loaded);
+    setAutonDialog(null);
+    setError(null);
+    setNote(
+      entry.slot === slot
+        ? `${slotLabel(slot)} loaded “${entry.name}”.`
+        : `${slotLabel(slot)} loaded “${entry.name}”, the auton saved from ${slotLabel(entry.slot)}.`,
+    );
+  };
+
+  const forgetAuton = (entry: SavedAuton) => {
+    writeLibrary(removeAuton(library, entry.name));
+    setNote(`Removed “${entry.name}” from this browser.`);
+  };
+
+  /** A name to start from: the team, or the column when no team is set. */
+  const autonSuggestion = (slot: number): string => {
+    const robot = plan.robots[slot] ?? defaultRobot(slot);
+    const who = teams[slot]?.name ?? (robot.teamNumber === null ? slotLabel(slot) : `${robot.teamNumber}`);
+    return `${who} auton`;
+  };
   const renderRobotPanel = (slot: number) => {
     const robot = plan.robots[slot] ?? defaultRobot(slot);
     const schedule = schedules[slot] ?? buildSchedule(robot);
@@ -772,30 +910,26 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
             type="button"
             className="button button--small button--ghost"
             disabled={robot.path.length === 0}
-            onClick={() => exportRobot(slot)}
+            title="Keep this robot's auton in this browser"
+            onClick={() => {
+              setError(null);
+              setNote(null);
+              setAutonDialog({ mode: 'save', slot });
+            }}
           >
-            Export auton
+            Save auton…
           </button>
-          <input
-            ref={(element) => {
-              autonInputs.current[slot] = element;
-            }}
-            className="asset__input"
-            type="file"
-            accept="application/json,.json"
-            aria-label={`Import ${label} auton`}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              void importRobotFile(slot, file);
-            }}
-          />
           <button
             type="button"
             className="button button--small button--ghost"
-            onClick={() => autonInputs.current[slot]?.click()}
+            title="Load a saved auton into this robot"
+            onClick={() => {
+              setError(null);
+              setNote(null);
+              setAutonDialog({ mode: 'load', slot });
+            }}
           >
-            Import auton…
+            Load auton…
           </button>
         </div>
 
@@ -1333,9 +1467,9 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                       <tr>
                         <th scope="col">#</th>
                         <th scope="col">Arrives</th>
-                        <th scope="col">Facing</th>
                         <th scope="col">Wait</th>
                         <th scope="col">Balls</th>
+                        <th scope="col">After</th>
                         <th scope="col">Leaves</th>
                         <th scope="col">
                           <span className="autoplan__sr">Actions</span>
@@ -1387,58 +1521,39 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                               )}
                             </td>
                             <td>
-                              <input
-                                type="number"
-                                className="field__control autoplan__cell-input autoplan__cell-input--angle"
-                                min={0}
-                                max={359}
-                                step={5}
-                                value={Math.round((waypoint.heading * 180) / Math.PI)}
-                                title="Facing in degrees: 0 faces across the field, 90 faces the audience wall"
-                                aria-label={`Facing for waypoint ${step.index + 1} in degrees`}
-                                onChange={(event) => {
-                                  const degrees = Number(event.target.value);
-                                  if (!Number.isFinite(degrees)) return;
-                                  patchWaypoint(activeIndex, step.index, {
-                                    heading: normalizeHeading((degrees * Math.PI) / 180),
-                                  });
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                className="field__control autoplan__cell-input"
+                              <Stepper
+                                name={`Wait at waypoint ${step.index + 1}`}
+                                title="Seconds to sit still after arriving, before the first artifact leaves"
+                                value={round2(waypoint.wait)}
                                 min={0}
                                 max={MAX_WAIT}
-                                step={0.1}
-                                value={round2(waypoint.wait)}
-                                aria-label={`Wait at waypoint ${step.index + 1}`}
-                                onChange={(event) =>
-                                  patchWaypoint(activeIndex, step.index, {
-                                    wait: round2(
-                                      clamp(Number(event.target.value) || 0, 0, MAX_WAIT),
-                                    ),
-                                  })
-                                }
+                                step={0.25}
+                                onChange={(wait) => patchWaypoint(activeIndex, step.index, { wait })}
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
-                                className="field__control autoplan__cell-input"
+                              <Stepper
+                                name={`Balls launched at waypoint ${step.index + 1}`}
+                                title={`Artifacts launched from here, up to ${MAX_BALLS}`}
+                                value={waypoint.shots}
                                 min={0}
                                 max={MAX_BALLS}
                                 step={1}
-                                value={waypoint.shots}
-                                aria-label={`Balls launched at waypoint ${step.index + 1}`}
-                                onChange={(event) =>
-                                  patchWaypoint(activeIndex, step.index, {
-                                    shots: Math.round(
-                                      clamp(Number(event.target.value) || 0, 0, MAX_BALLS),
-                                    ),
-                                  })
+                                maxLabel="max"
+                                onChange={(shots) =>
+                                  patchWaypoint(activeIndex, step.index, { shots: Math.round(shots) })
                                 }
+                              />
+                            </td>
+                            <td>
+                              <Stepper
+                                name={`Wait after shooting at waypoint ${step.index + 1}`}
+                                title="Seconds to sit still after the last artifact leaves, before driving on"
+                                value={round2(waypoint.after)}
+                                min={0}
+                                max={MAX_WAIT}
+                                step={0.25}
+                                onChange={(after) => patchWaypoint(activeIndex, step.index, { after })}
                               />
                             </td>
                             <td className="autoplan__departs">
@@ -1466,7 +1581,10 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                 <p className="autoplan__table-hint">
                   Arrival times are worked out from the distance and the robot&apos;s speed. Editing one
                   adds the difference to the wait before it; the first waypoint always starts at 0.00 s.
-                  Tap a waypoint on the map to jump the clock to it; drag it to move it.
+                  Wait is the settle before the first artifact, After is the hold once the last one has
+                  gone; − and + move each in 0.25 s, and max loads all {MAX_BALLS} artifacts. Tap a
+                  waypoint on the map to jump the clock to it, drag it to move it, and turn its handle to
+                  face the robot.
                 </p>
               </div>
             </section>
@@ -1521,7 +1639,12 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                   type="button"
                   className="button button--small button--ghost"
                   disabled={plan.robots.every((robot) => robot.path.length === 0)}
-                  onClick={() => downloadPlan(plan)}
+                  title="Choose whether saved autons travel with the plan"
+                  onClick={() => {
+                    setError(null);
+                    setNote(null);
+                    setExportOpen(true);
+                  }}
                 >
                   Export JSON
                 </button>
@@ -1591,7 +1714,9 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                 </p>
               </div>
               <p className="config__hint autoplan__save-hint">
-                Saved in this browser as you edit ({AUTO_PLAN_KEY}); export it to keep or share a copy.
+                The plan saves in this browser as you edit ({AUTO_PLAN_KEY}). <strong>Save auton…</strong>{' '}
+                on a robot card keeps that one program on a named shelf here, and{' '}
+                <strong>Export JSON</strong> keeps or shares the whole four-robot plan.
               </p>
             </section>
 
@@ -1627,6 +1752,27 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
           }}
           onRate={setRate}
           onClose={() => setShow3d(false)}
+        />
+      ) : null}
+
+      {autonDialog ? (
+        <AutonLibraryDialog
+          mode={autonDialog.mode}
+          slot={autonDialog.slot}
+          entries={library}
+          initialName={autonSuggestion(autonDialog.slot)}
+          onSave={(name) => keepRobotAuton(autonDialog.slot, name)}
+          onLoad={(entry) => useSavedAuton(autonDialog.slot, entry)}
+          onDelete={forgetAuton}
+          onClose={() => setAutonDialog(null)}
+        />
+      ) : null}
+
+      {exportOpen ? (
+        <ExportPlanDialog
+          entries={library}
+          onExport={exportPlan}
+          onClose={() => setExportOpen(false)}
         />
       ) : null}
     </div>

@@ -4135,7 +4135,19 @@ select {
 .autoplan__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 8px 6px;
+  margin-bottom: 2px;
+}
+
+/* The card's button rows sit close together, so they get a touch more height and line spacing. */
+.autoplan__actions .button--small {
+  height: 30px;
+  padding: 0 11px;
+}
+
+.autoplan__actions + .autoplan__actions {
+  margin-top: 8px;
 }
 
 /* Per-robot scoreline: two ticked flags and the points they are worth. */
@@ -4499,13 +4511,9 @@ select {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.autoplan__three-transport .autoplan__scrub {
+}.autoplan__three-transport .autoplan__scrub {
   flex: 1 1 240px;
-}
-
-@media (max-width: 640px) {
+}@media (max-width: 640px) {
   .autoplan__three {
     padding: 10px;
   }
@@ -4520,13 +4528,158 @@ select {
 }
 
 
+/* The auton shelf: one modal, either naming a program or listing the saved ones. */
+.autoplan__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(4, 7, 5, 0.72);
+}
+
+.autoplan__modal-card {
+  width: min(480px, 100%);
+  max-height: min(80vh, 620px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.autoplan__modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.autoplan__modal-title {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.autoplan__modal-field {
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.autoplan__modal-field .field__control {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.autoplan__modal-hint,
+.autoplan__modal-empty {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.autoplan__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.autoplan__autons {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.autoplan__auton {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.autoplan__auton-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.autoplan__auton-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autoplan__auton-meta {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The export picker: a checkbox and the auton's name share the row's first column. */
+.autoplan__modal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.autoplan__modal-count {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplan__modal-toggles {
+  display: flex;
+  gap: 6px;
+}
+
+.autoplan__auton-pick {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.autoplan__auton-pick input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .autoplan__waypoints {
   margin-top: 16px;
   border-top: 1px solid var(--line);
   padding-top: 12px;
-}
-
-.autoplan__waypoints-head {
+}.autoplan__waypoints-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -4600,6 +4753,50 @@ select {
   padding: 0 6px;
   font-family: var(--mono);
   font-size: 11px;
+}
+
+/* A value with − / + either side, so the timetable can be nudged without typing. */
+.autoplan__stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.autoplan__stepper .autoplan__cell-input {
+  width: 52px;
+  padding: 0 4px;
+  text-align: center;
+}
+
+.autoplan__step {
+  min-width: 20px;
+  height: 24px;
+  padding: 0 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.autoplan__step:hover:not(:disabled) {
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+.autoplan__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.autoplan__step--max {
+  padding: 0 5px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .autoplan__fixed {
@@ -4839,8 +5036,4 @@ select {
 
 .autoplan__robot--grabbable:active {
   cursor: grabbing;
-}
-
-.autoplan__cell-input--angle {
-  width: 58px;
 }

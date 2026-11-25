@@ -61,8 +61,8 @@ import {
   type Waypoint,
 } from './autoplan';
 
-function wp(x: number, y: number, wait = 0, shots = 0, heading = 0): Waypoint {
-  return { x, y, heading, wait, shots };
+function wp(x: number, y: number, wait = 0, shots = 0, heading = 0, after = 0): Waypoint {
+  return { x, y, heading, wait, shots, after };
 }
 
 function robot(overrides: Partial<RobotPlan> = {}): RobotPlan {
@@ -194,10 +194,29 @@ describe('buildSchedule', () => {
     expect(schedule.duration).toBe(0);
   });
 
+  it('holds after the last ball before it can drive on', () => {
+    const schedule = buildSchedule(
+      robot({ speed: 40, shotCycle: 0.5, path: [wp(0, -60, 1, 3, 0, 0.75), wp(0, 0)] }),
+    );
+
+    // 1 s wait, three balls half a second apart, then three quarters of a second of holding.
+    expect(schedule.steps[0]?.after).toBe(0.75);
+    expect(schedule.steps[0]?.depart).toBeCloseTo(3.25);
+    // 60 in at 40 in/s gets the robot to the second stop at 4.75 s.
+    expect(schedule.steps[1]?.arrive).toBeCloseTo(4.75);
+  });
+
+  it('holds at a stop that shoots nothing too', () => {
+    const schedule = buildSchedule(robot({ speed: 40, path: [wp(0, -60, 0.5, 0, 0, 2), wp(0, 0)] }));
+    expect(schedule.steps[0]?.firstShot).toBeCloseTo(0.5);
+    expect(schedule.steps[0]?.depart).toBeCloseTo(2.5);
+  });
+
   it('ignores negative waits and ball counts', () => {
     const schedule = buildSchedule(buildScheduleRobot());
     expect(schedule.steps[0]?.wait).toBe(0);
     expect(schedule.steps[0]?.shots).toBe(0);
+    expect(schedule.steps[0]?.after).toBe(0);
   });
 });
 
@@ -208,7 +227,7 @@ function buildScheduleRobot(): RobotPlan {
     teamNumber: null,
     speed: 30,
     shotCycle: 0.3,
-    path: [{ x: 0, y: 0, heading: 0, wait: -4, shots: -2 }],
+    path: [{ x: 0, y: 0, heading: 0, wait: -4, shots: -2, after: -1 }],
   };
 }
 
@@ -354,6 +373,25 @@ describe('parseAutoPlan', () => {
     expect(plan.robots.map((entry) => entry.alliance)).toEqual(['red', 'red', 'blue', 'blue']);
   });
 
+  it('never loads a waypoint with more than one CELL’s worth of artifacts', () => {
+    const plan = parseAutoPlan(
+      JSON.stringify({
+        robots: [{ speed: 40, shotCycle: 0.5, path: [{ x: 0, y: 0, shots: 8 }] }],
+      }),
+    );
+    expect(plan.robots[0]?.path[0]?.shots).toBe(FIRST_TIP_BALLS);
+  });
+
+  it('keeps the wait after shooting out of programs that predate it', () => {
+    const plan = parseAutoPlan(
+      JSON.stringify({
+        robots: [{ speed: 40, shotCycle: 0.5, path: [{ x: 0, y: 0, wait: 0.5, shots: 2 }] }],
+      }),
+    );
+    expect(plan.robots[0]?.path[0]?.after).toBe(0);
+    expect(plan.robots[0]?.path[0]?.wait).toBe(0.5);
+  });
+
   it('lets the slot decide the alliance, whatever the file says', () => {
     const plan = parseAutoPlan(
       JSON.stringify({
@@ -397,7 +435,7 @@ describe('parseAutoPlan', () => {
             teamNumber: -3,
             speed: 9000,
             shotCycle: 99,
-            path: [{ x: 'a', y: 1 }, { x: 5, y: 6, wait: 900, shots: 900 }],
+            path: [{ x: 'a', y: 1 }, { x: 5, y: 6, wait: 900, shots: 900, after: -3 }],
           },
           'nope',
         ],
@@ -411,7 +449,7 @@ describe('parseAutoPlan', () => {
     expect(plan.robots[0]?.speed).toBe(MAX_SPEED);
     expect(plan.robots[0]?.shotCycle).toBe(MAX_SHOT_CYCLE);
     expect(plan.robots[0]?.path).toEqual([
-      { x: 5, y: 6, heading: 0, wait: MAX_WAIT, shots: MAX_BALLS },
+      { x: 5, y: 6, heading: 0, wait: MAX_WAIT, shots: MAX_BALLS, after: 0 },
     ]);
     expect(plan.robots[1]).toEqual(defaultPlan().robots[1]);
   });
@@ -719,7 +757,11 @@ describe('waypoint facing', () => {
 
 describe('a single robot’s auton file', () => {
   it('round-trips one robot and keeps the slot’s alliance', () => {
-    const source = robot({ alliance: 'red', teamNumber: 10136, path: [wp(0, -40, 1, 2), wp(0, 0, 0, 3)] });
+    const source = robot({
+      alliance: 'red',
+      teamNumber: 10136,
+      path: [wp(0, -40, 1, 2, 0, 0.5), wp(0, 0, 0, 3)],
+    });
     const text = serializeRobotPlan(source, 1);
     expect(JSON.parse(text)).toMatchObject({ app: 'ftcdash', kind: 'auton' });
     expect(parseRobotPlan(text, 1)).toEqual(source);
