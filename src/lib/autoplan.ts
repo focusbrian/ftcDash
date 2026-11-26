@@ -308,6 +308,26 @@ export function headingBetween(from: Pt, to: Pt): number {
   return normalizeHeading(Math.atan2(to.y - from.y, to.x - from.x));
 }
 
+/**
+ * The facing that looks into the field from wherever the robot is standing: square on to the
+ * nearest wall and pointing away from it. A start waypoint placed against the glass faces inward
+ * rather than at it, and one dropped in the middle of the field keeps the plain 0° facing.
+ */
+export function awayFromNearestWall(p: Pt): number {
+  const walls: { distance: number; heading: number }[] = [
+    { distance: p.x + HALF_FIELD, heading: 0 }, // away from the -x wall
+    { distance: HALF_FIELD - p.x, heading: Math.PI }, // away from the +x wall
+    { distance: p.y + HALF_FIELD, heading: Math.PI / 2 }, // away from the -y wall
+    { distance: HALF_FIELD - p.y, heading: -Math.PI / 2 }, // away from the +y wall
+  ];
+  // Ties keep the earlier wall, so equidistant spots (the centre, a diagonal) still resolve.
+  let best = { distance: Number.POSITIVE_INFINITY, heading: 0 };
+  for (const wall of walls) {
+    if (wall.distance < best.distance - 1e-9) best = wall;
+  }
+  return normalizeHeading(best.heading);
+}
+
 /** Rounds a heading to the nearest multiple of `step` degrees; a step of 0 leaves it alone. */
 export function snapHeading(heading: number, step: number): number {
   if (!(step > 0)) return normalizeHeading(heading);

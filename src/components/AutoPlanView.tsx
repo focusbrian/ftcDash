@@ -67,7 +67,7 @@ import {
   snapHeading,
   snapPoint,
   startPose,
-  headingBetween,
+  awayFromNearestWall,
   FIRST_TIP_BALLS,
   HEADING_SNAP_OPTIONS,
   TIP_BALLS,
@@ -492,8 +492,9 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
     const point = snapPoint(p, plan.snap);
     changeRobot(activeIndex, (robot) => {
       const previous = robot.path[robot.path.length - 1];
-      // A new waypoint faces the way the robot drives into it, unless that is the start.
-      const heading = previous ? headingBetween(previous, point) : normalizeHeading(0);
+      // A new waypoint keeps the last one's facing, so a run of stops keeps its aim; the first
+      // waypoint has no predecessor, so it squares up to the nearest wall instead.
+      const heading = previous ? previous.heading : awayFromNearestWall(point);
       return { ...robot, path: [...robot.path, { ...point, heading, wait: 0, shots: 0, after: 0 }] };
     });
     setError(null);
@@ -1584,7 +1585,8 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                   Wait is the settle before the first artifact, After is the hold once the last one has
                   gone; − and + move each in 0.25 s, and max loads all {MAX_BALLS} artifacts. Tap a
                   waypoint on the map to jump the clock to it, drag it to move it, and turn its handle to
-                  face the robot.
+                  face the robot — a new stop keeps the facing of the one before it, and the first turns
+                  away from the nearest wall.
                 </p>
               </div>
             </section>

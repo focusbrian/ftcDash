@@ -392,8 +392,10 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   move the waits in 0.25 s and the balls by one.
 - **Facing is per waypoint.** Each stop has its own heading in degrees (0 faces across the field
   towards blue, 90 faces the rear wall); the robot turns to it while driving the leg in, so a plan can
-  pull in sideways and still aim the launcher. New waypoints default to facing the direction they were
-  driven from, and it is set on the map rather than in the table.
+  pull in sideways and still aim the launcher. A new waypoint keeps the facing of the stop before it,
+  so a run of stops holds its aim; the first waypoint of a robot has nothing to inherit, so it squares
+  up to the nearest wall and points away from it — drop a start against the glass and the robot looks
+  into the field. Facing is set on the map rather than in the table.
 - **Tap a waypoint to stand the robot on it.** A press that does not travel is a tap, not a drag: it
   selects that robot and puts the clock at the moment the robot arrives there, paused, so the pose,
   the raised CELL and the timetable row all show that instant. A press only becomes a move once the

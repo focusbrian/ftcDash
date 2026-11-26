@@ -32,6 +32,7 @@ import {
   hiveCellOnSide,
   initialRaisedSide,
   isParked,
+  awayFromNearestWall,
   headingBetween,
   launches,
   lerpHeading,
@@ -687,10 +688,41 @@ describe('waypoint facing', () => {
     expect(Math.abs(halfway - Math.PI)).toBeLessThan(0.05);
   });
 
-  it('faces a new waypoint along the drive into it', () => {
+  it('faces a waypoint along the drive into it, which is how plans without a facing load', () => {
     expect(headingBetween({ x: 0, y: 0 }, { x: 10, y: 0 })).toBeCloseTo(0);
     expect(headingBetween({ x: 0, y: 0 }, { x: 0, y: 10 })).toBeCloseTo(Math.PI / 2);
     expect(headingBetween({ x: 10, y: 10 }, { x: 0, y: 10 })).toBeCloseTo(Math.PI);
+  });
+
+  it('turns a start waypoint away from the wall it is nearest', () => {
+    expect(awayFromNearestWall({ x: -60, y: 4 })).toBeCloseTo(0);
+    expect(awayFromNearestWall({ x: 60, y: 4 })).toBeCloseTo(Math.PI);
+    expect(awayFromNearestWall({ x: 4, y: -60 })).toBeCloseTo(Math.PI / 2);
+    expect(awayFromNearestWall({ x: 4, y: 60 })).toBeCloseTo((3 * Math.PI) / 2);
+  });
+
+  it('leaves a start waypoint in the middle of the field facing along +x', () => {
+    // Every wall is the same distance away there, so the plain facing wins.
+    expect(awayFromNearestWall({ x: 0, y: 0 })).toBeCloseTo(0);
+  });
+
+  it('always points in from the nearest wall, corners included', () => {
+    const corners: [number, number][] = [
+      [-HALF_FIELD, -HALF_FIELD],
+      [HALF_FIELD, -HALF_FIELD],
+      [-HALF_FIELD, HALF_FIELD],
+      [60, 10],
+      [-10, -60],
+    ];
+    for (const [x, y] of corners) {
+      const heading = awayFromNearestWall({ x, y });
+      // One step along that facing must not end up nearer the glass than it started.
+      const step = 4;
+      const moved = { x: x + Math.cos(heading) * step, y: y + Math.sin(heading) * step };
+      const nearestWall = (p: { x: number; y: number }) =>
+        Math.min(p.x + HALF_FIELD, HALF_FIELD - p.x, p.y + HALF_FIELD, HALF_FIELD - p.y);
+      expect(nearestWall(moved)).toBeGreaterThanOrEqual(nearestWall({ x, y }));
+    }
   });
 
   describe('pose snap', () => {
