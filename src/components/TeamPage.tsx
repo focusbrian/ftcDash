@@ -4,10 +4,13 @@ import kitbot from '../assets/kitbot.webp';
 import { Sparkline } from './Sparkline';
 import { useTeamAwards } from '../hooks/useTeamAwards';
 import { useTeamOprHistory } from '../hooks/useTeamOprHistory';
+import { useTeamRank } from '../hooks/useTeamRank';
+import type { RankSlot } from '../hooks/useTeamRank';
 import { awardLabel, placementLabel } from '../lib/awards';
 import { fmtDate, fmtPoints, matchShortLabel, singleAllianceLabel } from '../lib/format';
 import { OPR_COLORS, eventSparkSeries, seasonSparkSeries } from '../lib/oprSeries';
 import { rollingOprForTeam } from '../lib/opr';
+import { regionLabel } from '../lib/region';
 import { robotForSeason, type AssetKind, type TeamAsset } from '../lib/assets';
 import { fileToImageDataUrl, isImageFile, MAX_ASSET_SIZE } from '../lib/image';
 import type { MatchView, SideView } from '../lib/model';
@@ -37,6 +40,25 @@ interface TeamMatch {
   detail: string;
   outcome: 'win' | 'loss' | 'tie' | 'open';
   score: string;
+}
+
+function RankTile({ label, slot }: { label: string; slot: RankSlot }) {
+  const place = slot.place;
+  return (
+    <div className="rank-tile">
+      <span className="rank-tile__label">{label}</span>
+      <span className="rank-tile__rank">{place ? `#${place.rank}` : '#—'}</span>
+      <span className="rank-tile__pool">
+        {place
+          ? `of ${place.pool.toLocaleString('en-US')} teams`
+          : slot.status === 'loading'
+            ? 'counting…'
+            : slot.status === 'error'
+              ? 'unavailable'
+              : 'no OPR published'}
+      </span>
+    </div>
+  );
 }
 
 function sideOf(view: MatchView, teamNumber: number): SideView | null {
@@ -107,6 +129,8 @@ export function TeamPage({
 }: Props) {
   const seasonOpr = useTeamOprHistory(team.teamNumber, event.season);
   const awards = useTeamAwards(team.teamNumber, event.season);
+  const rank = useTeamRank(team.teamNumber, event.season, event.regionCode);
+  const regionName = regionLabel(event.regionCode);
   const eventOpr = rollingOprForTeam(views, team.teamNumber);
   const matches = teamMatches(views, team.teamNumber);
   // What the chart tooltip says under each match — partners on the left, opposition on the right.
@@ -350,6 +374,17 @@ export function TeamPage({
           </div>
         </dl>
       </div>
+
+      <section className="team-page__ranking-block">
+        <div className="team-page__ranking">
+          <RankTile label="World" slot={rank.world} />
+          {regionName ? <RankTile label={`Region · ${regionName}`} slot={rank.region} /> : null}
+        </div>
+        <p className="team-page__ranking-note">
+          Season ranking by OPR total (auto + teleop) among the teams that have played this
+          season.
+        </p>
+      </section>
 
       {team.oprFromSeason ? (
         <p className="team-page__note">

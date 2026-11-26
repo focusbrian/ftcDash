@@ -15,6 +15,7 @@ const event: RawEvent = {
   liveStreamURL: null,
   type: 'Qualifier',
   fieldCount: 2,
+  regionCode: 'USMA',
   location: { venue: 'Gym', city: 'Boston', state: 'MA', country: 'USA' },
   teams: [
     {

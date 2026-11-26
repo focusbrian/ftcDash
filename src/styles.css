@@ -3478,6 +3478,57 @@ select {
   color: var(--text-dim);
 }
 
+.team-page__ranking-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-page__ranking {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.rank-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--wash), var(--bg-raised);
+}
+
+.rank-tile__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.rank-tile__rank {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-tile__pool {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.team-page__ranking-note {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
 .team-page__block h3 {
   margin: 0 0 8px;
   font-size: 11px;

@@ -42,6 +42,11 @@ Everything comes from one GraphQL query per event (`src/api/queries.ts`) against
   surrogate/no-show/DQ flags) and published scores, plus each participating team's event stats.
 - `eventsSearch(season, limit)` → the event picker list (cached in memory per season).
 
+The team page adds two ranking lookups, both cached for the session (`src/api/rankings.ts`):
+`teamByNumber(number).quickStats(season)` gives the worldwide OPR rank and the size of the field, and
+`teamsSearch(region)` lists a whole FTC Scout region (~1,000 teams in one request) so the same rank can
+be counted among the event's region.
+
 FTC Scout models scores and stats with **one type per season** (`MatchScores2025`,
 `TeamEventStats2026`, …). All of them expose the same fields used here — `autoPoints`, `dcPoints`,
 `totalPoints`, `totalPointsNp` — so the query is assembled from a single field list instead of
@@ -120,7 +125,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   clicking a row opens that team's page.
 - **Team page (right):** clicking any team in the ranking or the prediction swaps the detail panel for
   a synopsis of that team: logo, number and name, school, then its event rank, win–loss record,
-  ranking points and OPR split, beside the robot photo (or the kitbot placeholder). Below that are the
+  ranking points and OPR split, beside the robot photo (or the kitbot placeholder), then its season
+  standing — worldwide, as FTC Scout ranks it, and within the event's region (Michigan, Ontario, …) —
+  each counted out of the teams with a published OPR total that season. Below that are the
   same two sparklines as the hover card — the whole season against its previous-season anchor, and the
   running estimate through this event — and both are readable: hover across either chart (or tab to it
   and use the arrow keys) to see the event name and date, or the match with its partners and
