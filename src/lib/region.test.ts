@@ -5,7 +5,7 @@ describe('regionLabel', () => {
   it('names US and Canadian regions', () => {
     expect(regionLabel('USMI')).toBe('Michigan');
     expect(regionLabel('CAON')).toBe('Ontario');
-    expect(regionLabel('GB')).toBe('GB');
+    expect(regionLabel('GB')).toBe('United Kingdom');
   });
 
   it('falls back to the raw code for unknown regions and normalises case', () => {
