@@ -4866,6 +4866,30 @@ select {
   cursor: pointer;
 }
 
+/* The load dialog's alliance filter: a dot and a colour name per button. */
+.autoplan__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.autoplan__filter--on {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.autoplan__dot--any {
+  background: linear-gradient(90deg, var(--red) 50%, var(--blue) 50%);
+}
+
+.autoplan__modal-search input {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12px;
+}
+
 /* Save mode: the row itself picks a saved auton to write over. */
 .autoplan__auton-choose {
   grid-column: 1 / -1;

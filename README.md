@@ -464,12 +464,14 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
 - **A shelf of single-robot autons.** Each robot card has **Save**, which asks for a name and keeps
   that one program in this browser (`ftcdash.autons.v1`), and **Load**, which lists what is saved —
   name, the column it came from, stops, balls and when it was saved — so any of them can be dropped
-  onto any robot. Naming one that is already on the shelf turns the button into **Replace…** and the
-  dialog lists the shelf, so an entry can be picked instead of typed; either way a confirmation names
-  what is about to go and asks before it does, and nothing is overwritten until **Overwrite**. The ×
-  beside an entry deletes it. A saved auton remembers the slot it was written for, but loading it
-  into another column keeps the program and takes that column's alliance. No files are downloaded or
-  picked for a single robot; the shelf holds the last 24.
+  onto any robot. The load list searches as you type and narrows to **All / Red / Blue**, the alliance
+  the auton was saved from, with a running "2 of 4 autons" count. Naming one that is already on the
+  shelf turns the save button into **Replace…** and the dialog lists the shelf, so an entry can be
+  picked instead of typed; either way a confirmation names what is about to go and asks before it
+  does, and nothing is overwritten until **Overwrite**. The × beside an entry deletes it. A saved
+  auton remembers the slot it was written for, but loading it into another column keeps the program
+  and takes that column's alliance. No files are downloaded or picked for a single robot; the shelf
+  holds the last 24.
 - **Swap alliance** turns the whole plan 180° about the centre of the field: every waypoint moves to
   its mirrored position with its facing turned half a turn, and each robot hands its program to the
   matching robot on the other side (Red 1 ↔ Blue 1, Red 2 ↔ Blue 2). The robots themselves — team

@@ -1,4 +1,10 @@
-import { parseRobotPlan, serializeRobotPlan, type RobotPlan } from './autoplan';
+import {
+  allianceForSlot,
+  parseRobotPlan,
+  serializeRobotPlan,
+  type Alliance,
+  type RobotPlan,
+} from './autoplan';
 
 /**
  * The browser's shelf of single-robot autons: what a team keeps instead of a pile of downloaded
@@ -164,4 +170,21 @@ export function autonNameTaken(entries: SavedAuton[], rawName: string): boolean 
 /** Reads a shelf entry back as a program for the column it is going into. */
 export function loadAuton(entry: SavedAuton, slot: number): RobotPlan | null {
   return parseRobotPlan(entry.text, slot);
+}
+
+/**
+ * The shelf narrowed to a name search and an alliance. The search is the same normalised compare
+ * used for names, so `left  SIDE` finds "Left side"; the alliance is the one the auton was saved
+ * from, which is what its card said when it was written.
+ */
+export function filterAutons(
+  entries: SavedAuton[],
+  query: string,
+  alliance: Alliance | 'all' = 'all',
+): SavedAuton[] {
+  const needle = autonName(query).toLowerCase();
+  return entries.filter((entry) => {
+    if (alliance !== 'all' && allianceForSlot(entry.slot) !== alliance) return false;
+    return needle.length === 0 || entry.name.toLowerCase().includes(needle);
+  });
 }

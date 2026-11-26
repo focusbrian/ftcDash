@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { slotLabel } from '../lib/autoplan';
+import { slotLabel, type Alliance } from '../lib/autoplan';
 import {
   AUTON_LIBRARY_KEY,
   MAX_AUTON_NAME,
   autonName,
+  filterAutons,
   findAuton,
   loadAuton,
   type SavedAuton,
 } from '../lib/autonLibrary';
+
+/** The two colours the shelf can be narrowed to, plus everything. */
+const ALLIANCE_FILTERS: { value: Alliance | 'all'; text: string }[] = [
+  { value: 'all', text: 'All' },
+  { value: 'red', text: 'Red' },
+  { value: 'blue', text: 'Blue' },
+];
 
 interface Props {
   /** `save` asks for a name; `load` offers the shelf. */
@@ -74,6 +82,14 @@ export function AutonLibraryDialog({
   const cleaned = autonName(name);
   const replacing = findAuton(entries, name);
   const rows = useMemo(() => entries.map((entry) => ({ entry, summary: summarize(entry) })), [entries]);
+  // Loading is a search: narrow the shelf by name and by the alliance it was saved from.
+  const [query, setQuery] = useState('');
+  const [alliance, setAlliance] = useState<Alliance | 'all'>('all');
+  const shown = useMemo(
+    () => filterAutons(entries, query, alliance).map((entry) => ({ entry, summary: summarize(entry) })),
+    [entries, query, alliance],
+  );
+  const searched = autonName(query);
 
   const submit = () => {
     if (!cleaned) return;
@@ -213,32 +229,77 @@ export function AutonLibraryDialog({
             No autons saved yet — use <strong>Save</strong> on a robot card to keep one here.
           </p>
         ) : (
-          <ul className="autoplan__autons">
-            {rows.map(({ entry, summary }) => (
-              <li key={entry.name} className="autoplan__auton">
-                <div className="autoplan__auton-main">
-                  <strong className="autoplan__auton-name">{entry.name}</strong>
-                  <span className="autoplan__auton-meta">{summary}</span>
-                </div>
-                <button
-                  type="button"
-                  className="button button--small"
-                  onClick={() => onLoad(entry)}
-                >
-                  Load
-                </button>
-                <button
-                  type="button"
-                  className="autoplan__row-remove"
-                  aria-label={`Delete ${entry.name}`}
-                  title="Remove this auton from the browser"
-                  onClick={() => onDelete(entry)}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <label className="autoplan__modal-field autoplan__modal-search">
+              <span>Search</span>
+              <input
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- the dialog is opened to find one auton
+                autoFocus
+                className="field__control"
+                type="search"
+                value={query}
+                placeholder="Name, or part of one"
+                aria-label="Search saved autons by name"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <div className="autoplan__modal-row">
+              <span className="autoplan__modal-count">
+                {shown.length} of {rows.length} auton{rows.length === 1 ? '' : 's'}
+              </span>
+              <span className="autoplan__modal-toggles" role="group" aria-label="Saved from">
+                {ALLIANCE_FILTERS.map(({ value, text }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={
+                      alliance === value
+                        ? 'button button--small autoplan__filter autoplan__filter--on'
+                        : 'button button--small button--ghost autoplan__filter'
+                    }
+                    aria-pressed={alliance === value}
+                    onClick={() => setAlliance(value)}
+                  >
+                    <span className={`autoplan__dot autoplan__dot--${value === 'all' ? 'any' : value}`} />
+                    {text}
+                  </button>
+                ))}
+              </span>
+            </div>
+            {shown.length === 0 ? (
+              <p className="autoplan__modal-empty">
+                Nothing on the shelf matches{searched.length > 0 ? ` “${searched}”` : ''}
+                {alliance === 'all' ? '' : ` among the ${alliance} autons`}.
+              </p>
+            ) : (
+              <ul className="autoplan__autons">
+                {shown.map(({ entry, summary }) => (
+                  <li key={entry.name} className="autoplan__auton">
+                    <div className="autoplan__auton-main">
+                      <strong className="autoplan__auton-name">{entry.name}</strong>
+                      <span className="autoplan__auton-meta">{summary}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="button button--small"
+                      onClick={() => onLoad(entry)}
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      className="autoplan__row-remove"
+                      aria-label={`Delete ${entry.name}`}
+                      title="Remove this auton from the browser"
+                      onClick={() => onDelete(entry)}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </div>,

@@ -3,6 +3,7 @@ import type { RobotPlan, Waypoint } from './autoplan';
 import {
   autonName,
   autonNameTaken,
+  filterAutons,
   findAuton,
   loadAuton,
   MAX_AUTON_NAME,
@@ -49,6 +50,46 @@ describe('auton names', () => {
     expect(autonNameTaken(entries, 'left side')).toBe(true);
     expect(findAuton(entries, 'Right side')).toBeNull();
     expect(findAuton(entries, '   ')).toBeNull();
+  });
+});
+
+describe('loading a saved auton', () => {
+  const shelf = saved(
+    saved(
+      saved(saved([], 'Left side 4 ball', '2026-11-25T09:00:00.000Z', 0), 'Right side 4 ball', '2026-11-25T10:00:00.000Z', 1),
+      'Blue far 2 ball',
+      '2026-11-25T11:00:00.000Z',
+      3,
+    ),
+    'Blue near',
+    '2026-11-25T12:00:00.000Z',
+    2,
+  );
+
+  it('narrows by name, ignoring case and extra spacing', () => {
+    expect(filterAutons(shelf, '  LEFT   side ').map((entry) => entry.name)).toEqual([
+      'Left side 4 ball',
+    ]);
+    expect(filterAutons(shelf, 'ball').map((entry) => entry.name)).toHaveLength(3);
+    expect(filterAutons(shelf, '')).toHaveLength(4);
+    expect(filterAutons(shelf, 'nothing')).toEqual([]);
+  });
+
+  it('narrows by the alliance the auton was saved from', () => {
+    expect(filterAutons(shelf, '', 'red').map((entry) => entry.name)).toEqual([
+      'Right side 4 ball',
+      'Left side 4 ball',
+    ]);
+    expect(filterAutons(shelf, '', 'blue').map((entry) => entry.name)).toEqual([
+      'Blue near',
+      'Blue far 2 ball',
+    ]);
+    expect(filterAutons(shelf, '', 'all')).toHaveLength(4);
+  });
+
+  it('applies the name and the colour together', () => {
+    expect(filterAutons(shelf, 'blue', 'red')).toEqual([]);
+    expect(filterAutons(shelf, 'far', 'blue').map((entry) => entry.name)).toEqual(['Blue far 2 ball']);
   });
 });
 
