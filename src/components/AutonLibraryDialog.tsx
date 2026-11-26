@@ -238,8 +238,8 @@ export function AutonLibraryDialog({
                 className="field__control"
                 type="search"
                 value={query}
-                placeholder="Name, or part of one"
-                aria-label="Search saved autons by name"
+                placeholder="Name or team number"
+                aria-label="Search saved autons by name or team"
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>

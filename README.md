@@ -464,7 +464,8 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
 - **A shelf of single-robot autons.** Each robot card has **Save**, which asks for a name and keeps
   that one program in this browser (`ftcdash.autons.v1`), and **Load**, which lists what is saved —
   name, the column it came from, stops, balls and when it was saved — so any of them can be dropped
-  onto any robot. The load list searches as you type and narrows to **All / Red / Blue**, the alliance
+  onto any robot. The load list searches as you type — by auton name or by the team number the
+  program was written for (`10136` or `#10136`) — and narrows to **All / Red / Blue**, the alliance
   the auton was saved from, with a running "2 of 4 autons" count. Naming one that is already on the
   shelf turns the save button into **Replace…** and the dialog lists the shelf, so an entry can be
   picked instead of typed; either way a confirmation names what is about to go and asks before it

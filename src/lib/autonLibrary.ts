@@ -173,8 +173,9 @@ export function loadAuton(entry: SavedAuton, slot: number): RobotPlan | null {
 }
 
 /**
- * The shelf narrowed to a name search and an alliance. The search is the same normalised compare
- * used for names, so `left  SIDE` finds "Left side"; the alliance is the one the auton was saved
+ * The shelf narrowed to a search — a name, or a team number — and an alliance. The name compare is
+ * the same normalised one used when saving, so `left  SIDE` finds "Left side"; a number matches the
+ * team the auton was written for (`10136` or `#10136`). The alliance is the one the auton was saved
  * from, which is what its card said when it was written.
  */
 export function filterAutons(
@@ -183,8 +184,12 @@ export function filterAutons(
   alliance: Alliance | 'all' = 'all',
 ): SavedAuton[] {
   const needle = autonName(query).toLowerCase();
+  const digits = needle.replace(/^#/, '');
   return entries.filter((entry) => {
     if (alliance !== 'all' && allianceForSlot(entry.slot) !== alliance) return false;
-    return needle.length === 0 || entry.name.toLowerCase().includes(needle);
+    if (needle.length === 0) return true;
+    if (entry.name.toLowerCase().includes(needle)) return true;
+    const team = loadAuton(entry, entry.slot)?.teamNumber ?? null;
+    return team !== null && String(team).includes(digits);
   });
 }

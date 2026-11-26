@@ -91,6 +91,23 @@ describe('loading a saved auton', () => {
     expect(filterAutons(shelf, 'blue', 'red')).toEqual([]);
     expect(filterAutons(shelf, 'far', 'blue').map((entry) => entry.name)).toEqual(['Blue far 2 ball']);
   });
+
+  it('finds an auton by the team it was written for', () => {
+    // The fixture robot carries team 10136 wherever it was saved from.
+    expect(filterAutons(shelf, '10136').map((entry) => entry.name)).toHaveLength(4);
+    expect(filterAutons(shelf, '#10136').map((entry) => entry.name)).toHaveLength(4);
+    expect(filterAutons(shelf, '136').map((entry) => entry.name)).toHaveLength(4);
+    expect(filterAutons(shelf, '10136', 'blue').map((entry) => entry.name)).toEqual([
+      'Blue near',
+      'Blue far 2 ball',
+    ]);
+    expect(filterAutons(shelf, '9999')).toEqual([]);
+  });
+
+  it('ignores the team of an auton that no longer carries one', () => {
+    const teamless = saved([], 'No team', '2026-11-25T13:00:00.000Z', 0, robot({ teamNumber: null }));
+    expect(filterAutons(teamless, '10136')).toEqual([]);
+  });
 });
 
 describe('the saved auton shelf', () => {
