@@ -76,12 +76,12 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 ## Reading the UI
 
 - **Landing page (`#/`):** the bare site URL opens a picker rather than auto-selecting an event. It
-  introduces the site as a pit dashboard for the run of an event — a season switch, a search box that
-  takes an event code, part of an event name or a bare team number, and three lists — **Happening
-  now**, **Upcoming** and **Recently finished**, six rows each with a "Show all" switch for the whole
-  season. The button under the intro jumps straight to the live event, or to the latest one with
-  results. Every row is a real link (`#/2026/USCITEQ`), so it can be opened in a new tab. The wordmark
-  in the header returns here from anywhere.
+  introduces the site as a pit dashboard in one line — the schedule, real results and projected
+  scores — above a season switch, a search box that takes an event code, part of an event name or a
+  bare team number, and three lists — **Happening now**, **Upcoming** and **Recently finished**, six
+  rows each with a "Show all" switch for the whole season. The button under the intro jumps straight
+  to the live event, or to the latest one with results. Every row is a real link (`#/2026/USCITEQ`),
+  so it can be opened in a new tab. The wordmark in the header returns here from anywhere.
 - **Schedule (left):** one card per match, grouped into Qualification / Playoff / Semifinal / Final.
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.

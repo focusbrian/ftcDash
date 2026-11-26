@@ -127,9 +127,8 @@ export function HomePage({ season, seasons, onSeasonChange, events, loading, err
           <span>Every number.</span>
         </h1>
         <p className="home__intro">
-          A pit dashboard for the run of an event: pick one for its schedule, the real results as
-          FIRST reports them, and OPR-based projections for the matches still to come — auto and
-          teleop for each alliance, how every team has been trending, and who you face next.
+          Pick an event for its schedule, real results as they post, and projected scores for the
+          matches still to come.
         </p>
         {featured ? (
           <div className="home__cta">
