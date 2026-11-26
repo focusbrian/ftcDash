@@ -124,7 +124,9 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   running estimate through this event — then every award the team won this season with its placement
   and event, and finally each of its matches here with a W/L mark, partner and opposition, score, and a
   click through to the match itself. **Back** (or the browser's back button, since the team is in the
-  URL) returns to the panel you came from, and **+ Highlight** beside it adds the team to the
+  URL) returns to the panel you came from — and so does picking any match in the schedule, which
+  always brings the match view back rather than leaving the team page in its place. **+ Highlight**
+  beside it adds the team to the
   highlight list the search box builds (it reads **✓ Highlighted** once it is in, and clicking again
   removes it). **✎ Edit** opens the same logo and robot uploader the configuration page offers, right
   on the team: upload or replace either image, or remove one, and the page, the schedule cards and the
