@@ -349,83 +349,87 @@ export function TeamPage({
         </p>
       ) : null}
 
-      <Sparkline
-        title="OPR by event"
-        caption={
-          seasonOpr.status === 'loading'
-            ? 'loading…'
-            : seasonOpr.status === 'error'
-              ? 'unavailable'
-              : `${eventsPlayed} ${eventsPlayed === 1 ? 'event' : 'events'}`
-        }
-        empty={seasonOpr.status === 'loading' ? 'Loading season OPR…' : 'No season OPR published'}
-        series={seasonSparkSeries(seasonOpr.points)}
-        note={seasonNote}
-      />
-      <Sparkline
-        title="OPR this event"
-        caption={`${eventOpr.length} match${eventOpr.length === 1 ? '' : 'es'}`}
-        empty="No qualification matches yet"
-        series={eventSparkSeries(eventOpr)}
-      />
+      <div className="team-page__charts">
+        <Sparkline
+          title="OPR by event"
+          caption={
+            seasonOpr.status === 'loading'
+              ? 'loading…'
+              : seasonOpr.status === 'error'
+                ? 'unavailable'
+                : `${eventsPlayed} ${eventsPlayed === 1 ? 'event' : 'events'}`
+          }
+          empty={seasonOpr.status === 'loading' ? 'Loading season OPR…' : 'No season OPR published'}
+          series={seasonSparkSeries(seasonOpr.points)}
+          note={seasonNote}
+        />
+        <Sparkline
+          title="OPR this event"
+          caption={`${eventOpr.length} match${eventOpr.length === 1 ? '' : 'es'}`}
+          empty="No qualification matches yet"
+          series={eventSparkSeries(eventOpr)}
+        />
+      </div>
 
-      <section className="team-page__block">
-        <h3>Awards this season</h3>
-        {awards.status === 'loading' ? <p className="empty">Loading awards…</p> : null}
-        {awards.status === 'error' ? <p className="empty">Awards unavailable.</p> : null}
-        {awards.status === 'ready' && awards.awards.length === 0 ? (
-          <p className="empty">No awards yet this season.</p>
-        ) : null}
-        {awards.awards.length > 0 ? (
-          <ul className="team-page__awards">
-            {awards.awards.map((award, at) => {
-              const place = placementLabel(award.type, award.placement);
-              return (
-                <li
-                  key={`${award.eventCode}-${award.type}-${award.placement}-${at}`}
-                  className="team-page__award"
-                >
-                  <span className="team-page__award-name">
-                    {awardLabel(award.type)}
-                    {place ? <em>{place}</em> : null}
-                    {award.divisionName ? <em>{award.divisionName}</em> : null}
-                  </span>
-                  <span className="team-page__award-event">
-                    {award.eventName}
-                    <span> · {fmtDate(award.eventStart, { month: 'short', day: 'numeric' })}</span>
-                  </span>
+      <div className="team-page__lists">
+        <section className="team-page__block">
+          <h3>Awards this season</h3>
+          {awards.status === 'loading' ? <p className="empty">Loading awards…</p> : null}
+          {awards.status === 'error' ? <p className="empty">Awards unavailable.</p> : null}
+          {awards.status === 'ready' && awards.awards.length === 0 ? (
+            <p className="empty">No awards yet this season.</p>
+          ) : null}
+          {awards.awards.length > 0 ? (
+            <ul className="team-page__awards">
+              {awards.awards.map((award, at) => {
+                const place = placementLabel(award.type, award.placement);
+                return (
+                  <li
+                    key={`${award.eventCode}-${award.type}-${award.placement}-${at}`}
+                    className="team-page__award"
+                  >
+                    <span className="team-page__award-name">
+                      {awardLabel(award.type)}
+                      {place ? <em>{place}</em> : null}
+                      {award.divisionName ? <em>{award.divisionName}</em> : null}
+                    </span>
+                    <span className="team-page__award-event">
+                      {award.eventName}
+                      <span> · {fmtDate(award.eventStart, { month: 'short', day: 'numeric' })}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </section>
+
+        <section className="team-page__block">
+          <h3>Matches at this event</h3>
+          {matches.length === 0 ? (
+            <p className="empty">No matches published for this team yet.</p>
+          ) : (
+            <ul className="team-page__matches">
+              {matches.map((match) => (
+                <li key={match.id}>
+                  <button
+                    type="button"
+                    className="team-page__match"
+                    onClick={() => onSelectMatch(match.id)}
+                  >
+                    <span className={`team-page__result team-page__result--${match.outcome}`}>
+                      {OUTCOME_MARK[match.outcome]}
+                    </span>
+                    <span className="team-page__match-label">{match.label}</span>
+                    <span className="team-page__match-detail">{match.detail}</span>
+                    <span className="team-page__match-score">{match.score}</span>
+                  </button>
                 </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </section>
-
-      <section className="team-page__block">
-        <h3>Matches at this event</h3>
-        {matches.length === 0 ? (
-          <p className="empty">No matches published for this team yet.</p>
-        ) : (
-          <ul className="team-page__matches">
-            {matches.map((match) => (
-              <li key={match.id}>
-                <button
-                  type="button"
-                  className="team-page__match"
-                  onClick={() => onSelectMatch(match.id)}
-                >
-                  <span className={`team-page__result team-page__result--${match.outcome}`}>
-                    {OUTCOME_MARK[match.outcome]}
-                  </span>
-                  <span className="team-page__match-label">{match.label}</span>
-                  <span className="team-page__match-detail">{match.detail}</span>
-                  <span className="team-page__match-score">{match.score}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -1725,7 +1725,6 @@ select {
 
 .detail {
   padding: 20px 24px 44px;
-  max-width: 1080px;
 }
 
 /* Replays whenever another match is opened, because the panel is keyed by match id. */
@@ -3336,6 +3335,13 @@ select {
   margin: 0;
 }
 
+/* With room for it, the six numbers read better as one row than as 3 + 3. */
+@media (min-width: 1440px) {
+  .team-page__stats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
 .team-page__stats dt {
   font-size: 9px;
   font-weight: 700;
@@ -3498,10 +3504,34 @@ select {
     max-width: 220px;
   }
 }
-/* The chart stretches to its container, so cap it here or the markers turn into ellipses. */
-.team-page .spark {
-  max-width: 300px;
+/* The charts and the two lists share the panel's width instead of stacking in one narrow column. */
+.team-page__charts,
+.team-page__lists {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px 22px;
+  align-items: start;
 }
+
+@media (min-width: 1100px) {
+  .team-page__charts,
+  .team-page__lists {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  }
+}
+
+/* The chart stretches to its container, so keep its own proportions: the viewBox is 244 x 34, and
+   matching that stops the markers from turning into ellipses. */
+.team-page .spark__chart {
+  height: auto;
+  aspect-ratio: 244 / 34;
+}
+
+/* Scaling the chart with its column would grow the markers with it. */
+.team-page .spark__dot {
+  r: 1.4px;
+}
+
 .team-page__bar {
   display: flex;
   align-items: center;

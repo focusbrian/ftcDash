@@ -205,6 +205,11 @@ content under a 96px header, which leaves headroom even at 125% display scaling 
 Above 720px wide the chrome runs a notch tighter than the phone layout — shorter header, verdict and
 alliance cards, a 150px robot line-up — so the schedule list shows four matches instead of three.
 
+Both detail views fill whatever width the panel has rather than sitting in a 1080px column: the
+verdict and the two alliance cards spread across it, and on the team page the two OPR charts sit side
+by side with awards on the left and its matches on the right once the viewport passes 1100px (the
+six stat numbers become one row above 1440px).
+
 ### On a phone
 
 Below 720px wide the two columns become one pane at a time, with a **Schedule / Match** switch under
