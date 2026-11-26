@@ -5,7 +5,7 @@ import {
   AUTON_LIBRARY_KEY,
   MAX_AUTON_NAME,
   autonName,
-  autonNameTaken,
+  findAuton,
   loadAuton,
   type SavedAuton,
 } from '../lib/autonLibrary';
@@ -68,19 +68,29 @@ export function AutonLibraryDialog({
   onClose,
 }: Props) {
   const [name, setName] = useState(initialName);
+  /** The saved auton the current name would overwrite, once the saver has been asked about it. */
+  const [confirming, setConfirming] = useState<SavedAuton | null>(null);
   const label = slotLabel(slot);
   const cleaned = autonName(name);
-  const replaces = autonNameTaken(entries, name);
+  const replacing = findAuton(entries, name);
   const rows = useMemo(() => entries.map((entry) => ({ entry, summary: summarize(entry) })), [entries]);
+
+  const submit = () => {
+    if (!cleaned) return;
+    // Naming something that is already on the shelf is a replace, so it asks first.
+    if (replacing) setConfirming(replacing);
+    else onSave(cleaned);
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      onClose();
+      if (confirming) setConfirming(null);
+      else onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, confirming]);
 
   return createPortal(
     <div
@@ -105,7 +115,33 @@ export function AutonLibraryDialog({
           </button>
         </div>
 
-        {mode === 'save' ? (
+        {confirming ? (
+          <>
+            <p className="autoplan__modal-question">
+              Replace the saved auton “{confirming.name}”?
+            </p>
+            <p className="autoplan__modal-hint">
+              {summarize(confirming)}. Overwriting puts {label}&rsquo;s current program in its place;
+              this cannot be undone.
+            </p>
+            <div className="autoplan__modal-actions">
+              <button
+                type="button"
+                className="button button--small button--ghost"
+                onClick={() => setConfirming(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button--small button--danger"
+                onClick={() => onSave(autonName(confirming.name))}
+              >
+                Overwrite
+              </button>
+            </div>
+          </>
+        ) : mode === 'save' ? (
           <>
             <label className="autoplan__modal-field">
               <span>Auton name</span>
@@ -119,15 +155,45 @@ export function AutonLibraryDialog({
                 placeholder="e.g. Left side, 4 ball"
                 onChange={(event) => setName(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && cleaned) onSave(cleaned);
+                  if (event.key === 'Enter') submit();
                 }}
               />
             </label>
             <p className="autoplan__modal-hint">
-              {replaces
-                ? `“${cleaned}” is already saved — saving replaces it.`
+              {replacing
+                ? `“${cleaned}” is already saved — replacing it asks first.`
                 : `Kept in this browser only (${AUTON_LIBRARY_KEY}), so it can be loaded into any robot card.`}
             </p>
+            {rows.length > 0 ? (
+              <>
+                <p className="autoplan__modal-row">
+                  <span>Or pick one to save over</span>
+                  <span className="autoplan__modal-count">
+                    {rows.length} saved
+                  </span>
+                </p>
+                <ul className="autoplan__autons">
+                  {rows.map(({ entry, summary }) => (
+                    <li key={entry.name} className="autoplan__auton">
+                      <button
+                        type="button"
+                        className={
+                          entry.name === replacing?.name
+                            ? 'autoplan__auton-choose autoplan__auton-choose--on'
+                            : 'autoplan__auton-choose'
+                        }
+                        aria-pressed={entry.name === replacing?.name}
+                        title={`Save over “${entry.name}”`}
+                        onClick={() => setName(entry.name)}
+                      >
+                        <strong className="autoplan__auton-name">{entry.name}</strong>
+                        <span className="autoplan__auton-meta">{summary}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             <div className="autoplan__modal-actions">
               <button type="button" className="button button--small button--ghost" onClick={onClose}>
                 Cancel
@@ -136,15 +202,15 @@ export function AutonLibraryDialog({
                 type="button"
                 className="button button--small"
                 disabled={cleaned.length === 0}
-                onClick={() => onSave(cleaned)}
+                onClick={submit}
               >
-                {replaces ? 'Replace' : 'Save'}
+                {replacing ? 'Replace…' : 'Save'}
               </button>
             </div>
           </>
         ) : rows.length === 0 ? (
           <p className="autoplan__modal-empty">
-            No autons saved yet — use <strong>Save auton…</strong> on a robot card to keep one here.
+            No autons saved yet — use <strong>Save</strong> on a robot card to keep one here.
           </p>
         ) : (
           <ul className="autoplan__autons">

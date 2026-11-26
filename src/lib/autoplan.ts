@@ -30,11 +30,12 @@ export const BALL_FLIGHT_SECONDS = 0.45;
 /** R101: a robot fits an 18 in. cube, measured from the floor. */
 export const ROBOT_SIZE = 18;
 export const MIN_SPEED = 6;
-export const MAX_SPEED = 84;
-export const DEFAULT_SPEED = 36;
+/** A BIOBUZZ drivetrain is geared for about 36 in/s, so the slider stops there. */
+export const MAX_SPEED = 36;
+export const DEFAULT_SPEED = 18;
 export const MIN_SHOT_CYCLE = 0.1;
 export const MAX_SHOT_CYCLE = 3;
-export const DEFAULT_SHOT_CYCLE = 0.3;
+export const DEFAULT_SHOT_CYCLE = 2;
 /** A waypoint is capped at one CELL's worth of artifacts. */
 export const MAX_BALLS = 4;
 export const MAX_WAIT = 20;

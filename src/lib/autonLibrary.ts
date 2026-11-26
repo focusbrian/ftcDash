@@ -149,10 +149,16 @@ export function removeAuton(entries: SavedAuton[], name: string): SavedAuton[] {
   return entries.filter((entry) => nameKey(entry.name) !== key);
 }
 
+/** The saved auton a name would replace, if the shelf already holds one. */
+export function findAuton(entries: SavedAuton[], rawName: string): SavedAuton | null {
+  const key = nameKey(rawName);
+  if (key.length === 0) return null;
+  return entries.find((entry) => nameKey(entry.name) === key) ?? null;
+}
+
 /** True when saving under this name would replace something. */
 export function autonNameTaken(entries: SavedAuton[], rawName: string): boolean {
-  const key = nameKey(rawName);
-  return key.length > 0 && entries.some((entry) => nameKey(entry.name) === key);
+  return findAuton(entries, rawName) !== null;
 }
 
 /** Reads a shelf entry back as a program for the column it is going into. */

@@ -3,6 +3,7 @@ import type { RobotPlan, Waypoint } from './autoplan';
 import {
   autonName,
   autonNameTaken,
+  findAuton,
   loadAuton,
   MAX_AUTON_NAME,
   MAX_SAVED_AUTONS,
@@ -24,7 +25,7 @@ function robot(overrides: Partial<RobotPlan> = {}): RobotPlan {
   return {
     alliance: 'red',
     teamNumber: 10136,
-    speed: 40,
+    speed: 24,
     shotCycle: 0.4,
     path: [wp(0, -40), wp(0, 0)],
     ...overrides,
@@ -40,6 +41,14 @@ describe('auton names', () => {
     expect(autonName('  Left   side  ')).toBe('Left side');
     expect(autonName('   ')).toBe('');
     expect(autonName('x'.repeat(MAX_AUTON_NAME + 20))).toHaveLength(MAX_AUTON_NAME);
+  });
+
+  it('finds the entry a name would replace, however the name is typed', () => {
+    const entries = saved([], 'Left side', '2026-11-25T10:00:00.000Z');
+    expect(findAuton(entries, '  left   SIDE ')?.name).toBe('Left side');
+    expect(autonNameTaken(entries, 'left side')).toBe(true);
+    expect(findAuton(entries, 'Right side')).toBeNull();
+    expect(findAuton(entries, '   ')).toBeNull();
   });
 });
 
@@ -59,7 +68,7 @@ describe('the saved auton shelf', () => {
     expect(read[0]?.slot).toBe(1);
   });
 
-  it('keeps the program, not the column’s alliance, when it is loaded elsewhere', () => {
+  it('keeps the program, not the columnâ€™s alliance, when it is loaded elsewhere', () => {
     const entries = saved([], 'Left side', '2026-11-25T12:00:00.000Z', 0, robot({ alliance: 'red' }));
     const loaded = loadAuton(entries[0]!, 2);
 
@@ -73,10 +82,10 @@ describe('the saved auton shelf', () => {
   it('overwrites an auton saved under the same name and puts it first', () => {
     let entries = saved([], 'Left side', '2026-11-25T10:00:00.000Z', 0);
     entries = saved(entries, 'Other', '2026-11-25T11:00:00.000Z', 0);
-    entries = saved(entries, '  left   SIDE ', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 60 }));
+    entries = saved(entries, '  left   SIDE ', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 30 }));
 
     expect(entries.map((entry) => entry.name)).toEqual(['left SIDE', 'Other']);
-    expect(loadAuton(entries[0]!, 0)?.speed).toBe(60);
+    expect(loadAuton(entries[0]!, 0)?.speed).toBe(30);
   });
 
   it('ignores a blank name', () => {
@@ -157,23 +166,23 @@ describe('autons bundled into an exported plan', () => {
 
 describe('merging an imported shelf', () => {
   it('adds what is new and keeps the newer saving of a name', () => {
-    const mine = saved([], 'Shared', '2026-11-25T10:00:00.000Z', 0, robot({ speed: 40 }));
+    const mine = saved([], 'Shared', '2026-11-25T10:00:00.000Z', 0, robot({ speed: 24 }));
     const theirs = saved(
-      saved([], 'Shared', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 60 })),
+      saved([], 'Shared', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 30 })),
       'Only theirs',
       '2026-11-25T09:00:00.000Z',
     );
 
     const merged = mergeAutons(mine, theirs);
     expect(merged.map((entry) => entry.name)).toEqual(['Shared', 'Only theirs']);
-    expect(loadAuton(merged[0]!, 0)?.speed).toBe(60);
+    expect(loadAuton(merged[0]!, 0)?.speed).toBe(30);
   });
 
   it('keeps the local save when the import is older', () => {
-    const mine = saved([], 'Shared', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 40 }));
-    const older = saved([], 'Shared', '2026-11-25T09:00:00.000Z', 0, robot({ speed: 60 }));
+    const mine = saved([], 'Shared', '2026-11-25T12:00:00.000Z', 0, robot({ speed: 24 }));
+    const older = saved([], 'Shared', '2026-11-25T09:00:00.000Z', 0, robot({ speed: 30 }));
 
-    expect(loadAuton(mergeAutons(mine, older)[0]!, 0)?.speed).toBe(40);
+    expect(loadAuton(mergeAutons(mine, older)[0]!, 0)?.speed).toBe(24);
     expect(mergeAutons(mine, older)).toHaveLength(1);
   });
 });

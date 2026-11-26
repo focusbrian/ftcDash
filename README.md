@@ -376,10 +376,11 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
 - **Four robots**, two per alliance: the red cards sit to the left of the map and the blue cards to
   the right, so the page reads like the field. Each slot has its own team number, speed, shot cycle
   and program; the alliance comes from the slot, so a hand-edited file cannot put a blue robot in a
-  red column. Click the field to drop a waypoint on the selected robot, drag a handle to move one,
-  right-click (or double-click) to delete it, and use **Undo** to step back a whole gesture. **Start
-  pose** snaps the first waypoint to one of the two legal starting positions for that alliance, and
-  the dashed squares on the map show all four.
+  red column. Speed runs 6–36 in/s and starts at 18, the cycle 0.1–3 s/ball and starts at 2 — the
+  drivetrain and launcher speeds this year's robots actually run. Click the field to drop a waypoint
+  on the selected robot, drag a handle to move one, right-click (or double-click) to delete it, and
+  use **Undo** to step back a whole gesture. **Start pose** snaps the first waypoint to one of the two
+  legal starting positions for that alliance, and the dashed squares on the map show all four.
 - **Team number.** Type it on the robot card and the page looks the name up in FTC Scout and puts the
   team's logo — from the shipped library or your own uploads — in a disc inside the robot's footprint
   on the map. The disc keeps a square or wide logo from spilling over the robot outline, and a team
@@ -463,10 +464,12 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
 - **A shelf of single-robot autons.** Each robot card has **Save**, which asks for a name and keeps
   that one program in this browser (`ftcdash.autons.v1`), and **Load**, which lists what is saved —
   name, the column it came from, stops, balls and when it was saved — so any of them can be dropped
-  onto any robot. Saving under a name that already exists replaces it; the × beside an entry deletes
-  it. A saved auton remembers the slot it was written for, but loading it into another column keeps
-  the program and takes that column's alliance. No files are downloaded or picked for a single robot;
-  the shelf holds the last 24.
+  onto any robot. Naming one that is already on the shelf turns the button into **Replace…** and the
+  dialog lists the shelf, so an entry can be picked instead of typed; either way a confirmation names
+  what is about to go and asks before it does, and nothing is overwritten until **Overwrite**. The ×
+  beside an entry deletes it. A saved auton remembers the slot it was written for, but loading it
+  into another column keeps the program and takes that column's alliance. No files are downloaded or
+  picked for a single robot; the shelf holds the last 24.
 - **Swap alliance** turns the whole plan 180° about the centre of the field: every waypoint moves to
   its mirrored position with its facing turned half a turn, and each robot hands its program to the
   matching robot on the other side (Red 1 ↔ Blue 1, Red 2 ↔ Blue 2). The robots themselves — team

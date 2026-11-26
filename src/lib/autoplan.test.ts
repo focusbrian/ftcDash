@@ -4,6 +4,7 @@ import {
   AUTO_SECONDS,
   DEFAULT_HEADING_SNAP,
   DEFAULT_SHOT_CYCLE,
+  DEFAULT_SPEED,
   FIELD_SIZE,
   FLOWERS,
   GARDEN,
@@ -71,7 +72,7 @@ function robot(overrides: Partial<RobotPlan> = {}): RobotPlan {
   return {
     alliance: 'blue',
     teamNumber: null,
-    speed: 40,
+    speed: 24,
     shotCycle: 0.5,
     path: [wp(0, -60), wp(0, 0)],
     ...overrides,
@@ -518,12 +519,18 @@ describe('parseAutoPlan', () => {
 
   it('keeps speed and cycle inside the usable range', () => {
     const plan = parseAutoPlan(
-      JSON.stringify({ robots: [{ speed: 1, shotCycle: 0 }, { speed: 40, shotCycle: 0.3 }] }),
+      JSON.stringify({ robots: [{ speed: 1, shotCycle: 0 }, { speed: 30, shotCycle: 0.3 }] }),
     );
     expect(plan.robots[0]?.speed).toBe(MIN_SPEED);
     expect(plan.robots[0]?.shotCycle).toBe(MIN_SHOT_CYCLE);
-    expect(plan.robots[1]?.speed).toBe(40);
-    expect(plan.robots[1]?.shotCycle).toBe(DEFAULT_SHOT_CYCLE);
+    expect(plan.robots[1]?.speed).toBe(30);
+    expect(plan.robots[1]?.shotCycle).toBe(0.3);
+  });
+
+  it('starts a robot at 18 in/s and one ball every two seconds', () => {
+    expect(defaultRobot(0).speed).toBe(DEFAULT_SPEED);
+    expect(defaultRobot(0).shotCycle).toBe(DEFAULT_SHOT_CYCLE);
+    expect(MAX_SPEED).toBe(36);
   });
 
   it('accepts a team number but refuses a silly one', () => {
