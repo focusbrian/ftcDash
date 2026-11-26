@@ -462,16 +462,15 @@ deploying are unchanged.
    one owns the library**, so do this right after deploying. If you would rather not race that, put
    cPanel → Directory Privacy on `public_html/admin` until you have.
 3. Find the team: type `10136` **or start typing its name** (`Frost Robo…`). Suggestions come from FTC
-   Scout and show the school too; picking one fills in the number. A bare number is looked up and shown
-   underneath, so you can see you have the right team before uploading.
-4. Drag a logo onto the **Team logo** card, a robot photo onto the **Robot photo** card, or drop both
-   anywhere in the upload area. Two files arriving together are split by name (`…logo…`, `…robot…`)
-   and otherwise fill the empty cards in order; a single file lands on the card it was dropped on.
-   Each card keeps its own file picker for a click-only workflow. The robot card carries a **season**
-   picker labelled with the game (`2026–27`, `2025–26 · Decode`, …); *Every season* writes the older
-   season-less entry, used only when a team has no photo for the match's season.
-5. Press **Upload** once: it sends whichever cards are filled, so a logo and a robot photo go up
-   together in one request.
+   Scout and show the school too; picking one opens that team in the editor below (the choice lives in
+   the URL, `?team=10136`, so an upload, a delete or a reload comes back to the same team).
+4. The editor shows what is stored for that team — the logo, and the robot photo for the season in the
+   picker — with **Replace** / **Upload** and **Remove** under each. Choosing a file sends it straight
+   away; dropping an image on a card does the same. The season picker is labelled with the game
+   (`2026–27`, `2025–26 · Decode`, …) and reloads the page for that season, since each season has its
+   own robot photo.
+5. **In the library** at the bottom lists every team as a card — logo, number and what it has (`logo`,
+   `robot 2026`, …); clicking one opens it in the editor.
 
 How it behaves:
 
