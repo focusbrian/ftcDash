@@ -460,13 +460,18 @@ with the nav on top; the waypoint timetable and the Plan card sit below and scro
   plan between machines — it opens a picker first, so any saved autons can ride along in the same
   file. **Import…** reads such a file and puts its bundled autons back on the shelf, keeping whichever
   copy of a name was saved later.
-- **A shelf of single-robot autons.** Each robot card has **Save auton…**, which asks for a name and
-  keeps that one program in this browser (`ftcdash.autons.v1`), and **Load auton…**, which lists what
-  is saved — name, the column it came from, stops, balls and when it was saved — so any of them can be
-  dropped onto any robot. Saving under a name that already exists replaces it; the × beside an entry
-  deletes it. A saved auton remembers the slot it was written for, but loading it into another column
-  keeps the program and takes that column's alliance. No files are downloaded or picked for a single
-  robot; the shelf holds the last 24.
+- **A shelf of single-robot autons.** Each robot card has **Save**, which asks for a name and keeps
+  that one program in this browser (`ftcdash.autons.v1`), and **Load**, which lists what is saved —
+  name, the column it came from, stops, balls and when it was saved — so any of them can be dropped
+  onto any robot. Saving under a name that already exists replaces it; the × beside an entry deletes
+  it. A saved auton remembers the slot it was written for, but loading it into another column keeps
+  the program and takes that column's alliance. No files are downloaded or picked for a single robot;
+  the shelf holds the last 24.
+- **Swap alliance** turns the whole plan 180° about the centre of the field: every waypoint moves to
+  its mirrored position with its facing turned half a turn, and each robot hands its program to the
+  matching robot on the other side (Red 1 ↔ Blue 1, Red 2 ↔ Blue 2). The robots themselves — team
+  number, speed, shoot cycle — stay on their own alliance, so a red auton becomes the blue one that
+  mirrors it without shuffling the teams. It is a normal undo step.
 
 Field geometry (141.2 in. inside the perimeter, the shared HIVE frame with one tilting CELL per
 alliance, four FLOWERS, the LOADING ZONEs and GARDENs, and the starting poses) lives in

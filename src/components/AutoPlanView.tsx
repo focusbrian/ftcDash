@@ -49,6 +49,7 @@ import {
   hiveCellOnSide,
   initialRaisedSide,
   launches,
+  mirroredPlan,
   normalizeHeading,
   parseAutoPlan,
   planIssues,
@@ -918,7 +919,7 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
               setAutonDialog({ mode: 'save', slot });
             }}
           >
-            Save auton…
+            Save
           </button>
           <button
             type="button"
@@ -930,7 +931,7 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
               setAutonDialog({ mode: 'load', slot });
             }}
           >
-            Load auton…
+            Load
           </button>
         </div>
 
@@ -1641,6 +1642,19 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                   type="button"
                   className="button button--small button--ghost"
                   disabled={plan.robots.every((robot) => robot.path.length === 0)}
+                  title="Turn every path 180° about the centre of the field and hand each robot the plan of its opposite number on the other alliance"
+                  onClick={() => {
+                    commit(mirroredPlan(planRef.current));
+                    setError(null);
+                    setNote('Swapped alliances — every path turned 180° about the centre of the field.');
+                  }}
+                >
+                  Swap alliance
+                </button>
+                <button
+                  type="button"
+                  className="button button--small button--ghost"
+                  disabled={plan.robots.every((robot) => robot.path.length === 0)}
                   title="Choose whether saved autons travel with the plan"
                   onClick={() => {
                     setError(null);
@@ -1716,8 +1730,9 @@ export function AutoPlanView({ assets, onBack, backLabel = 'Back to dashboard' }
                 </p>
               </div>
               <p className="config__hint autoplan__save-hint">
-                The plan saves in this browser as you edit ({AUTO_PLAN_KEY}). <strong>Save auton…</strong>{' '}
-                on a robot card keeps that one program on a named shelf here, and{' '}
+                The plan saves in this browser as you edit ({AUTO_PLAN_KEY}). <strong>Save</strong> on a
+                robot card keeps that one program on a named shelf here and <strong>Load</strong> puts one
+                back, <strong>Swap alliance</strong> turns the whole plan 180° onto the other side, and{' '}
                 <strong>Export JSON</strong> keeps or shares the whole four-robot plan.
               </p>
             </section>

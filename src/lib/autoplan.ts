@@ -752,6 +752,32 @@ export function serializeAutoPlan(plan: AutoPlan): string {
   return JSON.stringify(plan, null, 2);
 }
 
+/**
+ * The same plan driven from the other alliance: every path turns 180° about the centre of the field
+ * and moves to the matching robot on the other side (Red 1 ↔ Blue 1, Red 2 ↔ Blue 2), which is what
+ * the mirrored game elements ask for. The robots themselves stay put — a number, speed and cycle
+ * belong to that team, not to the half of the field it happens to drive on.
+ */
+export function mirroredPlan(plan: AutoPlan): AutoPlan {
+  // `-0` is legal but noisy in a saved plan, so a point on an axis keeps a plain zero.
+  const flip = (value: number): number => (value === 0 ? 0 : -value);
+  const mirrorPath = (path: readonly Waypoint[]): Waypoint[] =>
+    path.map((point) => ({
+      ...point,
+      x: flip(point.x),
+      y: flip(point.y),
+      heading: normalizeHeading(point.heading + Math.PI),
+    }));
+
+  const robots = plan.robots.map((robot, slot) => {
+    const half = plan.robots.length / 2;
+    const partner = plan.robots[(slot + half) % plan.robots.length];
+    return partner ? { ...robot, path: mirrorPath(partner.path) } : robot;
+  });
+
+  return { ...plan, robots };
+}
+
 /** Sets when a waypoint is reached by moving the wait before it, which is the only free variable. */
 export function retimeArrival(
   robot: RobotPlan,

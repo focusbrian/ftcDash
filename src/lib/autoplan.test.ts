@@ -36,6 +36,7 @@ import {
   headingBetween,
   launches,
   lerpHeading,
+  mirroredPlan,
   normalizeHeading,
   otherSide,
   parseAutoPlan,
@@ -162,6 +163,66 @@ describe('field geometry', () => {
   it('keeps points inside the field', () => {
     expect(clampToField({ x: 200, y: -200 })).toEqual({ x: HALF_FIELD, y: -HALF_FIELD });
     expect(clampToField({ x: FIELD_SIZE, y: 0 })).toEqual({ x: HALF_FIELD, y: 0 });
+  });
+});
+
+describe('swap alliance', () => {
+  const base = (): AutoPlan => ({
+    ...defaultPlan(),
+    robots: [
+      {
+        ...defaultRobot(0),
+        teamNumber: 10136,
+        speed: 48,
+        path: [wp(-50, 0, 1, 2, 0), wp(-20, 30, 0, 0, Math.PI / 2)],
+      },
+      defaultRobot(1),
+      defaultRobot(2),
+      { ...defaultRobot(3), teamNumber: 23392, path: [wp(40, -40, 0, 0, Math.PI)] },
+    ],
+  });
+
+  const at = (plan: AutoPlan, slot: number): RobotPlan => {
+    const robot = plan.robots[slot];
+    if (!robot) throw new Error(`no robot at slot ${slot}`);
+    return robot;
+  };
+
+  it('turns each path 180° about the centre of the field', () => {
+    const swapped = mirroredPlan(base());
+    expect(at(swapped, 2).path).toEqual([
+      { x: 50, y: 0, heading: Math.PI, wait: 1, shots: 2, after: 0 },
+      { x: 20, y: -30, heading: Math.PI * 1.5, wait: 0, shots: 0, after: 0 },
+    ]);
+    expect(at(swapped, 1).path).toEqual([
+      { x: -40, y: 40, heading: 0, wait: 0, shots: 0, after: 0 },
+    ]);
+  });
+
+  it('leaves the robots themselves on their own alliance', () => {
+    const swapped = mirroredPlan(base());
+    expect(at(swapped, 0).teamNumber).toBe(10136);
+    expect(at(swapped, 0).speed).toBe(48);
+    expect(at(swapped, 0).path).toEqual([]);
+    expect(at(swapped, 3).teamNumber).toBe(23392);
+  });
+
+  it('comes back to where it started when applied twice', () => {
+    const plan = base();
+    const twice = mirroredPlan(mirroredPlan(plan));
+    for (const slot of [0, 1, 2, 3]) {
+      const before = at(plan, slot).path;
+      const after = at(twice, slot).path;
+      expect(after).toHaveLength(before.length);
+      after.forEach((point, index) => {
+        const original = before[index];
+        expect(original).toBeDefined();
+        expect(point.x).toBeCloseTo(original?.x ?? 0);
+        expect(point.y).toBeCloseTo(original?.y ?? 0);
+        expect(Math.cos(point.heading)).toBeCloseTo(Math.cos(original?.heading ?? 0));
+        expect(Math.sin(point.heading)).toBeCloseTo(Math.sin(original?.heading ?? 0));
+      });
+    }
   });
 });
 
