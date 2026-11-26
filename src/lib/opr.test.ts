@@ -41,7 +41,7 @@ function view(
   level: Match['level'] = 'Quals',
 ): MatchView {
   return {
-    match: { id, played: true, level } as Match,
+    match: { id, played: true, level, matchNum: id, series: 0 } as Match,
     sides: [red, blue],
     projected: false,
     leader: null,
@@ -58,6 +58,12 @@ const views = [
 describe('rollingOprForTeam', () => {
   it('adds one point per match the team played', () => {
     expect(rollingOprForTeam(views, 1)).toHaveLength(3);
+  });
+
+  it('says which match each snapshot belongs to, so a chart point can open it', () => {
+    const points = rollingOprForTeam(views, 1);
+    expect(points.map((point) => point.matchId)).toEqual([1, 2, 3]);
+    expect(points.map((point) => point.label)).toEqual(['Q1', 'Q2', 'Q3']);
   });
 
   it('ranks a team on the high-scoring alliance above one on the low-scoring side', () => {

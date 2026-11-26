@@ -295,6 +295,15 @@ export default function App() {
     setMatchId(null);
   }, []);
 
+  /** The team page can point at another event of the season; opening it leaves the team page. */
+  const openEventFromTeamPage = useCallback(
+    (value: string) => {
+      setTeamNumber(null);
+      handleSelectEvent(value);
+    },
+    [handleSelectEvent],
+  );
+
   const handleAddTeam = useCallback((teamNumber: number) => {
     setHighlightTeams((current) =>
       current.includes(teamNumber) ? current : [...current, teamNumber],
@@ -676,6 +685,7 @@ export default function App() {
                 assetError={assetError}
                 onBack={closeTeam}
                 onSelectMatch={selectMatch}
+                onOpenEvent={openEventFromTeamPage}
               />
             ) : teamNumber !== null ? (
               <div className="team-page detail--enter">

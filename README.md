@@ -121,7 +121,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   a synopsis of that team: logo, number and name, school, then its event rank, win–loss record,
   ranking points and OPR split, beside the robot photo (or the kitbot placeholder). Below that are the
   same two sparklines as the hover card — the whole season against its previous-season anchor, and the
-  running estimate through this event — then every award the team won this season with its placement
+  running estimate through this event — and both are readable: hover across either chart (or tab to it
+  and use the arrow keys) to see the event name and date, or the match with its partners and
+  opposition, plus that point's auto, teleop and total; click or tap to pin the bubble, which carries
+  an **Open event** / **Open match** button for the thing you are pointing at. Then every award the team won this season with its placement
   and event, and finally each of its matches here with a W/L mark, partner and opposition, score, and a
   click through to the match itself. **Back** (or the browser's back button, since the team is in the
   URL) returns to the panel you came from — and so does picking any match in the schedule, which

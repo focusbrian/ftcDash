@@ -27,6 +27,8 @@ interface Props {
   assetError?: string | null;
   onBack: () => void;
   onSelectMatch: (matchId: number) => void;
+  /** Jump to another event of the season, from the "OPR by event" chart. */
+  onOpenEvent: (code: string) => void;
 }
 
 interface TeamMatch {
@@ -101,11 +103,18 @@ export function TeamPage({
   assetError = null,
   onBack,
   onSelectMatch,
+  onOpenEvent,
 }: Props) {
   const seasonOpr = useTeamOprHistory(team.teamNumber, event.season);
   const awards = useTeamAwards(team.teamNumber, event.season);
   const eventOpr = rollingOprForTeam(views, team.teamNumber);
   const matches = teamMatches(views, team.teamNumber);
+  // What the chart tooltip says under each match — partners on the left, opposition on the right.
+  const matchDetails = new Map(matches.map((match) => [match.id, match.detail]));
+  const eventSeriesPoints = eventOpr.map((point) => ({
+    ...point,
+    detail: point.matchId === undefined ? undefined : matchDetails.get(point.matchId),
+  }));
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<AssetKind | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -362,12 +371,23 @@ export function TeamPage({
           empty={seasonOpr.status === 'loading' ? 'Loading season OPR…' : 'No season OPR published'}
           series={seasonSparkSeries(seasonOpr.points)}
           note={seasonNote}
+          // The anchor point belongs to the previous season, so there is nothing here to open.
+          actionFor={(index) => (seasonOpr.points[index]?.kind === 'prior' ? null : 'Open event')}
+          onSelectPoint={(index) => {
+            const point = seasonOpr.points[index];
+            if (point && point.kind !== 'prior') onOpenEvent(point.code);
+          }}
         />
         <Sparkline
           title="OPR this event"
           caption={`${eventOpr.length} match${eventOpr.length === 1 ? '' : 'es'}`}
           empty="No qualification matches yet"
-          series={eventSparkSeries(eventOpr)}
+          series={eventSparkSeries(eventSeriesPoints)}
+          actionFor={(index) => (eventOpr[index]?.matchId === undefined ? null : 'Open match')}
+          onSelectPoint={(index) => {
+            const point = eventOpr[index];
+            if (point?.matchId !== undefined) onSelectMatch(point.matchId);
+          }}
         />
       </div>
 

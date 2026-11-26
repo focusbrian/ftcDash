@@ -1,7 +1,11 @@
+import { useState } from 'react';
+
 export interface SparkPoint {
   value: number;
   /** Tooltip text for the marker, e.g. the event name. */
   label?: string;
+  /** Second line under the label, e.g. the date or the teams either side. */
+  detail?: string;
   /** Carried forward from the last published value rather than recorded at this position. */
   estimated?: boolean;
   /** Anchor carried in from the previous season, not this one. */
@@ -23,6 +27,9 @@ interface Props {
   empty?: string;
   /** Muted line under the legend, e.g. where carried values came from. */
   note?: string;
+  /** Button text for the point at this index, or null when that point opens nothing. */
+  actionFor?: (index: number) => string | null;
+  onSelectPoint?: (index: number) => void;
 }
 
 const WIDTH = 244;
@@ -39,8 +46,19 @@ function carried(point: SparkPoint): boolean {
   return Boolean(point.estimated || point.baseline);
 }
 
-/** Tiny multi-series line chart for the team hover card. */
-export function Sparkline({ series, caption, title, empty, note }: Props) {
+/** Tiny multi-series line chart: hover or tap a spot to read, and open, the event or match behind it. */
+export function Sparkline({
+  series,
+  caption,
+  title,
+  empty,
+  note,
+  actionFor,
+  onSelectPoint,
+}: Props) {
+  const [active, setActive] = useState<number | null>(null);
+  const [pinned, setPinned] = useState(false);
+
   const length = Math.max(0, ...series.map((entry) => entry.points.length));
   if (length === 0) {
     return (
@@ -64,12 +82,34 @@ export function Sparkline({ series, caption, title, empty, note }: Props) {
     return [x, y];
   };
 
+  /** Nearest plotted position to a fraction across the chart. */
+  const indexAt = (fraction: number): number =>
+    Math.max(0, Math.min(length - 1, Math.round(fraction * (length - 1))));
+
+  const indexFromPointer = (event: { clientX: number; currentTarget: HTMLDivElement }): number => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return 0;
+    return indexAt((event.clientX - rect.left) / rect.width);
+  };
+
+  const clear = () => {
+    setActive(null);
+    setPinned(false);
+  };
+
+  const activePoint = active === null ? undefined : series[0]?.points[active];
+  const action = active === null ? null : (actionFor?.(active) ?? null);
+  // Keep the bubble inside the chart instead of letting it hang off either end.
+  const tipLeft =
+    active === null ? 50 : Math.min(88, Math.max(12, (active / Math.max(1, length - 1)) * 100));
+
   return (
     <div className="spark">
       <div className="spark__head">
         <span className="spark__title">{title}</span>
         <span className="spark__caption">{caption}</span>
       </div>
+      <div className="spark__plot">
       <svg
         className="spark__chart"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -83,6 +123,15 @@ export function Sparkline({ series, caption, title, empty, note }: Props) {
           .join(', ')}`}
       >
         <line className="spark__axis" x1="0" y1={HEIGHT - PAD} x2={WIDTH} y2={HEIGHT - PAD} />
+        {active !== null ? (
+          <line
+            className="spark__guide"
+            x1={xyOf(0, active)[0]}
+            y1="0"
+            x2={xyOf(0, active)[0]}
+            y2={HEIGHT}
+          />
+        ) : null}
         {series.map((entry) => (
           <g key={entry.label}>
             {entry.points.map((point, at) => {
@@ -109,8 +158,6 @@ export function Sparkline({ series, caption, title, empty, note }: Props) {
               // Mark the carried values and the latest one only, so the line stays legible.
               if (!isLast && !carried(point)) return null;
               const [x, y] = xyOf(point.value, at);
-              const text = formatValue(point);
-              const tip = point.label ? `${point.label}: ${text}` : text;
               return carried(point) ? (
                 <circle
                   key={`dot-${at}`}
@@ -120,9 +167,7 @@ export function Sparkline({ series, caption, title, empty, note }: Props) {
                   r="2.4"
                   fill="none"
                   style={{ stroke: entry.color }}
-                >
-                  <title>{tip}</title>
-                </circle>
+                />
               ) : (
                 <circle
                   key={`dot-${at}`}
@@ -131,14 +176,100 @@ export function Sparkline({ series, caption, title, empty, note }: Props) {
                   cy={y}
                   r="2"
                   fill={entry.color}
-                >
-                  <title>{tip}</title>
-                </circle>
+                />
               );
             })}
+            {active !== null && entry.points[active] ? (
+              <circle
+                className="spark__dot spark__dot--active"
+                cx={xyOf(entry.points[active]!.value, active)[0]}
+                cy={xyOf(entry.points[active]!.value, active)[1]}
+                r="2.8"
+                fill={entry.color}
+              />
+            ) : null}
           </g>
         ))}
       </svg>
+
+      <div
+        className="spark__hit"
+        tabIndex={0}
+        role="group"
+        aria-label={`${title} — hover, or use the arrow keys, to read a point`}
+        onPointerMove={(event) => {
+          if (!pinned) setActive(indexFromPointer(event));
+        }}
+        onPointerLeave={() => {
+          if (!pinned) setActive(null);
+        }}
+        onClick={(event) => {
+          const index = indexFromPointer(event);
+          if (pinned && index === active) clear();
+          else {
+            setActive(index);
+            setPinned(true);
+          }
+        }}
+        onKeyDown={(event) => {
+          const current = active ?? length - 1;
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            setActive(
+              Math.max(0, Math.min(length - 1, current + (event.key === 'ArrowLeft' ? -1 : 1))),
+            );
+          } else if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault();
+            setActive(event.key === 'Home' ? 0 : length - 1);
+          } else if (event.key === 'Escape') {
+            clear();
+          } else if ((event.key === 'Enter' || event.key === ' ') && active !== null) {
+            event.preventDefault();
+            if (action) onSelectPoint?.(active);
+          }
+        }}
+        onBlur={(event) => {
+          // Moving focus onto the bubble's own button must not tear the bubble down before the click.
+          const next = event.relatedTarget as Node | null;
+          if (next && event.currentTarget.parentElement?.contains(next)) return;
+          clear();
+        }}
+      />
+
+      {active !== null ? (
+        <div
+          className={pinned ? 'spark__tip spark__tip--pinned' : 'spark__tip'}
+          style={{ left: `${tipLeft}%` }}
+        >
+          <p className="spark__tip-head">
+            {activePoint?.label ?? `${title} · point ${active + 1}`}
+            {activePoint?.detail ? <span>{activePoint.detail}</span> : null}
+          </p>
+          <ul className="spark__tip-values">
+            {series.map((entry) => {
+              const point = entry.points[active];
+              if (!point) return null;
+              return (
+                <li key={entry.label}>
+                  <span className="spark__swatch" style={{ background: entry.color }} />
+                  {entry.label}
+                  <strong>{formatValue(point)}</strong>
+                </li>
+              );
+            })}
+          </ul>
+          {action ? (
+            <button
+              type="button"
+              className="spark__tip-action"
+              onClick={() => onSelectPoint?.(active)}
+            >
+              {action}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      </div>
       <div className="spark__legend">
         {series.map((entry) => {
           const last = entry.points.at(-1);
