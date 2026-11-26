@@ -184,6 +184,7 @@ export function normalizeEvent(raw: RawEvent, season: number): EventData {
     liveStreamUrl: raw.liveStreamURL ?? null,
     type: raw.type ?? '',
     fieldCount: raw.fieldCount ?? null,
+    regionCode: raw.regionCode ?? null,
     location: raw.location,
     teams,
     matches,

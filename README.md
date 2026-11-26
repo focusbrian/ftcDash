@@ -42,6 +42,11 @@ Everything comes from one GraphQL query per event (`src/api/queries.ts`) against
   surrogate/no-show/DQ flags) and published scores, plus each participating team's event stats.
 - `eventsSearch(season, limit)` → the event picker list (cached in memory per season).
 
+The team page adds two ranking lookups, both cached for the session (`src/api/rankings.ts`):
+`teamByNumber(number).quickStats(season)` gives the worldwide OPR rank and the size of the field, and
+`teamsSearch(region)` lists a whole FTC Scout region (~1,000 teams in one request) so the same rank can
+be counted among the event's region.
+
 FTC Scout models scores and stats with **one type per season** (`MatchScores2025`,
 `TeamEventStats2026`, …). All of them expose the same fields used here — `autoPoints`, `dcPoints`,
 `totalPoints`, `totalPointsNp` — so the query is assembled from a single field list instead of
@@ -75,12 +80,13 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
 
 ## Reading the UI
 
-- **Landing page (`#/`):** the bare site URL opens a picker rather than auto-selecting an event: a
-  season switch, a search box that takes an event code, part of an event name or a bare team number,
-  and three lists — **Happening now**, **Upcoming** and **Recently finished**, six rows each with a
-  "Show all" switch for the whole season. The button under the intro jumps straight to the live event,
-  or to the latest one with results. Every row is a real link (`#/2026/USCITEQ`), so it can be opened
-  in a new tab. The wordmark in the header returns here from anywhere.
+- **Landing page (`#/`):** the bare site URL opens a picker rather than auto-selecting an event. It
+  introduces the site as a pit dashboard in one line — the schedule, real results and projected
+  scores — above a season switch, a search box that takes an event code, part of an event name or a
+  bare team number, and three lists — **Happening now**, **Upcoming** and **Recently finished**, six
+  rows each with a "Show all" switch for the whole season. The button under the intro jumps straight
+  to the live event, or to the latest one with results. Every row is a real link (`#/2026/USCITEQ`),
+  so it can be opened in a new tab. The wordmark in the header returns here from anywhere.
 - **Schedule (left):** one card per match, grouped into Qualification / Playoff / Semifinal / Final.
   Each card shows the alliance line-up — team logos with their numbers — and the total, with a
   `FINAL` or `PROJ` chip.
@@ -119,12 +125,19 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   clicking a row opens that team's page.
 - **Team page (right):** clicking any team in the ranking or the prediction swaps the detail panel for
   a synopsis of that team: logo, number and name, school, then its event rank, win–loss record,
-  ranking points and OPR split, beside the robot photo (or the kitbot placeholder). Below that are the
+  ranking points and OPR split, beside the robot photo (or the kitbot placeholder), then its season
+  standing — worldwide, as FTC Scout ranks it, and within the event's region (Michigan, Ontario, …) —
+  each counted out of the teams with a published OPR total that season. Below that are the
   same two sparklines as the hover card — the whole season against its previous-season anchor, and the
-  running estimate through this event — then every award the team won this season with its placement
+  running estimate through this event — and both are readable: hover across either chart (or tab to it
+  and use the arrow keys) to see the event name and date, or the match with its partners and
+  opposition, plus that point's auto, teleop and total; click or tap to pin the bubble, which carries
+  an **Open event** / **Open match** button for the thing you are pointing at. Then every award the team won this season with its placement
   and event, and finally each of its matches here with a W/L mark, partner and opposition, score, and a
   click through to the match itself. **Back** (or the browser's back button, since the team is in the
-  URL) returns to the panel you came from, and **+ Highlight** beside it adds the team to the
+  URL) returns to the panel you came from — and so does picking any match in the schedule, which
+  always brings the match view back rather than leaving the team page in its place. **+ Highlight**
+  beside it adds the team to the
   highlight list the search box builds (it reads **✓ Highlighted** once it is in, and clicking again
   removes it). **✎ Edit** opens the same logo and robot uploader the configuration page offers, right
   on the team: upload or replace either image, or remove one, and the page, the schedule cards and the
@@ -146,9 +159,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   the ranking and the prediction to just those teams — the tab counts follow the filter, those lists
   drop the orange accent since everything left is highlighted (the match view keeps it), and with
   nothing highlighted it leaves every list complete.
-- **Click a team to highlight:** in the alliance cards on the right, clicking a team row adds that
-  team to the highlights (and clicking it again removes it), so you can build a list straight from
-  the match you are looking at without going back to the search box.
+- **Click a team to open it:** in the alliance cards on the right, clicking a team row opens that
+  team's page in the detail panel (the same page the ranking and prediction open), where **+ Highlight**
+  adds it to the list and **✓ Highlighted** takes it back out — so a team is inspected first and
+  filtered from there, never filtered as a side effect of looking at it.
 - **Team summary on hover:** hovering — or keyboard-focusing — a team in either the schedule or an
   alliance card pops up a small summary beside the row with its event rank, matches played, OPR
   auto/teleop/total, and average ranking points. Two sparklines show how the team's OPR moved: one
@@ -195,6 +209,19 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   right of the header, beside the settings gear, pointing there — so the dashboard reads as part of the
   larger site. See [Adding a link back to your own site](#adding-a-link-back-to-your-own-site-back) for
   the exact URL to build.
+
+### On a desktop
+
+The match view is sized to land whole on a 1080p screen: with the browser chrome taking its share,
+the header, verdict, robot line-up and both alliance cards fit without scrolling (about 520px of
+content under a 96px header, which leaves headroom even at 125% display scaling ~730px of viewport).
+Above 720px wide the chrome runs a notch tighter than the phone layout — shorter header, verdict and
+alliance cards, a 150px robot line-up — so the schedule list shows four matches instead of three.
+
+Both detail views fill whatever width the panel has rather than sitting in a 1080px column: the
+verdict and the two alliance cards spread across it, and on the team page the two OPR charts sit side
+by side with awards on the left and its matches on the right once the viewport passes 1100px (the
+six stat numbers become one row above 1440px).
 
 ### On a phone
 
@@ -457,16 +484,15 @@ deploying are unchanged.
    one owns the library**, so do this right after deploying. If you would rather not race that, put
    cPanel → Directory Privacy on `public_html/admin` until you have.
 3. Find the team: type `10136` **or start typing its name** (`Frost Robo…`). Suggestions come from FTC
-   Scout and show the school too; picking one fills in the number. A bare number is looked up and shown
-   underneath, so you can see you have the right team before uploading.
-4. Drag a logo onto the **Team logo** card, a robot photo onto the **Robot photo** card, or drop both
-   anywhere in the upload area. Two files arriving together are split by name (`…logo…`, `…robot…`)
-   and otherwise fill the empty cards in order; a single file lands on the card it was dropped on.
-   Each card keeps its own file picker for a click-only workflow. The robot card carries a **season**
-   picker labelled with the game (`2026–27`, `2025–26 · Decode`, …); *Every season* writes the older
-   season-less entry, used only when a team has no photo for the match's season.
-5. Press **Upload** once: it sends whichever cards are filled, so a logo and a robot photo go up
-   together in one request.
+   Scout and show the school too; picking one opens that team in the editor below (the choice lives in
+   the URL, `?team=10136`, so an upload, a delete or a reload comes back to the same team).
+4. The editor shows what is stored for that team — the logo, and the robot photo for the season in the
+   picker — with **Replace** / **Upload** and **Remove** under each. Choosing a file sends it straight
+   away; dropping an image on a card does the same. The season picker is labelled with the game
+   (`2026–27`, `2025–26 · Decode`, …) and reloads the page for that season, since each season has its
+   own robot photo.
+5. **In the library** at the bottom lists every team as a card — logo, number and what it has (`logo`,
+   `robot 2026`, …); clicking one opens it in the editor.
 
 How it behaves:
 

@@ -82,6 +82,8 @@ export interface EventData {
   /** Qualifier, LeagueMeet, Championship, … */
   type: string;
   fieldCount: number | null;
+  /** FTC Scout's region code for the event (`USMI`, `CAON`, `GB`, …), used for regional ranking. */
+  regionCode: string | null;
   location: EventLocation;
   teams: Map<number, TeamStrength>;
   matches: Match[];

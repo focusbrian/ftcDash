@@ -1,9 +1,16 @@
+import { matchShortLabel } from './format';
 import type { MatchView } from './model';
 
 export interface OprPoint {
   auto: number;
   teleop: number;
   total: number;
+  /** Match this snapshot was computed after, so a chart point can name it. */
+  matchId?: number;
+  /** Short label for that match, e.g. `Q14`. */
+  label?: string;
+  /** Anything else worth showing for the point, e.g. partners and opposition. */
+  detail?: string;
 }
 
 /**
@@ -19,6 +26,8 @@ interface AllianceRow {
   /** Points excluding penalties, matching the API's `totalPointsNp` OPR. */
   total: number;
   quals: boolean;
+  matchId: number;
+  matchLabel: string;
 }
 
 function rowsOf(views: readonly MatchView[]): AllianceRow[] {
@@ -38,6 +47,8 @@ function rowsOf(views: readonly MatchView[]): AllianceRow[] {
         teleop: side.teleop,
         total: side.total - side.penalties,
         quals: view.match.level === 'Quals',
+        matchId: view.match.id,
+        matchLabel: matchShortLabel(view.match),
       });
     }
   }
@@ -134,6 +145,8 @@ export function rollingOprForTeam(views: readonly MatchView[], teamNumber: numbe
       auto: Math.max(0, Math.round(auto * 10) / 10),
       teleop: Math.max(0, Math.round(teleop * 10) / 10),
       total: Math.max(0, Math.round(total * 10) / 10),
+      matchId: row.matchId,
+      label: row.matchLabel,
     });
   }
 

@@ -260,21 +260,14 @@ export default function App() {
   const selectMatch = useCallback(
     (id: number) => {
       setMatchId(id);
+      // A team page is a detour, not a mode: picking a match is always how you get back to it.
+      setTeamNumber(null);
       // On a phone the two panes are stacked, so opening a match has to bring it into view.
       setPane('match');
       // Picking a match by hand means the viewer no longer wants to follow the newest result.
       if (settings.followLatest) setFollowLatest(false);
     },
     [settings.followLatest, setFollowLatest],
-  );
-
-  /** Picking one of a team's matches leaves the team page and shows that match. */
-  const openMatchFromTeam = useCallback(
-    (id: number) => {
-      setTeamNumber(null);
-      selectMatch(id);
-    },
-    [selectMatch],
   );
 
   // "Follow the latest result": keep the newest played match open, including across refreshes.
@@ -301,6 +294,15 @@ export default function App() {
     setCode(value);
     setMatchId(null);
   }, []);
+
+  /** The team page can point at another event of the season; opening it leaves the team page. */
+  const openEventFromTeamPage = useCallback(
+    (value: string) => {
+      setTeamNumber(null);
+      handleSelectEvent(value);
+    },
+    [handleSelectEvent],
+  );
 
   const handleAddTeam = useCallback((teamNumber: number) => {
     setHighlightTeams((current) =>
@@ -682,7 +684,8 @@ export default function App() {
                 onRemoveAsset={removeAsset}
                 assetError={assetError}
                 onBack={closeTeam}
-                onSelectMatch={openMatchFromTeam}
+                onSelectMatch={selectMatch}
+                onOpenEvent={openEventFromTeamPage}
               />
             ) : teamNumber !== null ? (
               <div className="team-page detail--enter">
@@ -706,7 +709,7 @@ export default function App() {
                 error={eventError}
                 assets={effectiveAssets}
                 highlightTeams={highlightTeams}
-                onToggleTeam={handleToggleTeam}
+                onOpenTeam={openTeam}
                 onJumpToNext={jumpToNext}
               />
             )}

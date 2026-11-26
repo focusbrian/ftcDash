@@ -72,6 +72,7 @@ query EventData($season: Int!, $code: String!) {
     liveStreamURL
     type
     fieldCount
+    regionCode
     location { venue city state country }
     matches {
       id
@@ -161,6 +162,29 @@ query TeamAwards($season: Int!, $number: Int!) {
         name
         start
       }
+    }
+  }
+}`;
+
+/** The season's published OPR total and the rank FTC Scout gives it worldwide. */
+export const TEAM_RANK_QUERY = `
+query TeamRank($season: Int!, $number: Int!) {
+  teamByNumber(number: $number) {
+    number
+    quickStats(season: $season) {
+      count
+      tot { value rank }
+    }
+  }
+}`;
+
+/** Every team in one region with its OPR total, so a regional rank can be counted out of them. */
+export const REGION_TEAMS_QUERY = `
+query RegionTeams($season: Int!, $region: RegionOption!) {
+  teamsSearch(region: $region) {
+    number
+    quickStats(season: $season) {
+      tot { value }
     }
   }
 }`;

@@ -70,6 +70,8 @@ export interface RawEvent {
   liveStreamURL: string | null;
   type: string;
   fieldCount: number | null;
+  /** FTC Scout's region code for the event, e.g. `USMI` — also the key `teamsSearch` takes. */
+  regionCode: string | null;
   location: { venue: string | null; city: string; state: string; country: string };
   matches: RawMatch[];
   teams: RawEventParticipation[];

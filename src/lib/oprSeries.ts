@@ -1,4 +1,5 @@
 import type { SeasonOprPoint } from './seasonOpr';
+import { fmtDate } from './format';
 import type { OprPoint } from './opr';
 
 /** Colours shared with the record stars on the schedule cards. */
@@ -12,6 +13,8 @@ export const OPR_COLORS = {
 export interface OprSparkPoint {
   value: number;
   label?: string;
+  /** Second line under the label — the date, or the teams either side. */
+  detail?: string;
   estimated?: boolean;
   baseline?: boolean;
 }
@@ -30,6 +33,8 @@ export function seasonSparkSeries(points: readonly SeasonOprPoint[]): OprSparkSe
     points: points.map((point) => ({
       value: point[key],
       label: point.kind === 'prior' ? `${point.season} season OPR` : point.name,
+      // The anchor point is named by the event it came from; the rest carry their date.
+      detail: point.kind === 'prior' ? point.name : fmtDate(point.start),
       baseline: point.kind === 'prior',
       estimated: point.kind === 'estimate',
     })),
@@ -47,7 +52,11 @@ export function eventSparkSeries(points: readonly OprPoint[]): OprSparkSeries[] 
   const build = (key: 'auto' | 'teleop' | 'total', label: string, color: string) => ({
     label,
     color,
-    points: points.map((point) => ({ value: point[key] })),
+    points: points.map((point) => ({
+      value: point[key],
+      label: point.label,
+      detail: point.detail,
+    })),
   });
 
   return [

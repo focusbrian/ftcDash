@@ -120,15 +120,15 @@ export function HomePage({ season, seasons, onSeasonChange, events, loading, err
   return (
     <div className="home">
       <header className="home__hero">
-        <p className="home__eyebrow">FTC scouting / {seasonLabel(season)} season</p>
+        <p className="home__eyebrow">FTC pit dashboard / {seasonLabel(season)} season</p>
         <h1 className="home__title">
           Every match.
           <br />
           <span>Every number.</span>
         </h1>
         <p className="home__intro">
-          Pick an event to see its schedule, the real results as FIRST reports them, and OPR-based
-          projections for the matches still to come.
+          Pick an event for its schedule, real results as they post, and projected scores for the
+          matches still to come.
         </p>
         {featured ? (
           <div className="home__cta">

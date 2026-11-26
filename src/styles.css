@@ -1648,6 +1648,116 @@ select {
   overflow: visible;
 }
 
+/* The pointer layer sits over the plot, so hovering anywhere on it reads the nearest point. */
+.spark__plot {
+  position: relative;
+}
+
+.spark__hit {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.spark__hit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.spark__guide {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark__dot--active {
+  stroke: var(--bg-panel);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Read-out for the hovered or tapped point. Only a pinned bubble takes clicks, so the button works. */
+.spark__tip {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  min-width: 132px;
+  max-width: 230px;
+  padding: 7px 9px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-panel);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.spark__tip--pinned {
+  pointer-events: auto;
+  border-color: var(--accent-line);
+}
+
+.spark__tip-head {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.spark__tip-head span {
+  display: block;
+  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.spark__tip-values {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.spark__tip-values li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.spark__tip-values strong {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.spark__tip-action {
+  width: 100%;
+  height: 24px;
+  margin-top: 7px;
+  border-radius: 6px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.spark__tip-action:hover {
+  background: var(--accent-line);
+}
+
 .spark__axis {
   stroke: var(--line);
   stroke-width: 1;
@@ -1725,7 +1835,6 @@ select {
 
 .detail {
   padding: 20px 24px 44px;
-  max-width: 1080px;
 }
 
 /* Replays whenever another match is opened, because the panel is keyed by match id. */
@@ -3336,6 +3445,13 @@ select {
   margin: 0;
 }
 
+/* With room for it, the six numbers read better as one row than as 3 + 3. */
+@media (min-width: 1440px) {
+  .team-page__stats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
 .team-page__stats dt {
   font-size: 9px;
   font-weight: 700;
@@ -3360,6 +3476,57 @@ select {
   font-size: 11px;
   line-height: 1.5;
   color: var(--text-dim);
+}
+
+.team-page__ranking-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-page__ranking {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.rank-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--wash), var(--bg-raised);
+}
+
+.rank-tile__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.rank-tile__rank {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-tile__pool {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.team-page__ranking-note {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--text-faint);
 }
 
 .team-page__block h3 {
@@ -3498,10 +3665,34 @@ select {
     max-width: 220px;
   }
 }
-/* The chart stretches to its container, so cap it here or the markers turn into ellipses. */
-.team-page .spark {
-  max-width: 300px;
+/* The charts and the two lists share the panel's width instead of stacking in one narrow column. */
+.team-page__charts,
+.team-page__lists {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px 22px;
+  align-items: start;
 }
+
+@media (min-width: 1100px) {
+  .team-page__charts,
+  .team-page__lists {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  }
+}
+
+/* The chart stretches to its container, so keep its own proportions: the viewBox is 244 x 34, and
+   matching that stops the markers from turning into ellipses. */
+.team-page .spark__chart {
+  height: auto;
+  aspect-ratio: 244 / 34;
+}
+
+/* Scaling the chart with its column would grow the markers with it. */
+.team-page .spark__dot {
+  r: 1.4px;
+}
+
 .team-page__bar {
   display: flex;
   align-items: center;
@@ -5036,4 +5227,175 @@ select {
 
 .autoplan__robot--grabbable:active {
   cursor: grabbing;
+}
+
+/* ---------- desktop density ----------
+   A 1080p screen only leaves about 730-950 px of viewport once the browser chrome is gone, and the
+   match view has to fit in that: header, verdict, robot line-up and both alliance cards. Everything
+   below is desktop-only, so the phone layout keeps its larger touch targets. */
+
+@media (min-width: 721px) {
+  .topbar {
+    gap: 10px 16px;
+    padding: 9px 18px 10px;
+  }
+
+  .brand__badge {
+    width: 24px;
+    height: 27px;
+    font-size: 21px;
+  }
+
+  .brand__mark {
+    font-size: 21px;
+  }
+
+  .brand__sub {
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .brand__credit {
+    font-size: 10px;
+  }
+
+  .brand__meta {
+    margin-top: 2px;
+  }
+
+  .field__control,
+  .button,
+  .iconbutton {
+    height: 32px;
+  }
+
+  .iconbutton {
+    width: 32px;
+  }
+
+  .schedule__head {
+    padding: 12px 14px 9px;
+  }
+
+  .schedule__head h1 {
+    font-size: 15px;
+  }
+
+  .schedule__tabs {
+    padding: 8px 14px 6px;
+  }
+
+  .schedule__tab {
+    height: 28px;
+  }
+
+  .schedule__list {
+    padding: 16px 10px 10px;
+  }
+
+  .matches {
+    gap: 14px;
+  }
+
+  .card {
+    padding: 7px 9px 7px;
+  }
+
+  .card__side {
+    padding: 2px 7px;
+    font-size: 12px;
+  }
+
+  .detail {
+    padding: 14px 20px 28px;
+  }
+
+  .detail__head {
+    margin-bottom: 10px;
+  }
+
+  .detail__head h2 {
+    font-size: 26px;
+  }
+
+  .detail__meta {
+    gap: 14px;
+  }
+
+  .verdict {
+    margin-bottom: 12px;
+    padding: 10px 16px 12px;
+  }
+
+  .verdict__score {
+    margin-top: 4px;
+    font-size: 28px;
+  }
+
+  .verdict__dash {
+    font-size: 19px;
+  }
+
+  .prob {
+    margin-top: 10px;
+  }
+
+  .prob__bar {
+    height: 8px;
+  }
+
+  .prob__labels {
+    margin-top: 4px;
+  }
+
+  .alliances {
+    gap: 12px;
+  }
+
+  .alliance__head {
+    padding: 9px 12px 6px;
+  }
+
+  .alliance__head h3 {
+    font-size: 15px;
+  }
+
+  .alliance__total {
+    font-size: 20px;
+  }
+
+  .alliance__teams {
+    padding: 0 12px;
+  }
+
+  .team__hit {
+    padding: 7px 6px;
+  }
+
+  .team__logo {
+    width: 26px;
+    height: 26px;
+  }
+
+  .alliance__splits {
+    margin: 9px 12px 10px;
+  }
+
+  .split {
+    padding: 5px 7px 6px;
+  }
+
+  .alliance__note {
+    margin: 0 12px 10px;
+  }
+
+  /* The robots hang over the card's top edge, so both numbers shrink together. */
+  .lineup {
+    height: 150px;
+    margin: 0 10px -36px;
+  }
+
+  .lineup--group .lineup__robot + .lineup__robot {
+    margin-left: -2rem;
+  }
 }
