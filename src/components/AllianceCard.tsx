@@ -11,7 +11,7 @@ interface Props {
   projected: boolean;
   assets: AssetStore;
   highlightTeams: readonly number[];
-  onToggleTeam: (teamNumber: number) => void;
+  onOpenTeam: (teamNumber: number) => void;
   celebrate?: boolean;
 }
 
@@ -29,7 +29,7 @@ export function AllianceCard({
   projected,
   assets,
   highlightTeams,
-  onToggleTeam,
+  onOpenTeam,
   celebrate,
 }: Props) {
   // Remote seasons recorded alliance totals without an auto/teleop breakdown.
@@ -64,9 +64,8 @@ export function AllianceCard({
               <button
                 type="button"
                 className="team__hit"
-                aria-pressed={highlighted.has(entry.teamNumber)}
-                title={`Highlight team ${entry.teamNumber}`}
-                onClick={() => onToggleTeam(entry.teamNumber)}
+                title={`Open team ${entry.teamNumber}`}
+                onClick={() => onOpenTeam(entry.teamNumber)}
                 onMouseEnter={(event) => show(entry.strength, event.currentTarget)}
                 onMouseLeave={hide}
                 onFocus={(event) => show(entry.strength, event.currentTarget)}
@@ -129,7 +128,7 @@ export function AllianceCard({
         })}
       </ul>
 
-      <TeamSummary state={hovered} hint="Click to highlight this team’s matches" />
+      <TeamSummary state={hovered} hint="Click to open this team’s page" />
 
       <dl className="alliance__splits">
         <Stat label="Auto" value={breakdownMissing ? '—' : fmtPoints(side.auto, digits)} />

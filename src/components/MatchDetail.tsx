@@ -12,7 +12,7 @@ interface Props {
   error: string | null;
   assets: AssetStore;
   highlightTeams: readonly number[];
-  onToggleTeam: (teamNumber: number) => void;
+  onOpenTeam: (teamNumber: number) => void;
   onJumpToNext: () => void;
 }
 
@@ -126,7 +126,7 @@ export function MatchDetail({
   error,
   assets,
   highlightTeams,
-  onToggleTeam,
+  onOpenTeam,
   onJumpToNext,
 }: Props) {
   if (error) {
@@ -247,7 +247,7 @@ export function MatchDetail({
               projected={view.projected}
               assets={assets}
               highlightTeams={highlightTeams}
-              onToggleTeam={onToggleTeam}
+              onOpenTeam={onOpenTeam}
               celebrate={!view.projected && view.leader?.alliance === side.alliance}
             />
           </div>

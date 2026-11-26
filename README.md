@@ -146,9 +146,10 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   the ranking and the prediction to just those teams — the tab counts follow the filter, those lists
   drop the orange accent since everything left is highlighted (the match view keeps it), and with
   nothing highlighted it leaves every list complete.
-- **Click a team to highlight:** in the alliance cards on the right, clicking a team row adds that
-  team to the highlights (and clicking it again removes it), so you can build a list straight from
-  the match you are looking at without going back to the search box.
+- **Click a team to open it:** in the alliance cards on the right, clicking a team row opens that
+  team's page in the detail panel (the same page the ranking and prediction open), where **+ Highlight**
+  adds it to the list and **✓ Highlighted** takes it back out — so a team is inspected first and
+  filtered from there, never filtered as a side effect of looking at it.
 - **Team summary on hover:** hovering — or keyboard-focusing — a team in either the schedule or an
   alliance card pops up a small summary beside the row with its event rank, matches played, OPR
   auto/teleop/total, and average ranking points. Two sparklines show how the team's OPR moved: one
@@ -195,6 +196,14 @@ probability is clamped to 0.5–99.5% so a lopsided matchup never reads as a cer
   right of the header, beside the settings gear, pointing there — so the dashboard reads as part of the
   larger site. See [Adding a link back to your own site](#adding-a-link-back-to-your-own-site-back) for
   the exact URL to build.
+
+### On a desktop
+
+The match view is sized to land whole on a 1080p screen: with the browser chrome taking its share,
+the header, verdict, robot line-up and both alliance cards fit without scrolling (about 520px of
+content under a 96px header, which leaves headroom even at 125% display scaling ~730px of viewport).
+Above 720px wide the chrome runs a notch tighter than the phone layout — shorter header, verdict and
+alliance cards, a 150px robot line-up — so the schedule list shows four matches instead of three.
 
 ### On a phone
 

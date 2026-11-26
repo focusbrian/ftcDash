@@ -4818,3 +4818,174 @@ select {
 .autoplan__cell-input--angle {
   width: 58px;
 }
+
+/* ---------- desktop density ----------
+   A 1080p screen only leaves about 730-950 px of viewport once the browser chrome is gone, and the
+   match view has to fit in that: header, verdict, robot line-up and both alliance cards. Everything
+   below is desktop-only, so the phone layout keeps its larger touch targets. */
+
+@media (min-width: 721px) {
+  .topbar {
+    gap: 10px 16px;
+    padding: 9px 18px 10px;
+  }
+
+  .brand__badge {
+    width: 24px;
+    height: 27px;
+    font-size: 21px;
+  }
+
+  .brand__mark {
+    font-size: 21px;
+  }
+
+  .brand__sub {
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .brand__credit {
+    font-size: 10px;
+  }
+
+  .brand__meta {
+    margin-top: 2px;
+  }
+
+  .field__control,
+  .button,
+  .iconbutton {
+    height: 32px;
+  }
+
+  .iconbutton {
+    width: 32px;
+  }
+
+  .schedule__head {
+    padding: 12px 14px 9px;
+  }
+
+  .schedule__head h1 {
+    font-size: 15px;
+  }
+
+  .schedule__tabs {
+    padding: 8px 14px 6px;
+  }
+
+  .schedule__tab {
+    height: 28px;
+  }
+
+  .schedule__list {
+    padding: 16px 10px 10px;
+  }
+
+  .matches {
+    gap: 14px;
+  }
+
+  .card {
+    padding: 7px 9px 7px;
+  }
+
+  .card__side {
+    padding: 2px 7px;
+    font-size: 12px;
+  }
+
+  .detail {
+    padding: 14px 20px 28px;
+  }
+
+  .detail__head {
+    margin-bottom: 10px;
+  }
+
+  .detail__head h2 {
+    font-size: 26px;
+  }
+
+  .detail__meta {
+    gap: 14px;
+  }
+
+  .verdict {
+    margin-bottom: 12px;
+    padding: 10px 16px 12px;
+  }
+
+  .verdict__score {
+    margin-top: 4px;
+    font-size: 28px;
+  }
+
+  .verdict__dash {
+    font-size: 19px;
+  }
+
+  .prob {
+    margin-top: 10px;
+  }
+
+  .prob__bar {
+    height: 8px;
+  }
+
+  .prob__labels {
+    margin-top: 4px;
+  }
+
+  .alliances {
+    gap: 12px;
+  }
+
+  .alliance__head {
+    padding: 9px 12px 6px;
+  }
+
+  .alliance__head h3 {
+    font-size: 15px;
+  }
+
+  .alliance__total {
+    font-size: 20px;
+  }
+
+  .alliance__teams {
+    padding: 0 12px;
+  }
+
+  .team__hit {
+    padding: 7px 6px;
+  }
+
+  .team__logo {
+    width: 26px;
+    height: 26px;
+  }
+
+  .alliance__splits {
+    margin: 9px 12px 10px;
+  }
+
+  .split {
+    padding: 5px 7px 6px;
+  }
+
+  .alliance__note {
+    margin: 0 12px 10px;
+  }
+
+  /* The robots hang over the card's top edge, so both numbers shrink together. */
+  .lineup {
+    height: 150px;
+    margin: 0 10px -36px;
+  }
+
+  .lineup--group .lineup__robot + .lineup__robot {
+    margin-left: -2rem;
+  }
+}

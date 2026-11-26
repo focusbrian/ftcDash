@@ -706,7 +706,7 @@ export default function App() {
                 error={eventError}
                 assets={effectiveAssets}
                 highlightTeams={highlightTeams}
-                onToggleTeam={handleToggleTeam}
+                onOpenTeam={openTeam}
                 onJumpToNext={jumpToNext}
               />
             )}
