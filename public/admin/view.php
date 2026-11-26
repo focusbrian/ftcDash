@@ -346,6 +346,7 @@ if (!in_array($editSeason, $seasonChoicesForEditor, true)) {
             upload a logo or robot photo.
           </p>
         <?php else: ?>
+        <div data-editor data-team="<?= h($editTeam) ?>">
           <p class="teamsearch__status">
             <span class="chip chip--team"><?= h($editTeam) ?></span>
             <strong data-team-name>Team <?= h($editTeam) ?></strong>
@@ -442,6 +443,8 @@ if (!in_array($editSeason, $seasonChoicesForEditor, true)) {
               <?php endif; ?>
             </div>
           </div>
+        </div>
+        <p class="empty" style="margin-top:14px" data-editor-idle hidden></p>
         <?php endif; ?>
       </section>
 
@@ -516,6 +519,32 @@ if (!in_array($editSeason, $seasonChoicesForEditor, true)) {
     if (team.schoolName) parts.push(team.schoolName);
     return parts.join(' — ');
   };
+
+  // The cards belong to the team in the URL. As soon as the box holds a different team they are
+  // cleared, so a logo picked for one team can never be sent to another.
+  const editor = document.querySelector('[data-editor]');
+  const idle = document.querySelector('[data-editor-idle]');
+  const openTeam = editor?.dataset.team ?? '';
+
+  const syncEditor = () => {
+    if (!editor || openTeam === '') return;
+    const typed = input.value.trim();
+    const same = typed === openTeam;
+    editor.hidden = !same;
+    if (!same) {
+      document.querySelectorAll('.asset__input').forEach((field) => {
+        field.value = '';
+      });
+    }
+    if (!idle) return;
+    idle.hidden = same || typed === '';
+    if (idle.hidden) return;
+    idle.textContent = /^\d+$/.test(typed)
+      ? `Press Enter, or pick the team below, to open team ${typed}.`
+      : `Pick team ${typed} from the suggestions to open it.`;
+  };
+
+  input.addEventListener('input', syncEditor);
 
   const open = (number) => {
     const season = document.querySelector('[data-season]');
